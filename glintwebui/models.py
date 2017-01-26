@@ -1,6 +1,8 @@
 from __future__ import unicode_literals
 
 from django.db import models
+from django.contrib.auth.models import User
+
 
 
 class Project(models.Model):
@@ -19,7 +21,7 @@ class Repo(models.Model):
         return "%s: %s" % (self.project, self.repo_name)
 
 
-class User(models.Model):
+class Glint_User(models.Model):
     user_id = models.AutoField(primary_key=True)
     public_key = models.CharField(max_length=200)
 
@@ -30,7 +32,7 @@ class User(models.Model):
 #not sure if this one is neccesary??
 class User_Projects(models.Model):
 	project = models.ForeignKey(Project, on_delete=models.CASCADE)
-	user_id = models.ForeignKey(User, on_delete=models.CASCADE)
+	user_id = models.ForeignKey(Glint_User, on_delete=models.CASCADE)
 
 	def __str__(self):
 		return "%s: %s" % (self.project, self.user_id)

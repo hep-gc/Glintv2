@@ -2,8 +2,13 @@ from django.http import HttpResponse
 #from django.template import loader
 
 from django.shortcuts import render, get_object_or_404
-
 from .models import Project
+
+#import os
+
+
+def checkUser(request):
+	return request.META.get('REMOTE_USER')
 
 
 def index(request):
@@ -11,6 +16,7 @@ def index(request):
 	#template = loader.get_template('glintwebui/index.html')
 	context = {
 		'projects': Project.objects.all(),
+		'user': checkUser(request),
 	}
 
 	return render(request, 'glintwebui/index.html', context)
