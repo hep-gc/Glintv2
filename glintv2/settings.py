@@ -123,12 +123,12 @@ USE_TZ = True
 
 
 STATICFILES_DIRS = (
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + 'static',
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/static/',
 )
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.10/howto/static-files/
-
+STATIC_ROOT = '/var/www/glintv2/static/'
 STATIC_URL = '/static/'
 
 #HTTPS and other security Settings
