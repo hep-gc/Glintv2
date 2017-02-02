@@ -1,22 +1,36 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseForbidden
 #from django.template import loader
 
+from django.core.exceptions import PermissionDenied
+
 from django.shortcuts import render, get_object_or_404
-from .models import Project
+from .models import Project, User, Glint_User
 
 #import os
 
 
-def checkUser(request):
+def getUser(request):
 	return request.META.get('REMOTE_USER')
+
+def verifyUser(request):
+	cert_user = getUser(request)
+	auth_user_list = Glint_User.objects.all()
+	for user in auth_user_list:
+		if cert_user == user.common_name:
+			return True
+
+	return False
 
 
 def index(request):
-	# need to figure out how to hold onto what user is currently authenticated.
-	#template = loader.get_template('glintwebui/index.html')
+
+	if not verifyUser(request):
+		raise PermissionDenied
+
 	context = {
 		'projects': Project.objects.all(),
-		'user': checkUser(request),
+		'user': getUser(request),
+		'all_users': User.objects.all(),
 	}
 
 	return render(request, 'glintwebui/index.html', context)
