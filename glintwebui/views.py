@@ -1,4 +1,4 @@
-from django.http import HttpResponse, HttpResponseForbidden
+from django.http import HttpResponse
 #from django.template import loader
 
 from django.core.exceptions import PermissionDenied
