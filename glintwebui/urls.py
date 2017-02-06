@@ -7,4 +7,5 @@ urlpatterns = [
     url(r'^users/$', views.users, name='users'),
     url(r'^projects/$', views.user_projects, name='user_projects'),
     url(r'^project_details/(?P<project_name>.+)/$', views.project_details, name='project_details'),
+    url(r'^add_repo/(?P<project_name>.+)/$', views.add_repo, name='add_repo'),
 ]

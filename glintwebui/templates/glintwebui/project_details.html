@@ -1,1 +1,8 @@
 <h1> {{project}} </h1>
+<h2> Repos: </h2>
+<table>
+	{% for repo in repo_list %}
+		<tr><td> {{repo.project_name}}: {{repo.tenant}}</td></tr>
+	{% endfor %}
+	<tr><td><a href="/ui/add_repo/{{project}}" > Add repo to {{project}} </a></td></tr>
+</table>

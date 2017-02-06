@@ -31,14 +31,15 @@ Atributes:
 '''
 class Project(models.Model):
     project_name = models.CharField(max_length=32)
-    uri = models.CharField(max_length=256, default="")
+    auth_url = models.CharField(max_length=256, default="")
     tenant = models.CharField(max_length=128, default="")
+    tenant_id = models.CharField(max_length=64, default="")
     #credentials? How to encrypt?
     username = models.CharField(max_length=64, default="")
     password = models.CharField(max_length=64, default="")
 
     def __str__(self):
-        return self.project_name
+        return self.project_name + ": " + self.tenant
 
 
 '''

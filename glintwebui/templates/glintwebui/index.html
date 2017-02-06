@@ -1,13 +1,7 @@
-<h1> Hello {{user}} </h1>
+<h1> Welcome, {{user}} </h1>
 <h1>Your projects: </h1>
 <table>
 	{% for project in projects %}
 		<tr><td><a href="project_details/{{project.project_name}}"> {{project.project_name}} </a></td></tr>
-	{% endfor %}
-</table>
-<h1>All Users: </h1>
-<table>
-	{% for user in all_users %}
-		<tr><td> {{user}} </td></tr>
 	{% endfor %}
 </table>
