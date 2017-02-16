@@ -1,8 +1,35 @@
+<style>
+table, th, td {
+    border: 1px solid black;
+    border-collapse: collapse;
+    padding: 5px;
+}
+th {
+    text-align: right;
+}
+</style>
+
 <h1> {{project}} </h1>
-<h2> Repos: </h2>
 <table>
+	<tr>
+		<th/>
 	{% for repo in repo_list %}
-		<tr><td> {{repo.project_name}}: {{repo.tenant}}</td></tr>
+		<th>{{repo.tenant}}</th>
 	{% endfor %}
-	<tr><td><a href="/ui/add_repo/{{project}}" > Add repo to {{project}} </a></td></tr>
+	</tr>
+	{% if image_list %}
+		{% for image in image_list %}
+			<tr><th> {{image.1}}</th>
+			{% for repo in repo_list %}
+				{% if image.0 == repo.tenant %}
+					<td><input type="checkbox" checked></td>
+				{% else %}
+					<td><input type="checkbox"></td>
+				{% endif %}
+			{% endfor %}
+			</tr>
+		{% endfor %}
+	{% endif %}
 </table>
+<br/>
+<a href="/ui/add_repo/{{project}}"><input type="button" value="Add repo to {{project}}"/></a>

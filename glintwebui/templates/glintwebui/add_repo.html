@@ -1,7 +1,7 @@
 <h1> Add repo for {{project_name}}</h1>
 
 {% if error_msg %}
-	<h2> Error: {{error_msg}} </h2>
+	<h2><font color=red> Error: {{error_msg}} </font></h2>
 {% endif %}
 
 
@@ -27,6 +27,7 @@
     <tr><td><label for="password">Retype Password</label></td>
     <td><input type="password" name="password2" id="" value="" /></td></tr>
 	<tr><td><input type="submit" value="Add Repo" /></td></tr>
+	<tr><td><a href="/ui/project_details/{{project_name}}/"><input type="button" value="Cancel"/></a></td></tr>
 </table>
 </form>
 

@@ -6,8 +6,7 @@ from django.core.exceptions import PermissionDenied
 from django.shortcuts import render, get_object_or_404
 from .models import Project, User_Projects, User, Glint_User
 from .forms import addRepoForm
-
-#import os
+from .glint_api import repo_connector, validate_repo
 
 
 def getUser(request):
@@ -49,14 +48,26 @@ def user_projects(request, user_id="N/A"):
     return HttpResponse("Your projects: %s" % user_id)
 
 def project_details(request, project_name="null_project"):
-	#template = loader.get_template('glintwebui/project_details.html')
+	repo_list = Project.objects.filter(project_name=project_name)
+	image_list = ()
+	for repo in repo_list:
+		try:
+			rcon = repo_connector(auth_url=repo.auth_url, project=repo.tenant, username=repo.username, password=repo.password)
+			image_list= image_list + rcon.image_list
+			
+		except:
+			print("Could not connet to repo: %s at %s", (repo.tenant, repo.auth_url))
+
+	# we can make the image list a set because thorugh the 3-tuple it should be unique across all clouds
+	# making it a set eliminates any duplicates if the same repo is added twice
 	context = {
 		'project': project_name,
-		'repo_list': Project.objects.filter(project_name=project_name)
+		'repo_list': repo_list,
+		'image_list': set(image_list)
 	}
 	return render(request, 'glintwebui/project_details.html', context)
 
-#displays the form for adding a repo to a project
+#displays the form for adding a repo to a project and handles the post request
 def add_repo(request, project_name):
 	if request.method == 'POST':
 		form = addRepoForm(request.POST)
@@ -66,17 +77,37 @@ def add_repo(request, project_name):
 			pass1 = form.cleaned_data['password1']
 			pass2 = form.cleaned_data['password2']
 			if pass1 == pass2:
-				# all data is valid: save the info
-				new_repo = Project(project_name=form.cleaned_data['project_name'], auth_url=form.cleaned_data['auth_url'], tenant=form.cleaned_data['tenant'], tenant_id=form.cleaned_data['tenant_id'], username=form.cleaned_data['username'], password=form.cleaned_data['password1'])
-				new_repo.save()
+				# all data is exists, check if the repo is valid
+				validate_resp = validate_repo(auth_url=form.cleaned_data['auth_url'], tenant_name=form.cleaned_data['tenant'], username=form.cleaned_data['username'], password=form.cleaned_data['password1'])
+				if (validate_resp[0]):
+					new_repo = Project(project_name=form.cleaned_data['project_name'], auth_url=form.cleaned_data['auth_url'], tenant=form.cleaned_data['tenant'], tenant_id=form.cleaned_data['tenant_id'], username=form.cleaned_data['username'], password=form.cleaned_data['password1'])
+					new_repo.save()
 
 
-				#return to project details page?
-				context = {
-					'project': project_name,
-					'repo_list': Project.objects.filter(project_name=project_name)
-				}
-				return render(request, 'glintwebui/project_details.html', context)
+					#return to project details page?
+					repo_list = Project.objects.filter(project_name=project_name)
+					image_list = []
+					for repo in repo_list:
+						try:
+							rcon = repo_connector(auth_url=repo.auth_url, project=repo.tenant, username=repo.username, password=repo.password)
+							image_list= image_list + rcon.image_list
+						except:
+							print("Could not connet to repo: %s at %s", (repo.tenant, repo.auth_url))
+
+					context = {
+						'project': project_name,
+						'repo_list': repo_list,
+						'image_list': set(image_list)
+					}
+					return render(request, 'glintwebui/project_details.html', context)
+				else:
+					#something in the repo information is bad
+					form = addRepoForm()
+					context = {
+						'project_name': project_name,
+						'error_msg': validate_resp[1]
+					}
+				return render(request, 'glintwebui/add_repo.html', context, {'form': form})
 			else:
 				# all data is good except the passwords
 				form = addRepoForm()
@@ -103,8 +134,3 @@ def add_repo(request, project_name):
 		}
 		return render(request, 'glintwebui/add_repo.html', context, {'form': form})
 
-
-
-#this is the post view that actually saves the repo
-def save_repo(request):
-	return
