@@ -80,7 +80,7 @@ def add_repo(request, project_name):
 				# all data is exists, check if the repo is valid
 				validate_resp = validate_repo(auth_url=form.cleaned_data['auth_url'], tenant_name=form.cleaned_data['tenant'], username=form.cleaned_data['username'], password=form.cleaned_data['password1'])
 				if (validate_resp[0]):
-					new_repo = Project(project_name=form.cleaned_data['project_name'], auth_url=form.cleaned_data['auth_url'], tenant=form.cleaned_data['tenant'], tenant_id=form.cleaned_data['tenant_id'], username=form.cleaned_data['username'], password=form.cleaned_data['password1'])
+					new_repo = Project(project_name=form.cleaned_data['project_name'], auth_url=form.cleaned_data['auth_url'], tenant=form.cleaned_data['tenant'], username=form.cleaned_data['username'], password=form.cleaned_data['password1'])
 					new_repo.save()
 
 

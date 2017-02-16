@@ -53,8 +53,7 @@ def validate_repo(auth_url, username, password, tenant_name):
 	except exceptions.http.HTTPClientError as e:
 		print(e)
 		return (False, "Unable to connect: Bad username, password, or tenant")
-	#except Exception as e:
-		#need to break these exceptions apart to provide user feedback about what information is messed up
+	except Exception as e:
 		print("Repo not valid: %s: %s", (tenant_name, auth_url))
 		print(e)
 		return (False, "unable to validate: unknown error")
