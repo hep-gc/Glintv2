@@ -10,26 +10,30 @@ th {
 </style>
 
 <h1> {{project}} </h1>
-<table>
-	<tr>
-		<th/>
-	{% for repo in repo_list %}
-		<th>{{repo.tenant}}</th>
-	{% endfor %}
-	</tr>
-	{% if image_list %}
-		{% for image in image_list %}
-			<tr><th> {{image.1}}</th>
-			{% for repo in repo_list %}
-				{% if image.0 == repo.tenant %}
-					<td><input type="checkbox" checked></td>
-				{% else %}
-					<td><input type="checkbox"></td>
-				{% endif %}
-			{% endfor %}
-			</tr>
+<form action="/ui/save_images/{{project}}/" method="post">
+	{% csrf_token %}
+	<table>
+		<tr>
+			<th/>
+		{% for repo in repo_list %}
+			<th>{{repo.tenant}}</th>
 		{% endfor %}
-	{% endif %}
-</table>
+		</tr>
+		{% if image_list %}
+			{% for image in image_list %}
+				<tr><th> {{image.2}} - {{image.1}}</th>
+				{% for repo in repo_list %}
+					{% if image.0 == repo.tenant %}
+						<td><input name="{{repo.tenant}}-{{image}}" type="checkbox" checked></td>
+					{% else %}
+						<td><input name="{{repo.tenant}}-{{image}}" type="checkbox"></td>
+					{% endif %}
+				{% endfor %}
+				</tr>
+			{% endfor %}
+		{% endif %}
+	</table>
+	<input type="submit" value="Save Images" />
+<form/>
 <br/>
 <a href="/ui/add_repo/{{project}}"><input type="button" value="Add repo to {{project}}"/></a>

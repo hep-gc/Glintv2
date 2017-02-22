@@ -8,9 +8,13 @@ from .models import Project, User_Projects, User, Glint_User
 from .forms import addRepoForm
 from .glint_api import repo_connector, validate_repo
 
+import json
+
 
 def getUser(request):
 	return request.META.get('REMOTE_USER')
+
+
 
 def verifyUser(request):
 	cert_user = getUser(request)
@@ -20,6 +24,7 @@ def verifyUser(request):
 			return True
 
 	return False
+
 
 
 def index(request):
@@ -32,20 +37,22 @@ def index(request):
 		'user': getUser(request),
 		'all_users': User.objects.all(),
 	}
-
 	return render(request, 'glintwebui/index.html', context)
 
 
 
 def users(request, users="N/A"):
     response = "The following are registered users: %s."
-
     return HttpResponse(response % users)
+
+
 
 # Once the users are authenticated with a cert this page will no longer be needed 
 # because everyone will see a unique landing page.
 def user_projects(request, user_id="N/A"):
     return HttpResponse("Your projects: %s" % user_id)
+
+
 
 def project_details(request, project_name="null_project"):
 	repo_list = Project.objects.filter(project_name=project_name)
@@ -67,6 +74,8 @@ def project_details(request, project_name="null_project"):
 	}
 	return render(request, 'glintwebui/project_details.html', context)
 
+
+
 #displays the form for adding a repo to a project and handles the post request
 def add_repo(request, project_name):
 	if request.method == 'POST':
@@ -84,13 +93,14 @@ def add_repo(request, project_name):
 					new_repo.save()
 
 
-					#return to project details page?
+					#return to project details page after saving the new repo
 					repo_list = Project.objects.filter(project_name=project_name)
-					image_list = []
+					image_list = ()
 					for repo in repo_list:
 						try:
 							rcon = repo_connector(auth_url=repo.auth_url, project=repo.tenant, username=repo.username, password=repo.password)
 							image_list= image_list + rcon.image_list
+							
 						except:
 							print("Could not connet to repo: %s at %s", (repo.tenant, repo.auth_url))
 
@@ -134,3 +144,20 @@ def add_repo(request, project_name):
 		}
 		return render(request, 'glintwebui/add_repo.html', context, {'form': form})
 
+def save_images(request, project_name):
+	if request.method == 'POST':
+		try:
+			print(request.POST)
+			for image in request.POST:
+				if "csrfmiddlewaretoken" not in image:
+					print((request.POST).get(key=image)) # For testing
+					# Need to devise a way to detect which repos will need to be modified
+					# brute force method is to check the results of the matrix against each repo
+					# and create a list of jobs (images needing transfer) but that seems real slow
+
+			return HttpResponse(request.POST)
+		except:
+			return HttpResponse("Couldn't retrieve post data, please go back and try again")
+	#Not a post request, display matrix
+	else:
+		 return project_details(request, project_name=project_name)
