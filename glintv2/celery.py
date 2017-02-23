@@ -2,7 +2,7 @@ from __future__ import absolute_import, unicode_literals
 from celery import Celery
 from celery.utils.log import get_task_logger
 from django.conf import settings
-from .utils import  jsonify_image_list
+from .utils import  jsonify_image_list, update_pending_transactions, get_imgages_for_proj, set_images_for_proj
 
  
 logger = get_task_logger(__name__)
@@ -50,5 +50,8 @@ def image_collection(self):
         #We are going to need some function that can take this json and compare it to the previous one
         # and merge the differences, generally the new one will be used but if there are any images awaiting
         # transfer or deletion they must be added to the list
+        updated_img_list = update_pending_transactions(get_imgages_for_proj(project.project_name), jsonify_image_list(image_list=image_list, repo_list=repo_list))
+        set_images_for_proj(project=project.project_name, json_img_dict=updated_img_list)
+
 
     logger.info("Task finished")
