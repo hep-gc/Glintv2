@@ -88,7 +88,7 @@ def update_pending_transactions(old_img_dict, new_img_dict):
 # returns a jsonified python dictionary containing the image list for a given project
 # If the image list doesn't exist in redis it returns False
 # Redis info should be moved to a config file
-def get_imgages_for_proj(project):
+def get_images_for_proj(project):
 	try:
 		r = redis.StrictRedis (host='localhost', port=6379, db=0)
 		return r.get(project)
@@ -107,8 +107,43 @@ def set_images_for_proj(project, json_img_dict):
 		logging.error ("Unknown exception while trying to set images for: %s", project)
 
 
-# Accepts a project as redis key and builds the image matrix that will be parsed
-# to display on the project details web page
+# Accepts a project as redis key and builds the image matrix in a dictionary
+# that will be parsed to display on the project details web page
+# The only problem with this is we discard the state and image name with this method
 def build_image_matrix(project):
-	#TODO
-	return None
+	image_dict=json.loads(get_images_for_proj(project))
+	img_matrix = {}
+	key_set = set()
+	# make a dictionary of all the images in the format key:value = image_id:list_of_repos
+	# start by making a list of the keys, using a set will keep them unique
+	for repo_key in image_dict:
+		for image_id in image_dict[repo_key]:
+			key_set.add(image_id)
+
+	# now with a unique set of keys fill out the dictionary
+	for key in key_set:
+		for repo_key in image_dict:
+			#try to get the image dict from the repo key, if there is a no key error it exists in that repo
+			try:
+				image_dict[repo_key][key]
+				img_matrix[key] = [repo_key]
+
+			#otherwise the image doesn't exist in that repo
+			except KeyError as e:
+				pass
+
+	return img_matrix
+
+
+# Returns a unique list of (image, name) tuples
+# May be a problem if two sites have the same image (id) but with different names
+# as the tuple will no longer be unique
+def get_unique_image_list(project):
+	image_dict=json.loads(get_images_for_proj(project))
+	image_set = set()
+	# make a dictionary of all the images in the format key:value = image_id:list_of_repos
+	# start by making a list of the keys, using a set will keep them unique
+	for repo_key in image_dict:
+		for image_id in image_dict[repo_key]:
+			image_set.add((image_id, image_dict[repo_key][image_id]['name']))
+	return image_set

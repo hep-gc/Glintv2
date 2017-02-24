@@ -3,10 +3,12 @@ from django.http import HttpResponse
 
 from django.core.exceptions import PermissionDenied
 
+
 from django.shortcuts import render, get_object_or_404
 from .models import Project, User_Projects, User, Glint_User
 from .forms import addRepoForm
 from .glint_api import repo_connector, validate_repo
+from glintv2.utils import get_unique_image_list, get_images_for_proj
 
 import json
 
@@ -32,6 +34,11 @@ def index(request):
 	if not verifyUser(request):
 		raise PermissionDenied
 
+	# This is a good place to spawn the data-collection worker thread
+	# The one drawback is if someone tries to go directly to another page before hitting this one
+	# It may be better to put it in the urls.py file then pass in the repo/image info
+	# If it cannot be accessed it means its deed and needs to be spawned again.
+
 	context = {
 		'projects': User_Projects.objects.all(),
 		'user': getUser(request),
@@ -56,21 +63,15 @@ def user_projects(request, user_id="N/A"):
 
 def project_details(request, project_name="null_project"):
 	repo_list = Project.objects.filter(project_name=project_name)
-	image_list = ()
-	for repo in repo_list:
-		try:
-			rcon = repo_connector(auth_url=repo.auth_url, project=repo.tenant, username=repo.username, password=repo.password)
-			image_list= image_list + rcon.image_list
-			
-		except:
-			print("Could not connet to repo: %s at %s", (repo.tenant, repo.auth_url))
+	image_set = get_unique_image_list(project_name)
+	image_dict = json.loads(get_images_for_proj(project_name))
 
-	# we can make the image list a set because thorugh the 3-tuple it should be unique across all clouds
-	# making it a set eliminates any duplicates if the same repo is added twice
+	# The image_list is a unique list of images stored in tuples (img_id, img_name)
+	# Still need to add detection for images that have different names but the same ID
 	context = {
 		'project': project_name,
-		'repo_list': repo_list,
-		'image_list': set(image_list)
+		'image_dict': image_dict,
+		'image_set': image_set
 	}
 	return render(request, 'glintwebui/project_details.html', context)
 
@@ -146,18 +147,22 @@ def add_repo(request, project_name):
 
 def save_images(request, project_name):
 	if request.method == 'POST':
-		try:
-			print(request.POST)
-			for image in request.POST:
-				if "csrfmiddlewaretoken" not in image:
-					print((request.POST).get(key=image)) # For testing
-					# Need to devise a way to detect which repos will need to be modified
-					# brute force method is to check the results of the matrix against each repo
-					# and create a list of jobs (images needing transfer) but that seems real slow
+		#get repos
+		repo_list = Project.objects.filter(project_name=project_name)
 
-			return HttpResponse(request.POST)
-		except:
-			return HttpResponse("Couldn't retrieve post data, please go back and try again")
+		# need to iterate thru a for loop of the repos in this project and get the list for each and
+		# check if we need to update any states
+		for repo in repo_list:
+			try:
+				#these check lists will have all of the images that are checked and need to be cross referenced
+				#against the images stoerd in redis to detect changes in state
+				check_list = request.POST.getlist(repo)
+				print("CHECK LIST:")
+				print(check_list)
+
+				return HttpResponse(check_list)
+			except:
+				return HttpResponse("Couldn't retrieve post data, please go back and try again")
 	#Not a post request, display matrix
 	else:
 		 return project_details(request, project_name=project_name)

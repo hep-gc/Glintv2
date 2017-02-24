@@ -7,6 +7,9 @@ table, th, td {
 th {
     text-align: right;
 }
+
+{% load template_utils %}
+
 </style>
 
 <h1> {{project}} </h1>
@@ -15,18 +18,18 @@ th {
 	<table>
 		<tr>
 			<th/>
-		{% for repo in repo_list %}
-			<th>{{repo.tenant}}</th>
+		{% for repo in image_dict %}
+			<th>{{repo}}</th>
 		{% endfor %}
 		</tr>
-		{% if image_list %}
-			{% for image in image_list %}
-				<tr><th> {{image.2}} - {{image.1}}</th>
-				{% for repo in repo_list %}
-					{% if image.0 == repo.tenant %}
-						<td><input name="{{repo.tenant}}-{{image}}" type="checkbox" checked></td>
+		{% if image_set %}
+			{% for image in image_set %}
+				<tr><th> {{image.1}}</th>
+				{% for repo_key, repo_value in image_dict.items %}
+					{% if repo_value|get_item:image.0 is not None %}
+						<td><input name="{{repo_key}}" type="checkbox" value="{{image.0}}" checked></td>
 					{% else %}
-						<td><input name="{{repo.tenant}}-{{image}}" type="checkbox"></td>
+						<td><input name="{{repo_key}}" type="checkbox" value="{{image.0}}"></td>
 					{% endif %}
 				{% endfor %}
 				</tr>
