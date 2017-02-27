@@ -2,7 +2,7 @@ from __future__ import absolute_import, unicode_literals
 from celery import Celery
 from celery.utils.log import get_task_logger
 from django.conf import settings
-from .utils import  jsonify_image_list, update_pending_transactions, get_images_for_proj, set_images_for_proj
+from .utils import  jsonify_image_list, update_pending_transactions, get_images_for_proj, set_images_for_proj, process_pending_transactions
 
  
 logger = get_task_logger(__name__)
@@ -43,14 +43,16 @@ def image_collection(self):
     			
             except:
                 print("Could not connet to repo: %s at %s", (repo.tenant, repo.auth_url))
-        # This function returns a stringified dictionary string suited to being stored in redis
-        # The string should be stored under the key for the top level Project
-        logger.info(jsonify_image_list(image_list=image_list, repo_list=repo_list))
 
-        #We are going to need some function that can take this json and compare it to the previous one
+        # take the new json and compare it to the previous one
         # and merge the differences, generally the new one will be used but if there are any images awaiting
         # transfer or deletion they must be added to the list
         updated_img_list = update_pending_transactions(get_images_for_proj(project.project_name), jsonify_image_list(image_list=image_list, repo_list=repo_list))
+        
+        # now we have the most current version of the image matrix for this project
+        # The last thing that needs to be done here is to proccess the PROJECTX_pending_transactions
+        updated_img_list = process_pending_transactions(project=project.project_name, json_img_dict=updated_img_list)
+
         set_images_for_proj(project=project.project_name, json_img_dict=updated_img_list)
 
 

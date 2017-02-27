@@ -8,7 +8,7 @@ from django.shortcuts import render, get_object_or_404
 from .models import Project, User_Projects, User, Glint_User
 from .forms import addRepoForm
 from .glint_api import repo_connector, validate_repo
-from glintv2.utils import get_unique_image_list, get_images_for_proj
+from glintv2.utils import get_unique_image_list, get_images_for_proj, parse_pending_transactions
 
 import json
 
@@ -152,17 +152,21 @@ def save_images(request, project_name):
 
 		# need to iterate thru a for loop of the repos in this project and get the list for each and
 		# check if we need to update any states
+		# Every image will have to be checked since if they are not present it means they need to be deleted
 		for repo in repo_list:
 			try:
 				#these check lists will have all of the images that are checked and need to be cross referenced
-				#against the images stoerd in redis to detect changes in state
-				check_list = request.POST.getlist(repo)
-				print("CHECK LIST:")
+				#against the images stored in redis to detect changes in state
+				check_list = request.POST.getlist(repo.tenant)
 				print(check_list)
+				parse_pending_transactions(project=project_name, repo=repo.tenant, image_list=check_list)
 
-				return HttpResponse(check_list)
+			
 			except:
 				return HttpResponse("Couldn't retrieve post data, please go back and try again")
+
+		# Need to return something useful, for now just returning random data for sanity checks.
+		return HttpResponse(check_list)
 	#Not a post request, display matrix
 	else:
 		 return project_details(request, project_name=project_name)
