@@ -28,21 +28,23 @@ th {
 			as unchecked. Additionally if it is in the dict as a pending transaction 
 			display a note accordingly.
 		{% endcomment %}
-		{% if image_set %}
+		{% if image_set is not None %}
 			{% for image in image_set %}
-				<tr><th> {{image.1}}</th>
+				<tr><th> {{image}}</th>
 				{% for repo_key, repo_value in image_dict.items %}
-					{% if repo_value|get_item:image.0 is not None %}
-						{% if repo_value|get_item:image.0|get_item:"state" == "Pending Delete" %}
+					{% with image_id=image_lookup|get_item:repo_key|get_item:image %}
+					{% if repo_value|get_item:image_id is not None %}
+						{% if repo_value|get_item:image_id|get_item:"state" == "Pending Delete" %}
 							<td>Pending Delete</td>
-						{% elif repo_value|get_item:image.0|get_item:"state" == "Pending Transfer" %}
+						{% elif repo_value|get_item:image_id|get_item:"state" == "Pending Transfer" %}
 							<td>Pending Transfer</td>
 						{% else %}
-							<td><input name="{{repo_key}}" type="checkbox" value="{{image.0}}" checked></td>
+							<td><input name="{{repo_key}}" type="checkbox" value="{{image}}" checked></td>
 						{% endif %}
 					{% else %}
-						<td><input name="{{repo_key}}" type="checkbox" value="{{image.0}}"></td>
+						<td><input name="{{repo_key}}" type="checkbox" value="{{image}}"></td>
 					{% endif %}
+					{% endwith %}
 				{% endfor %}
 				</tr>
 			{% endfor %}

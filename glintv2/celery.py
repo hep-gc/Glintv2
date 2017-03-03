@@ -57,3 +57,8 @@ def image_collection(self):
 
 
     logger.info("Task finished")
+
+
+@app.task(bind=True)
+def transfer_image(self, image_id, project, target_repo):
+    return False

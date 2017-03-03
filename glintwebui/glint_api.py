@@ -5,6 +5,14 @@ from keystoneclient.v2_0 import client as ksclient
 import glanceclient
 import json
 
+
+'''
+The Glint API file contains any functionality that connects to cloud components
+to gather data, upload or download images, or any other need to connect to a cloud.
+Most compute or utility functions can be found in utils.py or for asynchronous and
+periodic tasks in celery.py
+'''
+
 class repo_connector(object):
 	def __init__(self, auth_url, project, username, password):
 		self.auth_url = auth_url
@@ -37,10 +45,54 @@ class repo_connector(object):
 		for image in glance.images.list():
 			img_id = image['id']
 			img_name = image['name']
-			image_list += ((self.project, img_name, img_id),)
+			img_disk_format = image['disk_format']
+			img_containter_format = image['container_format']
+			image_list += ((self.project, img_name, img_id, img_disk_format, img_containter_format),)
+
 		
 
 		return image_list
+
+
+
+	'''
+	From my tests using python CLI
+	image = glance.images.create(image_id=img_id2, name='Colsontestimg', disk_format='raw', container_format='bare')
+	glance.images.upload(image.id, open('/tmp/colsontestimg', 'rb'))
+	'''
+	# Need to collect the image info: disk_format, container_format, name BEFORE calling this function
+	def create_placeholder_image(self, image_name, disk_format, container_format):
+		glance = glanceclient.Client('2', session=self.sess)
+		image = glance.images.create( name=image_name, disk_format=disk_format, container_format=container_format)
+		return image.id
+
+	# Upload an image to repo, returns True if successful or False if not
+	def upload_image(self, image_id, image_name, image_path):
+		glance = glanceclient.Client('2', session=self.sess)
+		'''
+		From my tests using python CLI
+		image = glance.images.create(image_id=img_id2, name='Colsontestimg', disk_format='raw', container_format='bare')
+		glance.images.upload(image.id, open('/tmp/colsontestimg', 'rb'))
+		'''
+		glance.images.upload(image_id, open(image_path, 'rb'))
+		return False
+
+	# Download an image from the repo, returns True if successful or False if not
+	def download_image(self, image_name, image_id):
+		glance = glanceclient.Client('2', session=self.sess)
+		'''
+		#open file then write to it
+		file_path = '/tmp/' + image_name
+		image_file = open(file_path, 'w+')
+		for chunk in glance.images.data(image_id)
+			image_file.write(chunk)
+		'''
+		return False
+
+	def delete_image(self, image_id):
+		glance = glanceclient.Client('2', session=self.sess)
+		glance.images.delete(image_id)
+		return False
 
 def validate_repo(auth_url, username, password, tenant_name):
 	try:

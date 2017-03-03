@@ -8,7 +8,7 @@ from django.shortcuts import render, get_object_or_404
 from .models import Project, User_Projects, User, Glint_User
 from .forms import addRepoForm
 from .glint_api import repo_connector, validate_repo
-from glintv2.utils import get_unique_image_list, get_images_for_proj, parse_pending_transactions
+from glintv2.utils import get_unique_image_list, get_images_for_proj, parse_pending_transactions, build_id_lookup_dict, check_for_duplicate_images
 
 import json
 
@@ -62,16 +62,45 @@ def user_projects(request, user_id="N/A"):
 
 
 def project_details(request, project_name="null_project"):
+	# Since img name, img id is no longer a unique way to identify images across clouds
+	# We will instead only use image name, img id will be used as a unique ID inside a given repo
+	# this means we now have to create a new unique image set that is just the image names
+
 	repo_list = Project.objects.filter(project_name=project_name)
-	image_set = get_unique_image_list(project_name)
-	image_dict = json.loads(get_images_for_proj(project_name))
+	try:
+		image_set = get_unique_image_list(project_name)
+		image_dict = json.loads(get_images_for_proj(project_name))
+		# since we are using name as the unique identifer we need to pass in a dictionary
+		# that lets us get the image id (uuid) from the repo and image name
+		# We will have to implement logic here that spots two images with the same name
+		# and forces the user to resolve
+		reverse_img_lookup = build_id_lookup_dict(image_dict)
+
+		# Check if there are any duplicate image names in a given repo and
+		# if so render a different page that attempts to resolve that
+		duplicate_dict = check_for_duplicate_images(image_dict)
+		if duplicate_dict is not None:
+			# Render page to resolve name difference
+			context = {
+				'project': project_name,
+				'duplicate_dict': duplicate_dict
+			}
+			return render(request, 'glintwebui/image_conflict.html', context)
+
+	except:
+		# No images in database yet, may want some logic here forcing it to wait a little on start up
+		image_set = None
+		image_dict = None
+		reverse_img_lookup = None
+		# Should render a page here that says no image info available please refresh in 20 seconds
 
 	# The image_list is a unique list of images stored in tuples (img_id, img_name)
 	# Still need to add detection for images that have different names but the same ID
 	context = {
 		'project': project_name,
 		'image_dict': image_dict,
-		'image_set': image_set
+		'image_set': image_set,
+		'image_lookup': reverse_img_lookup
 	}
 	return render(request, 'glintwebui/project_details.html', context)
 
@@ -154,16 +183,15 @@ def save_images(request, project_name):
 		# check if we need to update any states
 		# Every image will have to be checked since if they are not present it means they need to be deleted
 		for repo in repo_list:
-			try:
-				#these check lists will have all of the images that are checked and need to be cross referenced
-				#against the images stored in redis to detect changes in state
-				check_list = request.POST.getlist(repo.tenant)
-				print(check_list)
-				parse_pending_transactions(project=project_name, repo=repo.tenant, image_list=check_list)
+			#try:
+			#these check lists will have all of the images that are checked and need to be cross referenced
+			#against the images stored in redis to detect changes in state
+			check_list = request.POST.getlist(repo.tenant)
+			parse_pending_transactions(project=project_name, repo=repo.tenant, image_list=check_list)
 
 			
-			except:
-				return HttpResponse("Couldn't retrieve post data, please go back and try again")
+			#except:
+			#	return HttpResponse("Couldn't retrieve post data, please go back and try again")
 
 		# Need to return something useful, for now just returning random data for sanity checks.
 		return HttpResponse(check_list)
