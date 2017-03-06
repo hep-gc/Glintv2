@@ -245,7 +245,6 @@ def parse_pending_transactions(project, repo, image_list):
 
 		for image in image_list:
 			# If image is not in the image list we need to make a pending transfer
-			print(img_translation.get(image, False))
 			if not img_translation.get(image, False):
 				#MAKE TRANSFER
 				#We need to get disk_format and container_format from another repo that has this image
@@ -296,6 +295,8 @@ def parse_pending_transactions(project, repo, image_list):
 # Then finally we can call the asynch celery tasks
 def process_pending_transactions(project, json_img_dict):
 	from glintwebui.models import Project
+	from .celery import transfer_image, delete_image
+
 	r = redis.StrictRedis (host='localhost', port=6379, db=0)
 	trans_key = project + '_pending_transactions'
 	img_dict = json.loads(json_img_dict)
@@ -325,17 +326,66 @@ def process_pending_transactions(project, json_img_dict):
 			img_dict[transaction['repo']][new_img_id] = new_img_dict
 
 			# queue transfer task
-			#celery.transfer_img()
+			transfer_image.delay(image_name=transaction['image_name'], image_id=new_img_id, project=project, auth_url=repo_obj.auth_url, project_tenant=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password)
 
 		elif transaction['action'] == 'delete':
 			# First check if it exists in the redis dictionary, if it doesn't exist we can't delete it
 			if img_dict[transaction['repo']].get(transaction['image_id']) is not None:
 				# Set state and queue delete task
+				repo_obj = Project.objects.get(project_name=transaction['project'], tenant=transaction['repo'])
 				img_dict[transaction['repo']][transaction['image_id']]['state'] = 'Pending Delete'
-				#celery.delete_img()
+				delete_image.delay(image_id=transaction['image_id'], project=project, auth_url=repo_obj.auth_url, project_tenant=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password)
 	return json.dumps(img_dict)
 
 
+# Queues a state change in redis for the periodic task to perform
+# Key will take the form of project_pending_state_changes
+# and thus there will be a seperate queue for each project
+def queue_state_change(project, repo, img_id, state):
+	r = redis.StrictRedis (host='localhost', port=6379, db=0)
+	state_key = project + '_pending_state_changes'
+	state_change = {
+		'state': state,
+		'image_id': img_id,
+		'repo':repo
+	}
+	r.rpush(state_key, json.dumps(state_change))
+	return True
+
+
+
+def process_state_changes(project, json_img_dict):
+	r = redis.StrictRedis (host='localhost', port=6379, db=0)
+	state_key = project + '_pending_state_changes'
+	img_dict = json.loads(json_img_dict)
+	while(True):
+		raw_state_change = r.lpop(state_key)
+		if raw_state_change == None:
+			break
+		state_change = json.loads(raw_state_change)
+		if state_change['state'] == "deleted":
+			# Remove the key
+			img_dict[state_change['repo']].pop(state_change['image_id'], None)
+		else:
+			# Update the state
+			img_dict[state_change['repo']][state_change['image_id']]['state'] = state_change['state']
+
+	return json.dumps(img_dict)
+
+# This function accepts a project and an image name and looks through the image
+# dictionary until it finds a match where state='present' and returns a tuple of
+# (auth_url, tenant, username, password, img_id)
+def find_image_by_name(project, image_name):
+	from glintwebui.models import Project
+	
+	image_dict=json.loads(get_images_for_proj(project))
+	for repo in image_dict:
+		for image in image_dict[repo]:
+			if image_dict[repo][image]['name'] == image_name:
+				if image_dict[repo][image]['state'] == 'Present':
+					repo_obj = Project.objects.get(project_name=project, tenant=repo)
+					return (repo_obj.auth_url, repo, repo_obj.username, repo_obj.password, image)
+	return False
 '''
 added image_name to transaction
 this function should no longer be needed

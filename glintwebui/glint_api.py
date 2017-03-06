@@ -4,6 +4,7 @@ from keystoneauth1 import exceptions
 from keystoneclient.v2_0 import client as ksclient
 import glanceclient
 import json
+import logging
 
 
 '''
@@ -67,32 +68,38 @@ class repo_connector(object):
 		return image.id
 
 	# Upload an image to repo, returns True if successful or False if not
-	def upload_image(self, image_id, image_name, image_path):
+	def upload_image(self, image_id, image_name):
 		glance = glanceclient.Client('2', session=self.sess)
-		'''
-		From my tests using python CLI
-		image = glance.images.create(image_id=img_id2, name='Colsontestimg', disk_format='raw', container_format='bare')
-		glance.images.upload(image.id, open('/tmp/colsontestimg', 'rb'))
-		'''
-		glance.images.upload(image_id, open(image_path, 'rb'))
-		return False
+		images = glance.images.list()
+		file_path = '/tmp/' + image_name
+		glance.images.upload(image_id, open(file_path, 'rb'))
+		return True
 
 	# Download an image from the repo, returns True if successful or False if not
 	def download_image(self, image_name, image_id):
 		glance = glanceclient.Client('2', session=self.sess)
-		'''
+
 		#open file then write to it
 		file_path = '/tmp/' + image_name
 		image_file = open(file_path, 'w+')
-		for chunk in glance.images.data(image_id)
+		for chunk in glance.images.data(image_id):
 			image_file.write(chunk)
-		'''
-		return False
+
+		return True
 
 	def delete_image(self, image_id):
+		try:
+			glance = glanceclient.Client('2', session=self.sess)
+			glance.images.delete(image_id)
+		except Exception as e:
+			logging.error("Unknown error, unable to delete image")
+			return False
+		return True
+
+	def update_image_name(self, image_id, image_name):
 		glance = glanceclient.Client('2', session=self.sess)
-		glance.images.delete(image_id)
-		return False
+		glance.images.update(image_id, name=image_name)
+
 
 def validate_repo(auth_url, username, password, tenant_name):
 	try:
@@ -111,3 +118,13 @@ def validate_repo(auth_url, username, password, tenant_name):
 		return (False, "unable to validate: unknown error")
 
 	return (True, "Ok")
+
+
+def change_image_name(repo_obj, img_id, new_img_name):
+	try:
+		repo = repo_connector(auth_url=repo_obj.auth_url, project=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password)
+		repo.update_image_name(image_id=img_id, image_name=new_img_name)
+	except Exception as e:
+		logging.error('Unknown exception occured when attempting to change image name.')
+		logging.error(e)
+		return None

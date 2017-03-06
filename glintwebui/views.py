@@ -7,7 +7,7 @@ from django.core.exceptions import PermissionDenied
 from django.shortcuts import render, get_object_or_404
 from .models import Project, User_Projects, User, Glint_User
 from .forms import addRepoForm
-from .glint_api import repo_connector, validate_repo
+from .glint_api import repo_connector, validate_repo, change_image_name
 from glintv2.utils import get_unique_image_list, get_images_for_proj, parse_pending_transactions, build_id_lookup_dict, check_for_duplicate_images
 
 import json
@@ -80,9 +80,13 @@ def project_details(request, project_name="null_project"):
 		# if so render a different page that attempts to resolve that
 		duplicate_dict = check_for_duplicate_images(image_dict)
 		if duplicate_dict is not None:
+			# Find the problem repo:
+			for image in duplicate_dict:
+				problem_repo = duplicate_dict[image]['repo']
 			# Render page to resolve name difference
 			context = {
 				'project': project_name,
+				'repo': problem_repo,
 				'duplicate_dict': duplicate_dict
 			}
 			return render(request, 'glintwebui/image_conflict.html', context)
@@ -198,3 +202,31 @@ def save_images(request, project_name):
 	#Not a post request, display matrix
 	else:
 		 return project_details(request, project_name=project_name)
+
+def resolve_conflict(request, project_name, repo_name):
+	if request.method == 'POST':
+		repo_obj = Project.objects.get(project_name=project_name, tenant=repo_name)
+		image_dict = json.loads(get_images_for_proj(project_name))
+		changed_names = 0
+		for key, value in request.POST.items():
+			if key != 'csrfmiddlewaretoken':
+				# check if the name has been changed, if it is different, send update
+				if value != image_dict[repo_name][key]['name']:
+					change_image_name(repo_obj, key, value)
+					changed_names=changed_names+1
+		if changed_names == 0:
+			# Re render resolve conflict page
+			# for now this will do nothing and we trust that the user will change the name.
+			context = {
+				'projects': User_Projects.objects.all(),
+				'user': getUser(request),
+				'all_users': User.objects.all(),
+			}
+			return render(request, 'glintwebui/index.html', context)
+
+	context = {
+		'projects': User_Projects.objects.all(),
+		'user': getUser(request),
+		'all_users': User.objects.all(),
+	}
+	return render(request, 'glintwebui/index.html', context)
