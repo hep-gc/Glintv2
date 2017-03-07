@@ -115,7 +115,7 @@ def validate_repo(auth_url, username, password, tenant_name):
 	except Exception as e:
 		print("Repo not valid: %s: %s", (tenant_name, auth_url))
 		print(e)
-		return (False, "unable to validate: unknown error")
+		return (False, "unable to validate:" + e)
 
 	return (True, "Ok")
 

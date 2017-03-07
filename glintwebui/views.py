@@ -117,49 +117,49 @@ def add_repo(request, project_name):
 
 		#Check if the form data is valid
 		if form.is_valid():
-			pass1 = form.cleaned_data['password1']
-			pass2 = form.cleaned_data['password2']
-			if pass1 == pass2:
-				# all data is exists, check if the repo is valid
-				validate_resp = validate_repo(auth_url=form.cleaned_data['auth_url'], tenant_name=form.cleaned_data['tenant'], username=form.cleaned_data['username'], password=form.cleaned_data['password1'])
-				if (validate_resp[0]):
-					new_repo = Project(project_name=form.cleaned_data['project_name'], auth_url=form.cleaned_data['auth_url'], tenant=form.cleaned_data['tenant'], username=form.cleaned_data['username'], password=form.cleaned_data['password1'])
-					new_repo.save()
+			# all data is exists, check if the repo is valid
+			validate_resp = validate_repo(auth_url=form.cleaned_data['auth_url'], tenant_name=form.cleaned_data['tenant'], username=form.cleaned_data['username'], password=form.cleaned_data['password'])
+			if (validate_resp[0]):
+				#check if repo/auth_url combo already exists
+				try:
+					if Project.objects.get(project_name=project_name, tenant=form.cleaned_data['tenant'], auth_url=form.cleaned_data['auth_url']) is not None:
+						#This combo already exists
+						context = {
+							'project_name': project_name,
+							'error_msg': "Repo already exists"
+						}
+						return render(request, 'glintwebui/add_repo.html', context, {'form': form})
+				except Exception as e:
+					# this exception could be tightened around the django "DoesNotExist" exception
+					pass
+
+				new_repo = Project(project_name=form.cleaned_data['project_name'], auth_url=form.cleaned_data['auth_url'], tenant=form.cleaned_data['tenant'], username=form.cleaned_data['username'], password=form.cleaned_data['password'])
+				new_repo.save()
 
 
-					#return to project details page after saving the new repo
-					repo_list = Project.objects.filter(project_name=project_name)
-					image_list = ()
-					for repo in repo_list:
-						try:
-							rcon = repo_connector(auth_url=repo.auth_url, project=repo.tenant, username=repo.username, password=repo.password)
-							image_list= image_list + rcon.image_list
-							
-						except:
-							print("Could not connet to repo: %s at %s", (repo.tenant, repo.auth_url))
+				#return to project details page after saving the new repo
+				repo_list = Project.objects.filter(project_name=project_name)
+				image_list = ()
+				for repo in repo_list:
+					try:
+						rcon = repo_connector(auth_url=repo.auth_url, project=repo.tenant, username=repo.username, password=repo.password)
+						image_list= image_list + rcon.image_list
+						
+					except:
+						print("Could not connet to repo: %s at %s", (repo.tenant, repo.auth_url))
 
 					context = {
-						'project': project_name,
-						'repo_list': repo_list,
-						'image_list': set(image_list)
+						'redirect_url': '/ui/project_details/' + project_name,
 					}
-					return render(request, 'glintwebui/project_details.html', context)
-				else:
-					#something in the repo information is bad
-					form = addRepoForm()
-					context = {
-						'project_name': project_name,
-						'error_msg': validate_resp[1]
-					}
-				return render(request, 'glintwebui/add_repo.html', context, {'form': form})
+					return render(request, 'glintwebui/proccessing_request.html', context)
 			else:
-				# all data is good except the passwords
+				#something in the repo information is bad
 				form = addRepoForm()
 				context = {
 					'project_name': project_name,
-					'error_msg': "Passwords do not match."
+					'error_msg': validate_resp[1]
 				}
-				return render(request, 'glintwebui/add_repo.html', context, {'form': form})
+			return render(request, 'glintwebui/add_repo.html', context, {'form': form})
 
 		# Else there has been an error in the entry, display form with error msg
 		else:
@@ -194,14 +194,13 @@ def save_images(request, project_name):
 			parse_pending_transactions(project=project_name, repo=repo.tenant, image_list=check_list)
 
 			
-			#except:
-			#	return HttpResponse("Couldn't retrieve post data, please go back and try again")
-
-		# Need to return something useful, for now just returning random data for sanity checks.
-		return HttpResponse(check_list)
+		context = {
+			'redirect_url': "/ui/project_details/" + project_name,
+		}
+		return render(request, 'glintwebui/proccessing_request.html', context)
 	#Not a post request, display matrix
 	else:
-		 return project_details(request, project_name=project_name)
+		return project_details(request, project_name=project_name)
 
 def resolve_conflict(request, project_name, repo_name):
 	if request.method == 'POST':
@@ -225,8 +224,14 @@ def resolve_conflict(request, project_name, repo_name):
 			return render(request, 'glintwebui/index.html', context)
 
 	context = {
-		'projects': User_Projects.objects.all(),
-		'user': getUser(request),
-		'all_users': User.objects.all(),
+		'redirect_url': "/ui/project_details/" + project_name,
 	}
-	return render(request, 'glintwebui/index.html', context)
+	return render(request, 'glintwebui/proccessing_request.html', context)
+
+# may not need this def, could just render this page from the post views
+def processing_request(request, project_name):
+
+	context = {
+		'redirect_url': None,
+	}
+	return render(request, 'glintwebui/proccessing_request.html', context)
