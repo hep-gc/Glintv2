@@ -1,3 +1,5 @@
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 <style>
 table, th, td {
     border: 1px solid black;
@@ -8,11 +10,27 @@ th {
     text-align: right;
 }
 
+#no_filter{
+	border: 3px solid black;
+	font-weight: bold
+}
+
+.public {
+	background-color: #FFFF63;
+
+}
+
+.private{
+	background-color: #97E739;
+
+}
+
 {% load template_utils %}
 
 </style>
-
+</head>
 <h1> {{project}} </h1>
+<table> <tr><th>Image Filter</th><td class='public' id='public_filter'> Public </td><td class='private' id='private_filter'>Private</td><td id='no_filter'> None </td></tr></table> <br/>
 <form action="/ui/save_images/{{project}}/" method="post">
 	{% csrf_token %}
 	<table>
@@ -30,7 +48,7 @@ th {
 		{% endcomment %}
 		{% if image_set is not None %}
 			{% for image in image_set %}
-				<tr><th> {{image}}</th>
+				<tr class="image_row"><th> {{image}}</th>
 				{% for repo_key, repo_value in image_dict.items %}
 					{% with image_id=image_lookup|get_item:repo_key|get_item:image %}
 					{% if repo_value|get_item:image_id is not None %}
@@ -39,10 +57,10 @@ th {
 						{% elif repo_value|get_item:image_id|get_item:"state" == "Pending Transfer" %}
 							<td>Pending Transfer</td>
 						{% else %}
-							<td><input name="{{repo_key}}" type="checkbox" value="{{image}}" checked></td>
+							<td class='{{repo_value|get_item:image_id|get_item:"visibility"}}'><input name="{{repo_key}}" type="checkbox" value="{{image}}" checked></td>
 						{% endif %}
 					{% else %}
-						<td><input name="{{repo_key}}" type="checkbox" value="{{image}}"></td>
+						<td class=""><input name="{{repo_key}}" type="checkbox" value="{{image}}"></td>
 					{% endif %}
 					{% endwith %}
 				{% endfor %}
@@ -54,3 +72,54 @@ th {
 <form/>
 <br/>
 <a href="/ui/add_repo/{{project}}"><input type="button" value="Add repo to {{project}}"/></a>
+
+<script>
+$( "#public_filter" ).click(function() {
+  $("tr.image_row").filter(function(){
+		return $(this).find("td.public").length == 0;
+	}).hide();
+	$("tr.image_row").filter(function(){
+		return $(this).find("td.private").length == 0;
+	}).show();
+	$("#no_filter").css("font-weight","normal");
+	$("#no_filter").css("border","1px solid black");
+	$("#private_filter").css("font-weight","normal");
+	$("#private_filter").css("border","1px solid black");
+	$("#public_filter").css("font-weight","Bold");
+	$("#public_filter").css("border","3px solid black");
+});
+
+$( "#private_filter" ).click(function() {
+  $("tr.image_row").filter(function(){
+		return $(this).find("td.private").length == 0;
+	}).hide();
+	$("tr.image_row").filter(function(){
+		return $(this).find("td.public").length == 0;
+	}).show();
+	$("#no_filter").css("font-weight","normal");
+	$("#no_filter").css("border","1px solid black");
+	$("#private_filter").css("font-weight","Bold");
+	$("#private_filter").css("border","3px solid black");
+	$("#public_filter").css("font-weight","normal");
+	$("#public_filter").css("border","1px solid black");
+});
+
+$( "#no_filter" ).click(function() {
+  $("tr.image_row").filter(function(){
+		return $(this).find("td.private").length == 0;
+	}).show();
+	$("tr.image_row").filter(function(){
+		return $(this).find("td.public").length == 0;
+	}).show();
+	$("#no_filter").css("font-weight","Bold");
+	$("#no_filter").css("border","3px solid black");
+	$("#private_filter").css("font-weight","normal");
+	$("#private_filter").css("border","1px solid black");
+	$("#public_filter").css("font-weight","normal");
+	$("#public_filter").css("border","1px solid black");
+});
+</script>
+
+
+
+	

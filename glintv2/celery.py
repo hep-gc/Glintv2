@@ -42,7 +42,8 @@ def image_collection(self):
                 rcon = repo_connector(auth_url=repo.auth_url, project=repo.tenant, username=repo.username, password=repo.password)
                 image_list= image_list + rcon.image_list
     			
-            except:
+            except Exception as e:
+                print(e)
                 print("Could not connet to repo: %s at %s", (repo.tenant, repo.auth_url))
 
         # take the new json and compare it to the previous one
@@ -77,7 +78,7 @@ def transfer_image(self, image_name, image_id, project, auth_url, project_tenant
     logger.info("Downloading Image from %s" % src_img_info[1])
     src_rcon = repo_connector(auth_url=src_img_info[0], project=src_img_info[1], username=src_img_info[2], password=src_img_info[3])
     src_rcon.download_image(image_name=image_name, image_id=src_img_info[4])
-    
+
     # Upload said image to the new repo
     logger.info("Uploading Image to %s" % project_tenant)
     dest_rcon = repo_connector(auth_url=auth_url, project=project_tenant, username=username, password=password)

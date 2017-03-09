@@ -15,12 +15,14 @@ Proj_dict{
 			state
 			disk_format
 			container_format
+			visibility
 		}
 		Img_ID2{
 			name
 			state
 			disk_format
 			container_format
+			visibility
 		}
 		.
 		.
@@ -30,6 +32,7 @@ Proj_dict{
 			state
 			disk_format
 			container_format
+			visibility
 		}
 	}
 	Repo2{
@@ -56,6 +59,7 @@ def jsonify_image_list(image_list, repo_list):
 				img['state'] = 'Present'
 				img['disk_format'] = image[3]
 				img['container_format'] = image[4]
+				img['visibility'] = image[5]
 				img_dict[image[2]] = img
 
 		repo_dict[repo.tenant] = img_dict
@@ -377,7 +381,7 @@ def process_state_changes(project, json_img_dict):
 # (auth_url, tenant, username, password, img_id)
 def find_image_by_name(project, image_name):
 	from glintwebui.models import Project
-	
+
 	image_dict=json.loads(get_images_for_proj(project))
 	for repo in image_dict:
 		for image in image_dict[repo]:

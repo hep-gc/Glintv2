@@ -8,9 +8,6 @@
 <form action="/ui/add_repo/{{project_name}}/" method="post">
 {% csrf_token %}
 <table>
-    <tr><td><label for="project_name">Project Name</label></td>
-    <td><input type="text" name="project_name" id="project_name" value="{{project_name}}"/></td></tr>
-
     <tr><td><label for="auth_url">Auth URL</label></td>
     <td><input type="text" name="auth_url" id="" value="" /></td></tr>
 

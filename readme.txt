@@ -23,3 +23,12 @@ and apache instance may get warnings until we register the domain name.
 - Anyone with a grid certificate is added as an auth_user but there will be
 stops put in place to restrict their access until they are registered to some
 projets by an Admin.
+
+
+Requires:
+httpd/mod_ssl/mod_wsgi
+IGTF: https://wiki.egi.eu/wiki/EGI_IGTF_Release
+django
+celery
+celery beat
+redis

@@ -5,6 +5,7 @@ from keystoneclient.v2_0 import client as ksclient
 import glanceclient
 import json
 import logging
+import os
 
 
 '''
@@ -22,7 +23,7 @@ class repo_connector(object):
 		self.password = password
 		self.token = None
 		self.keystone = None
-		self.cacert = "/etc/glintv2/GridCanadaCertificateAuthority"
+		self.cacert = "/etc/glintv2/NewCombinedCertAuth"
 		self.sess = self._get_keystone_session()
 		self.image_list = self._get_images()
 
@@ -48,7 +49,8 @@ class repo_connector(object):
 			img_name = image['name']
 			img_disk_format = image['disk_format']
 			img_containter_format = image['container_format']
-			image_list += ((self.project, img_name, img_id, img_disk_format, img_containter_format),)
+			img_visibility = image['visibility']
+			image_list += ((self.project, img_name, img_id, img_disk_format, img_containter_format, img_visibility),)
 
 		
 
@@ -73,6 +75,9 @@ class repo_connector(object):
 		images = glance.images.list()
 		file_path = '/tmp/' + image_name
 		glance.images.upload(image_id, open(file_path, 'rb'))
+		# Delete the file when we are done with it
+		logging.error("Upload complete, deleting temp file")
+		os.remove(file_path)
 		return True
 
 	# Download an image from the repo, returns True if successful or False if not
@@ -92,7 +97,7 @@ class repo_connector(object):
 			glance = glanceclient.Client('2', session=self.sess)
 			glance.images.delete(image_id)
 		except Exception as e:
-			logging.error("Unknown error, unable to delete image")
+			logging.info("Unknown error, unable to delete image")
 			return False
 		return True
 
@@ -112,10 +117,13 @@ def validate_repo(auth_url, username, password, tenant_name):
 	except exceptions.http.HTTPClientError as e:
 		print(e)
 		return (False, "Unable to connect: Bad username, password, or tenant")
+	except exceptions.connection.SSLError as e:
+		print(e)
+		return (False, "SSL connection error")
 	except Exception as e:
 		print("Repo not valid: %s: %s", (tenant_name, auth_url))
 		print(e)
-		return (False, "unable to validate:" + e)
+		return (False, "unable to validate: please check httpd error log for message")
 
 	return (True, "Ok")
 

@@ -133,7 +133,7 @@ def add_repo(request, project_name):
 					# this exception could be tightened around the django "DoesNotExist" exception
 					pass
 
-				new_repo = Project(project_name=form.cleaned_data['project_name'], auth_url=form.cleaned_data['auth_url'], tenant=form.cleaned_data['tenant'], username=form.cleaned_data['username'], password=form.cleaned_data['password'])
+				new_repo = Project(project_name=project_name, auth_url=form.cleaned_data['auth_url'], tenant=form.cleaned_data['tenant'], username=form.cleaned_data['username'], password=form.cleaned_data['password'])
 				new_repo.save()
 
 
