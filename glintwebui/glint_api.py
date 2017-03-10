@@ -1,8 +1,8 @@
 from keystoneclient.auth.identity import v2
 from keystoneauth1 import session
 from keystoneauth1 import exceptions
-from keystoneclient.v2_0 import client as ksclient
 import glanceclient
+import glintv2.config as config
 import json
 import logging
 import os
@@ -23,7 +23,7 @@ class repo_connector(object):
 		self.password = password
 		self.token = None
 		self.keystone = None
-		self.cacert = "/etc/glintv2/NewCombinedCertAuth"
+		self.cacert = config.cert_auth_bundle_path
 		self.sess = self._get_keystone_session()
 		self.image_list = self._get_images()
 
@@ -52,17 +52,10 @@ class repo_connector(object):
 			img_visibility = image['visibility']
 			image_list += ((self.project, img_name, img_id, img_disk_format, img_containter_format, img_visibility),)
 
-		
-
 		return image_list
 
 
 
-	'''
-	From my tests using python CLI
-	image = glance.images.create(image_id=img_id2, name='Colsontestimg', disk_format='raw', container_format='bare')
-	glance.images.upload(image.id, open('/tmp/colsontestimg', 'rb'))
-	'''
 	# Need to collect the image info: disk_format, container_format, name BEFORE calling this function
 	def create_placeholder_image(self, image_name, disk_format, container_format):
 		glance = glanceclient.Client('2', session=self.sess)

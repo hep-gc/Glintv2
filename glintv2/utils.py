@@ -2,6 +2,7 @@ import json
 import redis
 import logging
 from glintwebui.glint_api import repo_connector
+import config
 
 
 '''
@@ -113,7 +114,7 @@ def update_pending_transactions(old_img_dict, new_img_dict):
 # Redis info should be moved to a config file
 def get_images_for_proj(project):
 	try:
-		r = redis.StrictRedis (host='localhost', port=6379, db=0)
+		r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
 		return r.get(project)
 	except KeyError as e:
 		logging.error("Couldnt find image list for project %s", project)
@@ -123,7 +124,7 @@ def get_images_for_proj(project):
 # Redis info should be moved to a config file 
 def set_images_for_proj(project, json_img_dict):
 	try:
-		r = redis.StrictRedis (host='localhost', port=6379, db=0)
+		r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
 		r.set(project, json_img_dict)
 
 	except Exception as e:
@@ -238,7 +239,7 @@ def check_for_duplicate_images(image_dict):
 # picked up by another thread.
 def parse_pending_transactions(project, repo, image_list):
 	try:
-		r = redis.StrictRedis (host='localhost', port=6379, db=0)
+		r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
 		proj_dict = json.loads(r.get(project))
 		repo_dict = proj_dict[repo]
 
@@ -301,7 +302,7 @@ def process_pending_transactions(project, json_img_dict):
 	from glintwebui.models import Project
 	from .celery import transfer_image, delete_image
 
-	r = redis.StrictRedis (host='localhost', port=6379, db=0)
+	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
 	trans_key = project + '_pending_transactions'
 	img_dict = json.loads(json_img_dict)
 
@@ -346,7 +347,7 @@ def process_pending_transactions(project, json_img_dict):
 # Key will take the form of project_pending_state_changes
 # and thus there will be a seperate queue for each project
 def queue_state_change(project, repo, img_id, state):
-	r = redis.StrictRedis (host='localhost', port=6379, db=0)
+	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
 	state_key = project + '_pending_state_changes'
 	state_change = {
 		'state': state,
@@ -359,7 +360,7 @@ def queue_state_change(project, repo, img_id, state):
 
 
 def process_state_changes(project, json_img_dict):
-	r = redis.StrictRedis (host='localhost', port=6379, db=0)
+	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
 	state_key = project + '_pending_state_changes'
 	img_dict = json.loads(json_img_dict)
 	while(True):
@@ -413,7 +414,7 @@ def __get_image_ids(repo_dict):
 #Searches through the image dict until it finds this image and returns the disk/container formats
 def __get_image_details(project, image):
 
-	r = redis.StrictRedis (host='localhost', port=6379, db=0)
+	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
 	proj_dict = json.loads(r.get(project))
 	for repo in proj_dict:
 		for img in proj_dict[repo]:

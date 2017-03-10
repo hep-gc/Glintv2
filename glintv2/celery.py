@@ -4,6 +4,7 @@ from celery.utils.log import get_task_logger
 from django.conf import settings
 from .utils import  jsonify_image_list, update_pending_transactions, get_images_for_proj, set_images_for_proj, process_pending_transactions, process_state_changes, queue_state_change, find_image_by_name
 from glintwebui.glint_api import repo_connector
+import glintv2.config as config
  
 logger = get_task_logger(__name__)
 
@@ -14,7 +15,7 @@ import redis
 # Indicate Celery to use the default Django settings module
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'glintv2.settings')
  
-app = Celery('glintv2', broker='redis://localhost:6379/0', backend='redis://localhost:6379/')
+app = Celery('glintv2', broker=config.celery_url, backend=config.celery_backend)
 app.config_from_object('django.conf:settings')
 # This line will tell Celery to autodiscover all your tasks.py that are in your app folders
 # However it seems to have issues in an apache/django enviroment
@@ -101,3 +102,6 @@ def delete_image(self, image_id, project, auth_url, project_tenant, username, pa
         return True
     logger.info("Unknown error deleting %s  (result = %s)" % (image_id, result))
     return False
+
+# CELERY workers can get their own ID with self.request.id
+# This will be useful during image transfers so there will be no conflicts
