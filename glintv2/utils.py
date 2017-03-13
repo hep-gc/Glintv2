@@ -173,7 +173,7 @@ def get_unique_image_list(project):
 	for repo_key in image_dict:
 		for image_id in image_dict[repo_key]:
 			image_set.add(image_dict[repo_key][image_id]['name'])
-	return image_set
+	return sorted(image_set, key=lambda s: s.lower())
 
 
 # accepts image dictionary and returns a dictionary that inverses the format to
