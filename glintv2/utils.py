@@ -237,7 +237,7 @@ def check_for_duplicate_images(image_dict):
 # Cross references the image repo in redis against the given image list
 # Either returns a list of transactions or posts them to redis to be
 # picked up by another thread.
-def parse_pending_transactions(project, repo, image_list):
+def parse_pending_transactions(project, repo, image_list, user):
 	try:
 		r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
 		proj_dict = json.loads(r.get(project))
@@ -257,6 +257,7 @@ def parse_pending_transactions(project, repo, image_list):
 				disk_format = img_details[0]
 				container_format = img_details[1]
 				transaction = {
+				    'user': user,
 					'action':  'transfer',
 					'project': project,
 					'repo': repo,
@@ -278,6 +279,7 @@ def parse_pending_transactions(project, repo, image_list):
 				if repo_dict[image_key].get('state') not in {'Pending Delete', 'Pending Transfer'}:
 					# MAKE DELETE
 					transaction = {
+					    'user': user,
 						'action':  'delete',
 						'project': project,
 						'repo': repo,
@@ -331,7 +333,7 @@ def process_pending_transactions(project, json_img_dict):
 			img_dict[transaction['repo']][new_img_id] = new_img_dict
 
 			# queue transfer task
-			transfer_image.delay(image_name=transaction['image_name'], image_id=new_img_id, project=project, auth_url=repo_obj.auth_url, project_tenant=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password)
+			transfer_image.delay(image_name=transaction['image_name'], image_id=new_img_id, project=project, auth_url=repo_obj.auth_url, project_tenant=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password, requesting_user=transaction['user'])
 
 		elif transaction['action'] == 'delete':
 			# First check if it exists in the redis dictionary, if it doesn't exist we can't delete it
@@ -339,7 +341,7 @@ def process_pending_transactions(project, json_img_dict):
 				# Set state and queue delete task
 				repo_obj = Project.objects.get(project_name=transaction['project'], tenant=transaction['repo'])
 				img_dict[transaction['repo']][transaction['image_id']]['state'] = 'Pending Delete'
-				delete_image.delay(image_id=transaction['image_id'], project=project, auth_url=repo_obj.auth_url, project_tenant=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password)
+				delete_image.delay(image_id=transaction['image_id'], project=project, auth_url=repo_obj.auth_url, project_tenant=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password, requesting_user=transaction['user'])
 	return json.dumps(img_dict)
 
 

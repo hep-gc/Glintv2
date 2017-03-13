@@ -69,7 +69,7 @@ class repo_connector(object):
 		file_path = scratch_dir + image_name
 		glance.images.upload(image_id, open(file_path, 'rb'))
 		# Delete the file when we are done with it
-		logging.error("Upload complete, deleting temp file")
+		logging.info("Upload complete, deleting temp file")
 		os.remove(file_path)
 		os.rmdir(scratch_dir)
 		return True
@@ -91,7 +91,7 @@ class repo_connector(object):
 			glance = glanceclient.Client('2', session=self.sess)
 			glance.images.delete(image_id)
 		except Exception as e:
-			logging.info("Unknown error, unable to delete image")
+			logging.error("Unknown error, unable to delete image")
 			return False
 		return True
 
@@ -122,11 +122,13 @@ def validate_repo(auth_url, username, password, tenant_name):
 	return (True, "Ok")
 
 
-def change_image_name(repo_obj, img_id, new_img_name):
+def change_image_name(repo_obj, img_id, old_img_name, new_img_name, user):
 	try:
+		logging.info("User %s attempting to rename image '%s' to '%s' in repo '%s'" % (user, old_img_name, new_img_name, repo_obj.tenant))
 		repo = repo_connector(auth_url=repo_obj.auth_url, project=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password)
 		repo.update_image_name(image_id=img_id, image_name=new_img_name)
+		logging.info("Image rename complete")
 	except Exception as e:
-		logging.error('Unknown exception occured when attempting to change image name.')
+		logging.error('Unknown exception occured when attempting to change image name')
 		logging.error(e)
 		return None

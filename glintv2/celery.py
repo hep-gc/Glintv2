@@ -23,7 +23,7 @@ app.config_from_object('django.conf:settings')
 
 @app.task(bind=True)
 def debug_task(self):
-    print('Request: {0!r}'.format(self.request))
+    logger.debug('Request: {0!r}'.format(self.request))
 
 
 @app.task(bind=True)
@@ -44,8 +44,8 @@ def image_collection(self):
                 image_list= image_list + rcon.image_list
     			
             except Exception as e:
-                print(e)
-                print("Could not connet to repo: %s at %s", (repo.tenant, repo.auth_url))
+                logger.error(e)
+                logger.error("Could not connet to repo: %s at %s", (repo.tenant, repo.auth_url))
 
         # take the new json and compare it to the previous one
         # and merge the differences, generally the new one will be used but if there are any images awaiting
@@ -61,15 +61,15 @@ def image_collection(self):
         set_images_for_proj(project=project.project_name, json_img_dict=updated_img_list)
 
 
-    logger.info("Task finished")
+    logger.info("Image collection complete")
 
 
 # Accepts Image info, project name, and a repo object
 # Must find and download the appropriate image (by name) and then upload it
 # to the given image ID
 @app.task(bind=True)
-def transfer_image(self, image_name, image_id, project, auth_url, project_tenant, username, password):
-    logger.info("attempting to transfer %s - %s" % (image_name, image_id))
+def transfer_image(self, image_name, image_id, project, auth_url, project_tenant, username, password, requesting_user):
+    logger.info("User %s attempting to transfer %s - %s to repo '%s'" % (requesting_user, image_name, image_id, project_tenant))
     #First check if this thread's scratch folder exists:
     scratch_dir = "/tmp/" + self.request.id + "/"
     if not os.path.exists(scratch_dir):
@@ -91,18 +91,18 @@ def transfer_image(self, image_name, image_id, project, auth_url, project_tenant
     dest_rcon.upload_image(image_id=image_id, image_name=image_name, scratch_dir=scratch_dir)
  
     queue_state_change(project=project, repo=project_tenant, img_id=image_id, state='Present')
-    logger.info("Task finished")
+    logger.info("Image transfer finished")
     return False
 
 # Accepts image id, project name, and repo object to delete image ID from.
 @app.task(bind=True)
-def delete_image(self, image_id, project, auth_url, project_tenant, username, password):
-    logger.info("attempting to delete %s" % image_id)
+def delete_image(self, image_id, project, auth_url, project_tenant, username, password, requesting_user):
+    logger.info("User %s attempting to delete %s from repo '%s'" % (requesting_user, image_id, project_tenant)
     rcon = repo_connector(auth_url=auth_url, project=project_tenant, username=username, password=password)
     result = rcon.delete_image(image_id)
     if result:
         queue_state_change(project=project, repo=project_tenant, img_id=image_id, state='deleted')
-        logger.info("Task finished")
+        logger.info("Image Delete finished")
         return True
     logger.info("Unknown error deleting %s  (result = %s)" % (image_id, result))
     return False

@@ -11,6 +11,7 @@ from .glint_api import repo_connector, validate_repo, change_image_name
 from glintv2.utils import get_unique_image_list, get_images_for_proj, parse_pending_transactions, build_id_lookup_dict, check_for_duplicate_images
 
 import json
+import logging
 
 
 def getUser(request):
@@ -114,9 +115,11 @@ def project_details(request, project_name="null_project"):
 def add_repo(request, project_name):
 	if request.method == 'POST':
 		form = addRepoForm(request.POST)
+		user = getUser(request)
 
 		#Check if the form data is valid
 		if form.is_valid():
+			logging.info("Attempting to add new repo for User:" + user)
 			# all data is exists, check if the repo is valid
 			validate_resp = validate_repo(auth_url=form.cleaned_data['auth_url'], tenant_name=form.cleaned_data['tenant'], username=form.cleaned_data['username'], password=form.cleaned_data['password'])
 			if (validate_resp[0]):
@@ -143,14 +146,15 @@ def add_repo(request, project_name):
 				for repo in repo_list:
 					try:
 						rcon = repo_connector(auth_url=repo.auth_url, project=repo.tenant, username=repo.username, password=repo.password)
-						image_list= image_list + rcon.image_list
+						image_list = image_list + rcon.image_list
 						
 					except:
-						print("Could not connet to repo: %s at %s", (repo.tenant, repo.auth_url))
+						logging.error("Could not connet to repo: %s at %s", (repo.tenant, repo.auth_url))
 
 					context = {
 						'redirect_url': '/ui/project_details/' + project_name,
 					}
+					logging.info("New repo: " + form.cleaned_data['tenant'] + " added.")
 					return render(request, 'glintwebui/proccessing_request.html', context)
 			else:
 				#something in the repo information is bad
@@ -180,6 +184,7 @@ def add_repo(request, project_name):
 
 def save_images(request, project_name):
 	if request.method == 'POST':
+		user = getUser(request)
 		#get repos
 		repo_list = Project.objects.filter(project_name=project_name)
 
@@ -191,7 +196,7 @@ def save_images(request, project_name):
 			#these check lists will have all of the images that are checked and need to be cross referenced
 			#against the images stored in redis to detect changes in state
 			check_list = request.POST.getlist(repo.tenant)
-			parse_pending_transactions(project=project_name, repo=repo.tenant, image_list=check_list)
+			parse_pending_transactions(project=project_name, repo=repo.tenant, image_list=check_list, user=user)
 
 			
 		context = {
@@ -204,6 +209,7 @@ def save_images(request, project_name):
 
 def resolve_conflict(request, project_name, repo_name):
 	if request.method == 'POST':
+		user = getUser(request)
 		repo_obj = Project.objects.get(project_name=project_name, tenant=repo_name)
 		image_dict = json.loads(get_images_for_proj(project_name))
 		changed_names = 0
@@ -211,14 +217,14 @@ def resolve_conflict(request, project_name, repo_name):
 			if key != 'csrfmiddlewaretoken':
 				# check if the name has been changed, if it is different, send update
 				if value != image_dict[repo_name][key]['name']:
-					change_image_name(repo_obj, key, value)
+					change_image_name(repo_obj=repo_obj, img_id=key, old_img_name=image_dict[repo_name][key]['name'], new_img_name=value, user=user)
 					changed_names=changed_names+1
 		if changed_names == 0:
 			# Re render resolve conflict page
 			# for now this will do nothing and we trust that the user will change the name.
 			context = {
 				'projects': User_Projects.objects.all(),
-				'user': getUser(request),
+				'user': user,
 				'all_users': User.objects.all(),
 			}
 			return render(request, 'glintwebui/index.html', context)
