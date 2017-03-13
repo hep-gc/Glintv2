@@ -63,22 +63,23 @@ class repo_connector(object):
 		return image.id
 
 	# Upload an image to repo, returns True if successful or False if not
-	def upload_image(self, image_id, image_name):
+	def upload_image(self, image_id, image_name, scratch_dir):
 		glance = glanceclient.Client('2', session=self.sess)
 		images = glance.images.list()
-		file_path = '/tmp/' + image_name
+		file_path = scratch_dir + image_name
 		glance.images.upload(image_id, open(file_path, 'rb'))
 		# Delete the file when we are done with it
 		logging.error("Upload complete, deleting temp file")
 		os.remove(file_path)
+		os.rmdir(scratch_dir)
 		return True
 
 	# Download an image from the repo, returns True if successful or False if not
-	def download_image(self, image_name, image_id):
+	def download_image(self, image_name, image_id, scratch_dir):
 		glance = glanceclient.Client('2', session=self.sess)
 
 		#open file then write to it
-		file_path = '/tmp/' + image_name
+		file_path = scratch_dir + image_name
 		image_file = open(file_path, 'w+')
 		for chunk in glance.images.data(image_id):
 			image_file.write(chunk)

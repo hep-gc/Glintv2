@@ -53,9 +53,9 @@ th {
 					{% with image_id=image_lookup|get_item:repo_key|get_item:image %}
 					{% if repo_value|get_item:image_id is not None %}
 						{% if repo_value|get_item:image_id|get_item:"state" == "Pending Delete" %}
-							<td>Pending Delete</td>
+							<td>Pending Delete<input hidden name="{{repo_key}}" type="checkbox" value="{{image}}"></td>
 						{% elif repo_value|get_item:image_id|get_item:"state" == "Pending Transfer" %}
-							<td>Pending Transfer</td>
+							<td>Pending Transfer<input hidden name="{{repo_key}}" type="checkbox" value="{{image}}" checked></td>
 						{% else %}
 							<td class='{{repo_value|get_item:image_id|get_item:"visibility"}}'><input name="{{repo_key}}" type="checkbox" value="{{image}}" checked></td>
 						{% endif %}

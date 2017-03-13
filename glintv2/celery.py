@@ -70,6 +70,11 @@ def image_collection(self):
 @app.task(bind=True)
 def transfer_image(self, image_name, image_id, project, auth_url, project_tenant, username, password):
     logger.info("attempting to transfer %s - %s" % (image_name, image_id))
+    #First check if this thread's scratch folder exists:
+    scratch_dir = "/tmp/" + self.request.id + "/"
+    if not os.path.exists(scratch_dir):
+        os.makedirs(scratch_dir)
+
     # Find image by name in another repo where the state=present
     # returns tuple: (auth_url, tenant, username, password, img_id)
     src_img_info = find_image_by_name(project=project, image_name=image_name)
@@ -78,14 +83,13 @@ def transfer_image(self, image_name, image_id, project, auth_url, project_tenant
     # Download said img to a scratch folder /tmp/ for now
     logger.info("Downloading Image from %s" % src_img_info[1])
     src_rcon = repo_connector(auth_url=src_img_info[0], project=src_img_info[1], username=src_img_info[2], password=src_img_info[3])
-    src_rcon.download_image(image_name=image_name, image_id=src_img_info[4])
+    src_rcon.download_image(image_name=image_name, image_id=src_img_info[4], scratch_dir=scratch_dir)
 
     # Upload said image to the new repo
     logger.info("Uploading Image to %s" % project_tenant)
     dest_rcon = repo_connector(auth_url=auth_url, project=project_tenant, username=username, password=password)
-    dest_rcon.upload_image(image_id=image_id, image_name=image_name)
-    # clean up scratch folder
-    #TODO
+    dest_rcon.upload_image(image_id=image_id, image_name=image_name, scratch_dir=scratch_dir)
+ 
     queue_state_change(project=project, repo=project_tenant, img_id=image_id, state='Present')
     logger.info("Task finished")
     return False
