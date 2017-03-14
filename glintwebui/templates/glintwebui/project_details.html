@@ -10,6 +10,10 @@ th {
     text-align: right;
 }
 
+#account_table{
+	border: none;
+}
+
 #no_filter{
 	border: 3px solid black;
 	font-weight: bold
@@ -25,11 +29,71 @@ th {
 
 }
 
+/* drop down style */
+ /* Dropdown Button */
+.dropbtn {
+	background-color: #3e8e41;
+    padding: 5px;
+    font-size: 16px;
+    border: 1px solid black;
+    cursor: pointer;
+}
+
+/* Dropdown button on hover & focus */
+.dropbtn:hover, .dropbtn:focus {
+	background-color: #FFFFFF;
+    
+}
+
+/* The container <div> - needed to position the dropdown content */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+/* Dropdown Content (Hidden by Default) */
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 230px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+}
+
+/* Links inside the dropdown */
+.dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+/* Change color of dropdown links on hover */
+.dropdown-content a:hover {background-color: #f1f1f1}
+
+/* Show the dropdown menu (use JS to add this class to the .dropdown-content container when the user clicks on the dropdown button) */
+.show {display:block;}
+
 {% load template_utils %}
 
 </style>
 </head>
-<h1> {{project}} </h1>
+<table id='account_table'><tr>
+	<td id='account_table'><b>Account:</b></td>
+	<td id='account_table'>
+		<div class="dropdown">
+			<button onclick="myFunction()" class="dropbtn">{{project}}</button>
+				<div id="myDropdown" class="dropdown-content">
+				{% for account in account_list %}
+					<a href='/ui/project_details/{{account}}/'>{{account}}</a> 
+				{% endfor %}
+			</div>
+		</div>
+	</td>
+</tr>
+</table>
+<br/>
 <table> <tr><th>Image Filter</th><td class='public' id='public_filter'> Public </td><td class='private' id='private_filter'>Private</td><td id='no_filter'> None </td></tr></table> <br/>
 <form action="/ui/save_images/{{project}}/" method="post">
 	{% csrf_token %}
@@ -119,6 +183,27 @@ $( "#no_filter" ).click(function() {
 	$("#public_filter").css("font-weight","normal");
 	$("#public_filter").css("border","1px solid black");
 });
+
+/* When the user clicks on the button,
+toggle between hiding and showing the dropdown content */
+function myFunction() {
+    document.getElementById("myDropdown").classList.toggle("show");
+}
+
+// Close the dropdown menu if the user clicks outside of it
+window.onclick = function(event) {
+  if (!event.target.matches('.dropbtn')) {
+
+    var dropdowns = document.getElementsByClassName("dropdown-content");
+    var i;
+    for (i = 0; i < dropdowns.length; i++) {
+      var openDropdown = dropdowns[i];
+      if (openDropdown.classList.contains('show')) {
+        openDropdown.classList.remove('show');
+      }
+    }
+  }
+}
 </script>
 
 

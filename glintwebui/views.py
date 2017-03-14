@@ -5,7 +5,7 @@ from django.core.exceptions import PermissionDenied
 
 
 from django.shortcuts import render, get_object_or_404
-from .models import Project, User_Projects, User, Glint_User
+from .models import Project, User_Projects, Glint_User
 from .forms import addRepoForm
 from .glint_api import repo_connector, validate_repo, change_image_name
 from glintv2.utils import get_unique_image_list, get_images_for_proj, parse_pending_transactions, build_id_lookup_dict, check_for_duplicate_images
@@ -39,6 +39,18 @@ def index(request):
 	# The one drawback is if someone tries to go directly to another page before hitting this one
 	# It may be better to put it in the urls.py file then pass in the repo/image info
 	# If it cannot be accessed it means its deed and needs to be spawned again.
+	active_user = getUser(request)
+	user_obj = Glint_User.objects.get(common_name=active_user)
+	user_account = User_Projects.objects.filter(user=user_obj)
+	if user_account is None:
+		#User has access to no accounts yet, tell them to contact admin
+		#Render index page that has the above info
+		pass
+	else:
+		#Else go to the last account that was active for that user
+		active_project = user_obj.active_project
+		return project_details(request, active_project)
+		
 
 	context = {
 		'projects': User_Projects.objects.all(),
@@ -49,23 +61,18 @@ def index(request):
 
 
 
-def users(request, users="N/A"):
-    response = "The following are registered users: %s."
-    return HttpResponse(response % users)
-
-
-
-# Once the users are authenticated with a cert this page will no longer be needed 
-# because everyone will see a unique landing page.
-def user_projects(request, user_id="N/A"):
-    return HttpResponse("Your projects: %s" % user_id)
-
-
 
 def project_details(request, project_name="null_project"):
 	# Since img name, img id is no longer a unique way to identify images across clouds
 	# We will instead only use image name, img id will be used as a unique ID inside a given repo
 	# this means we now have to create a new unique image set that is just the image names
+	if not verifyUser(request):
+		raise PermissionDenied
+	active_user = getUser(request)
+	user_obj = Glint_User.objects.get(common_name=active_user)
+	user_obj.active_project = project_name
+	user_obj.save()
+
 
 	repo_list = Project.objects.filter(project_name=project_name)
 	try:
@@ -101,8 +108,16 @@ def project_details(request, project_name="null_project"):
 
 	# The image_list is a unique list of images stored in tuples (img_id, img_name)
 	# Still need to add detection for images that have different names but the same ID
+	user_accounts = User_Projects.objects.filter(user=user_obj)
+	account_list = []
+	for acct in user_accounts:
+		act_name = acct.project_name
+		account_list.append(act_name)
+
+	account_list.remove(project_name)
 	context = {
 		'project': project_name,
+		'account_list': account_list,
 		'image_dict': image_dict,
 		'image_set': image_set,
 		'image_lookup': reverse_img_lookup
@@ -113,6 +128,8 @@ def project_details(request, project_name="null_project"):
 
 #displays the form for adding a repo to a project and handles the post request
 def add_repo(request, project_name):
+	if not verifyUser(request):
+		raise PermissionDenied
 	if request.method == 'POST':
 		form = addRepoForm(request.POST)
 		user = getUser(request)
@@ -183,6 +200,8 @@ def add_repo(request, project_name):
 		return render(request, 'glintwebui/add_repo.html', context, {'form': form})
 
 def save_images(request, project_name):
+	if not verifyUser(request):
+		raise PermissionDenied
 	if request.method == 'POST':
 		user = getUser(request)
 		#get repos
@@ -208,6 +227,8 @@ def save_images(request, project_name):
 		return project_details(request, project_name=project_name)
 
 def resolve_conflict(request, project_name, repo_name):
+	if not verifyUser(request):
+		raise PermissionDenied
 	if request.method == 'POST':
 		user = getUser(request)
 		repo_obj = Project.objects.get(project_name=project_name, tenant=repo_name)
