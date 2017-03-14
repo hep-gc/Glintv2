@@ -96,8 +96,8 @@ def transfer_image(self, image_name, image_id, project, auth_url, project_tenant
 
 # Accepts image id, project name, and repo object to delete image ID from.
 @app.task(bind=True)
-def delete_image(self, image_id, project, auth_url, project_tenant, username, password, requesting_user):
-    logger.info("User %s attempting to delete %s from repo '%s'" % (requesting_user, image_id, project_tenant)
+def delete_image(self, image_id, image_name, project, auth_url, project_tenant, username, password, requesting_user):
+    logger.info("User %s attempting to delete %s - %s from repo '%s'" % (requesting_user, image_name, image_id, project_tenant))
     rcon = repo_connector(auth_url=auth_url, project=project_tenant, username=username, password=password)
     result = rcon.delete_image(image_id)
     if result:

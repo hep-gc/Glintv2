@@ -341,7 +341,7 @@ def process_pending_transactions(project, json_img_dict):
 				# Set state and queue delete task
 				repo_obj = Project.objects.get(project_name=transaction['project'], tenant=transaction['repo'])
 				img_dict[transaction['repo']][transaction['image_id']]['state'] = 'Pending Delete'
-				delete_image.delay(image_id=transaction['image_id'], project=project, auth_url=repo_obj.auth_url, project_tenant=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password, requesting_user=transaction['user'])
+				delete_image.delay(image_id=transaction['image_id'], image_name=transaction['image_name'], project=project, auth_url=repo_obj.auth_url, project_tenant=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password, requesting_user=transaction['user'])
 	return json.dumps(img_dict)
 
 
