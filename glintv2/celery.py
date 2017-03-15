@@ -98,14 +98,17 @@ def transfer_image(self, image_name, image_id, project, auth_url, project_tenant
 @app.task(bind=True)
 def delete_image(self, image_id, image_name, project, auth_url, project_tenant, username, password, requesting_user):
     logger.info("User %s attempting to delete %s - %s from repo '%s'" % (requesting_user, image_name, image_id, project_tenant))
-    rcon = repo_connector(auth_url=auth_url, project=project_tenant, username=username, password=password)
-    result = rcon.delete_image(image_id)
-    if result:
-        queue_state_change(project=project, repo=project_tenant, img_id=image_id, state='deleted')
-        logger.info("Image Delete finished")
-        return True
-    logger.info("Unknown error deleting %s  (result = %s)" % (image_id, result))
-    return False
+    if check_delete_restrictions(image_id=image_id, project=project, project_tenant=project_tenant):
+        rcon = repo_connector(auth_url=auth_url, project=project_tenant, username=username, password=password)
+        result = rcon.delete_image(image_id)
+        if result:
+            queue_state_change(project=project, repo=project_tenant, img_id=image_id, state='deleted')
+            logger.info("Image Delete finished")
+            return True
+        logger.error("Unknown error deleting %s  (result = %s)" % (image_id, result))
+        return False
+    else:
+        logger.error("Delete request violates delete rules, image either shared or the last copy.")
 
 # CELERY workers can get their own ID with self.request.id
 # This will be useful during image transfers so there will be no conflicts

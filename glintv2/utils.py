@@ -393,6 +393,15 @@ def find_image_by_name(project, image_name):
 					repo_obj = Project.objects.get(project_name=project, tenant=repo)
 					return (repo_obj.auth_url, repo, repo_obj.username, repo_obj.password, image)
 	return False
+
+# Applys the delete rules and returns True if its ok to delete, False otherwise
+# Rule 1: Can't delete a shared image
+# Rule 2: Can't delete the last copy of an image.
+def check_delete_restrictions(image_id, project, project_tenant):
+	json_dict = get_images_for_proj(project)
+	image_dict = json.loads(json_dict)
+	pass
+
 '''
 added image_name to transaction
 this function should no longer be needed
