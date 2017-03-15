@@ -109,6 +109,7 @@ def delete_image(self, image_id, image_name, project, auth_url, project_tenant, 
         return False
     else:
         logger.error("Delete request violates delete rules, image either shared or the last copy.")
+        queue_state_change(project=project, repo=project_tenant, img_id=image_id, state='present')
 
 # CELERY workers can get their own ID with self.request.id
 # This will be useful during image transfers so there will be no conflicts
