@@ -262,3 +262,20 @@ def processing_request(request, project_name):
 		'redirect_url': None,
 	}
 	return render(request, 'glintwebui/proccessing_request.html', context)
+
+
+# This page will render manage_repos.html which will allow users to add, edit, or delete repos
+# It would be a good idea to redesign the add repo page to be used to update existing repos
+# in addition to adding new ones. However it may be easier to just make a copy of it and modify
+# it slightly for use updating existing repos.
+def manage_repos(request, project_name):
+	if not verifyUser(request):
+		raise PermissionDenied
+	active_user = getUser(request)
+	repo_list = Project.objects.filter(project_name=project_name)
+	context = {
+		'account': project_name,
+		'repo_list': repo_list,
+	}
+	return render(request, 'glintwebui/manage_repos.html', context)
+

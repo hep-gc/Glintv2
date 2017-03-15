@@ -400,7 +400,20 @@ def find_image_by_name(project, image_name):
 def check_delete_restrictions(image_id, project, project_tenant):
 	json_dict = get_images_for_proj(project)
 	image_dict = json.loads(json_dict)
-	pass
+
+	# Rule 1: check if image is shared
+	if image_dict[project_tenant][image_id]['visibility'] is "public":
+		return False
+
+	# Rule 2: check if its the last copy of the image
+	for repo in image_dict:
+		if repo is not project_tenant:
+			for image in image_dict[repo]:
+				if image['name'] is image_dict[project_tenant][image_id]['name']:
+					return False
+
+	return True
+
 
 '''
 added image_name to transaction
