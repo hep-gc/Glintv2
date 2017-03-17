@@ -409,10 +409,11 @@ def check_delete_restrictions(image_id, project, project_tenant):
 	for repo in image_dict:
 		if repo is not project_tenant:
 			for image in image_dict[repo]:
-				if image['name'] is image_dict[project_tenant][image_id]['name']:
-					return False
+				if image_dict[repo][image]['name'] is image_dict[project_tenant][image_id]['name']:
+					#found one, its ok to delete
+					return True
 
-	return True
+	return False
 
 
 '''
