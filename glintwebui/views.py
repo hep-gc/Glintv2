@@ -268,7 +268,7 @@ def processing_request(request, project_name):
 # It would be a good idea to redesign the add repo page to be used to update existing repos
 # in addition to adding new ones. However it may be easier to just make a copy of it and modify
 # it slightly for use updating existing repos.
-def manage_repos(request, project_name):
+def manage_repos(request, project_name, feedback_msg=None, error_msg=None):
 	if not verifyUser(request):
 		raise PermissionDenied
 	active_user = getUser(request)
@@ -276,6 +276,65 @@ def manage_repos(request, project_name):
 	context = {
 		'account': project_name,
 		'repo_list': repo_list,
+		'feedback_msg': feedback_msg,
+		'error_msg': error_msg,
 	}
 	return render(request, 'glintwebui/manage_repos.html', context)
 
+
+def update_repo(request, project_name):
+	if not verifyUser(request):
+		raise PermissionDenied
+	logging.info("Attempting to update repo")
+	active_user = getUser(request)
+	if request.method == 'POST':
+		#handle update
+		usr = request.POST.get('username')
+		pwd = request.POST.get('password')
+		auth_url = request.POST.get('auth_url')
+		tenant = request.POST.get('tenant')
+		proj_id = request.POST.get('proj_id')
+
+		# probably a more effecient way to do the if below, perhaps to a try/catch without using .get
+		if usr is not None and pwd is not None and auth_url is not None and tenant is not None and proj_id is not None:
+			#data is there, check if it is valid
+			validate_resp = validate_repo(auth_url=auth_url, tenant_name=tenant, username=usr, password=pwd)
+			if (validate_resp[0]):
+				# new data is good, grab the old repo and update to the new info
+				repo_obj = Project.objects.get(proj_id=proj_id)
+				repo_obj.username = usr
+				repo_obj.auth_url = auth_url
+				repo_obj.tenant_name = tenant
+				repo_obj.password = pwd
+				repo_obj.save()
+			else:
+				#invalid changes, reload manage_repos page with error msg
+				return manage_repos(request=request, project_name=project_name, error_msg=validate_resp[1])
+
+		return manage_repos(request=request, project_name=project_name, feedback_msg="Update Successful")
+
+	else:
+		#not a post, shouldnt be coming here, redirect to matrix page
+		return project_details(request, project_name)
+
+def delete_repo(request, project_name):
+	if not verifyUser(request):
+		logging.info("Verifying User")
+		raise PermissionDenied
+	active_user = getUser(request)
+	if request.method == 'POST':
+		#handle delete
+		repo = request.POST.get('repo')
+		repo_id = request.POST.get('repo_id')
+		if repo is not None and repo_id is not None:
+			logging.info("Attempting to delete repo: %s" % repo)
+			Project.objects.filter(tenant=repo, proj_id=repo_id).delete()
+			return HttpResponse(True)
+		else:
+			#invalid post, return false
+			return HttpResponse(False)
+		#Execution should never reach here, but it it does- return false
+		return HttpResponse(False)
+	else:
+		#not a post, shouldnt be coming here, redirect to matrix page
+		return project_details(request, project_name)

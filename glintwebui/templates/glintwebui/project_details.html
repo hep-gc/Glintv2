@@ -83,7 +83,7 @@ th {
 	<td id='account_table'><b>Account:</b></td>
 	<td id='account_table'>
 		<div class="dropdown">
-			<button onclick="myFunction()" class="dropbtn">{{project}}</button>
+			<button onclick="doDropdown()" class="dropbtn">{{project}}</button>
 				<div id="myDropdown" class="dropdown-content">
 				{% for account in account_list %}
 					<a href='/ui/project_details/{{account}}/'>{{account}}</a> 
@@ -91,6 +91,7 @@ th {
 			</div>
 		</div>
 	</td>
+	<td id='account_table'><a href="/ui/manage_repos/{{project}}">Manage {{project}} repos</a></td>
 </tr>
 </table>
 <br/>
@@ -134,8 +135,6 @@ th {
 	</table>
 	<input type="submit" value="Save Images" />
 <form/>
-<br/>
-<a href="/ui/add_repo/{{project}}"><input type="button" value="Add repo to {{project}}"/></a>
 
 
 <script>
@@ -186,7 +185,7 @@ $( "#no_filter" ).click(function() {
 
 /* When the user clicks on the button,
 toggle between hiding and showing the dropdown content */
-function myFunction() {
+function doDropdown() {
     document.getElementById("myDropdown").classList.toggle("show");
 }
 
