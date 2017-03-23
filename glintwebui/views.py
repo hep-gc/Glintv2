@@ -5,7 +5,7 @@ from django.core.exceptions import PermissionDenied
 
 
 from django.shortcuts import render, get_object_or_404
-from .models import Project, User_Projects, Glint_User
+from .models import Project, User_Account, Glint_User
 from .forms import addRepoForm
 from .glint_api import repo_connector, validate_repo, change_image_name
 from glintv2.utils import get_unique_image_list, get_images_for_proj, parse_pending_transactions, build_id_lookup_dict, check_for_duplicate_images
@@ -41,7 +41,7 @@ def index(request):
 	# If it cannot be accessed it means its deed and needs to be spawned again.
 	active_user = getUser(request)
 	user_obj = Glint_User.objects.get(common_name=active_user)
-	user_account = User_Projects.objects.filter(user=user_obj)
+	user_account = User_Account.objects.filter(user=user_obj)
 	if user_account is None:
 		#User has access to no accounts yet, tell them to contact admin
 		#Render index page that has the above info
@@ -53,7 +53,7 @@ def index(request):
 		
 
 	context = {
-		'projects': User_Projects.objects.all(),
+		'projects': User_Account.objects.all(),
 		'user': getUser(request),
 		'all_users': User.objects.all(),
 	}
@@ -70,6 +70,10 @@ def project_details(request, project_name="null_project"):
 		raise PermissionDenied
 	active_user = getUser(request)
 	user_obj = Glint_User.objects.get(common_name=active_user)
+	if project_name is None:
+		# First time user, lets put them at the first project the have access to
+		project_name = User_Account.objects.filter(user=user_obj).first()
+
 	user_obj.active_project = project_name
 	user_obj.save()
 
@@ -108,13 +112,16 @@ def project_details(request, project_name="null_project"):
 
 	# The image_list is a unique list of images stored in tuples (img_id, img_name)
 	# Still need to add detection for images that have different names but the same ID
-	user_accounts = User_Projects.objects.filter(user=user_obj)
+	user_accounts = User_Account.objects.filter(user=user_obj)
 	account_list = []
 	for acct in user_accounts:
-		act_name = acct.project_name
+		act_name = acct.account_name
 		account_list.append(act_name)
-
-	account_list.remove(project_name)
+	try:
+		account_list.remove(project_name)
+	except ValueError as e:
+		#list is empty
+		pass
 	context = {
 		'project': project_name,
 		'account_list': account_list,
@@ -244,7 +251,7 @@ def resolve_conflict(request, project_name, repo_name):
 			# Re render resolve conflict page
 			# for now this will do nothing and we trust that the user will change the name.
 			context = {
-				'projects': User_Projects.objects.all(),
+				'projects': User_Account.objects.all(),
 				'user': user,
 				'all_users': User.objects.all(),
 			}

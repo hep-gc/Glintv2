@@ -29,14 +29,14 @@ def debug_task(self):
 @app.task(bind=True)
 def image_collection(self):
 
-    from glintwebui.models import Project, User_Projects
+    from glintwebui.models import Project, User_Account, Account
     from glintwebui.glint_api import repo_connector
 
     logger.info("Start Image collection")
-    project_list = User_Projects.objects.all()
+    account_list = Account.objects.all()
 
-    for project in project_list:
-        repo_list = Project.objects.filter(project_name=project.project_name)
+    for account in account_list:
+        repo_list = Project.objects.filter(project_name=account.account_name)
         image_list = ()
         for repo in repo_list:
             try:
@@ -50,15 +50,15 @@ def image_collection(self):
         # take the new json and compare it to the previous one
         # and merge the differences, generally the new one will be used but if there are any images awaiting
         # transfer or deletion they must be added to the list
-        updated_img_list = update_pending_transactions(get_images_for_proj(project.project_name), jsonify_image_list(image_list=image_list, repo_list=repo_list))
+        updated_img_list = update_pending_transactions(get_images_for_proj(account.account_name), jsonify_image_list(image_list=image_list, repo_list=repo_list))
         
-        # now we have the most current version of the image matrix for this project
+        # now we have the most current version of the image matrix for this account
         # The last thing that needs to be done here is to proccess the PROJECTX_pending_transactions
         logger.info("Updating pending Transactions")
-        updated_img_list = process_pending_transactions(project=project.project_name, json_img_dict=updated_img_list)
+        updated_img_list = process_pending_transactions(project=account.account_name, json_img_dict=updated_img_list)
         logger.info("Proccessing state changes")
-        updated_img_list = process_state_changes(project=project.project_name, json_img_dict=updated_img_list)
-        set_images_for_proj(project=project.project_name, json_img_dict=updated_img_list)
+        updated_img_list = process_state_changes(project=account.account_name, json_img_dict=updated_img_list)
+        set_images_for_proj(project=account.account_name, json_img_dict=updated_img_list)
 
 
     logger.info("Image collection complete")

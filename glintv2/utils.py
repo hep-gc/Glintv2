@@ -302,7 +302,7 @@ def parse_pending_transactions(project, repo, image_list, user):
 # Then finally we can call the asynch celery tasks
 def process_pending_transactions(project, json_img_dict):
 	from glintwebui.models import Project
-	from .celery import transfer_image, delete_image
+	from .celery_app import transfer_image, delete_image
 
 	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
 	trans_key = project + '_pending_transactions'
