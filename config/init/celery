@@ -5,10 +5,10 @@
 CELERYD_NODES="w1 w2 w3 w4"
 
 # Absolute path to "manage.py"
-CELERY_BIN="/hepuser/colsond/projects/Glintv2/manage.py"
+CELERY_BIN="/root/Glintv2/manage.py"
 
 # Where to chdir at start. This could be the root of a virtualenv.
-CELERYD_CHDIR="/hepuser/colsond/projects/Glintv2"
+CELERYD_CHDIR="/root/Glintv2"
 
 # App instance to use
 # comment out this line if you don't use an app

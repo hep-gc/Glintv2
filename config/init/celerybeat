@@ -9,9 +9,9 @@ CELERY_BIN="/bin/celery"
 #CELERY_APP="proj.tasks:app"
 
 # Where to chdir at start.
-CELERYBEAT_CHDIR="/hepuser/colsond/projects/Glintv2"
+CELERYBEAT_CHDIR="/root/Glintv2"
 
 # Extra arguments to celerybeat
-CELERYBEAT_OPTS="-A glintv2 -l info -S django -s /etc/gltv2/db.sqlite3"
+CELERYBEAT_OPTS="-A glintv2 -l info -S django -s /etc/glintv2/db.sqlite3"
 
 #export DJANGO_SETTINGS_MODULE="settings"
