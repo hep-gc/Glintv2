@@ -4,7 +4,7 @@
 # =========================================================
 #
 # :Usage: /etc/init.d/celerybeat {start|stop|force-reload|restart|try-restart|status}
-# :Configuration file: /etc/default/celerybeat or /etc/default/celeryd
+# :Configuration file: /etc/glintv2/celerybeat or /etc/glintv2/celeryd
 #
 # See http://docs.celeryproject.org/en/latest/tutorials/daemonizing.html#generic-init-scripts
 
