@@ -5,18 +5,34 @@
 </head>
 
 
-<div><h2> Click a repo to edit or delete </h2></div>
+<div><h2> "{{account}}" projects </h2></div>
 {% if feedback_msg is not None %}
 	<div><p style="color:green">{{feedback_msg}}</p></div>
 {% endif %}
 {% if error_msg is not None %}
 	<div><p style="color:red">{{error_msg}}</p></div>
 {% endif %}
-<div style="width: 100%;  border: 1px solid; border-color: #0000ff; background-color:#b3daff;" class="container">
-	<div id="span-div">
-		{% for repo in repo_list %}
-			<div id="inner">
-				<button type="button" class="btn btn-info" data-toggle="collapse" data-target="#{{repo.proj_id}}" style="margin-right: 5px"> {{repo.tenant}} </button>
+<table class="main_table">
+	<tr class="main_table">
+		<th class="main_table">Project</th>
+		<th class="main_table">Auth URL</th>
+		<th class="main_table">Username</th>
+		<th class="edit_column" />
+	</tr>
+	{% for repo in repo_list %}
+		<tr class="main_table">
+			<th class="main_table">
+				{{repo.tenant}}
+			</th>
+			<td class="main_table">
+				{{repo.auth_url}}
+			</td>
+			<td class="main_table">
+				{{repo.username}}
+			</td>
+
+			<td class="edit_column">
+				<button type="button" class="btn btn-info" data-toggle="collapse" data-target="#{{repo.proj_id}}" style="margin-right: 5px"> Edit </button>
 				<div class="collapse" id="{{repo.proj_id}}" style="width: 400px">
 					<form name="{{repo.proj_id}}" action="/ui/update_repo/{{account}}/" method="post">
 						{% csrf_token %}
@@ -37,28 +53,25 @@
 						</table>
 					</form>
 				</div>
-			</div>
-		{% endfor %}
-	</div>
-</div>
+			</td>
+		</tr>
+	{% endfor %}
+</table>
 <br/>
 <a href="/ui/add_repo/{{account}}"><input type="button" value="Add repo to {{account}}"/></a>
 
 
 
 <style>
-#span-div {
-  overflow: hidden;
-  float: left;
-  width: 2000px;
-  position: relative;
-  left: 0;
-
+.main_table {
+    border: 1px solid black;
+    border-collapse: collapse;
+    padding: 5px;
 }
-#inner{
-	display: block;
-	overflow: hidden;
-	float: left;
+.edit_column {
+	border: none;
+    border-collapse: collapse;
+    padding: 5px;
 }
 </style>
 
