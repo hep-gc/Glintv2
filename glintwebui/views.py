@@ -175,11 +175,9 @@ def add_repo(request, project_name):
 					except:
 						logging.error("Could not connet to repo: %s at %s", (repo.tenant, repo.auth_url))
 
-					context = {
-						'redirect_url': '/ui/project_details/' + project_name,
-					}
+					
 					logging.info("New repo: " + form.cleaned_data['tenant'] + " added.")
-					return render(request, 'glintwebui/proccessing_request.html', context)
+					return manage_repos(request, project_name, feedback_msg="Project: " + form.cleaned_data['tenant'] + " added")
 			else:
 				#something in the repo information is bad
 				form = addRepoForm()
