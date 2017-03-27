@@ -13,6 +13,8 @@ from glintv2.utils import get_unique_image_list, get_images_for_proj, parse_pend
 import json
 import logging
 
+logger =  logging.getLogger('glintv2')
+
 
 def getUser(request):
 	return request.META.get('REMOTE_USER')
@@ -143,7 +145,7 @@ def add_repo(request, project_name):
 
 		#Check if the form data is valid
 		if form.is_valid():
-			logging.info("Attempting to add new repo for User:" + user)
+			logger.info("Attempting to add new repo for User:" + user)
 			# all data is exists, check if the repo is valid
 			validate_resp = validate_repo(auth_url=form.cleaned_data['auth_url'], tenant_name=form.cleaned_data['tenant'], username=form.cleaned_data['username'], password=form.cleaned_data['password'])
 			if (validate_resp[0]):
@@ -173,10 +175,10 @@ def add_repo(request, project_name):
 						image_list = image_list + rcon.image_list
 						
 					except:
-						logging.error("Could not connet to repo: %s at %s", (repo.tenant, repo.auth_url))
+						logger.error("Could not connet to repo: %s at %s", (repo.tenant, repo.auth_url))
 
 					
-					logging.info("New repo: " + form.cleaned_data['tenant'] + " added.")
+					logger.info("New repo: " + form.cleaned_data['tenant'] + " added.")
 					return manage_repos(request, project_name, feedback_msg="Project: " + form.cleaned_data['tenant'] + " added")
 			else:
 				#something in the repo information is bad
@@ -185,6 +187,7 @@ def add_repo(request, project_name):
 					'project_name': project_name,
 					'error_msg': validate_resp[1]
 				}
+				logger.error("Failed to add repo.")
 			return render(request, 'glintwebui/add_repo.html', context, {'form': form})
 
 		# Else there has been an error in the entry, display form with error msg
@@ -290,7 +293,7 @@ def manage_repos(request, project_name, feedback_msg=None, error_msg=None):
 def update_repo(request, project_name):
 	if not verifyUser(request):
 		raise PermissionDenied
-	logging.info("Attempting to update repo")
+	logger.info("Attempting to update repo")
 	active_user = getUser(request)
 	if request.method == 'POST':
 		#handle update
@@ -324,7 +327,7 @@ def update_repo(request, project_name):
 
 def delete_repo(request, project_name):
 	if not verifyUser(request):
-		logging.info("Verifying User")
+		logger.info("Verifying User")
 		raise PermissionDenied
 	active_user = getUser(request)
 	if request.method == 'POST':
@@ -332,7 +335,7 @@ def delete_repo(request, project_name):
 		repo = request.POST.get('repo')
 		repo_id = request.POST.get('repo_id')
 		if repo is not None and repo_id is not None:
-			logging.info("Attempting to delete repo: %s" % repo)
+			logger.info("Attempting to delete repo: %s" % repo)
 			Project.objects.filter(tenant=repo, proj_id=repo_id).delete()
 			return HttpResponse(True)
 		else:

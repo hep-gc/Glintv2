@@ -4,6 +4,7 @@ import logging
 from glintwebui.glint_api import repo_connector
 import config
 
+logger =  logging.getLogger('glintv2')
 
 '''
 Recieves a tuple of 3-tuples (repo, img_name, img_id) that uniquely identify an image_list
@@ -81,7 +82,7 @@ def update_pending_transactions(old_img_dict, new_img_dict):
 	try:
 		old_dict = json.loads(old_img_dict)
 	except TypeError as e:
-		logging.info("No old image dictionary, either bad redis entry or first call since startup")
+		logger.info("No old image dictionary, either bad redis entry or first call since startup")
 		return new_img_dict
 	new_dict = json.loads(new_img_dict)
 
@@ -117,7 +118,7 @@ def get_images_for_proj(project):
 		r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
 		return r.get(project)
 	except KeyError as e:
-		logging.error("Couldnt find image list for project %s", project)
+		logger.error("Couldnt find image list for project %s", project)
 		return False
 
 # accepts a project as key string and a jsonified dictionary of the images and stores them in redis
@@ -128,7 +129,7 @@ def set_images_for_proj(project, json_img_dict):
 		r.set(project, json_img_dict)
 
 	except Exception as e:
-		logging.error ("Unknown exception while trying to set images for: %s", project)
+		logger.error ("Unknown exception while trying to set images for: %s", project)
 
 
 '''
@@ -225,7 +226,7 @@ def check_for_duplicate_images(image_dict):
 						duplicate_dict[second_image] = duplicate_img
 						return duplicate_dict
 				# We should never get here
-				logging.error("An error occured, couldn't find duplicate image")
+				logger.error("An error occured, couldn't find duplicate image")
 
 			else:
 				image_set.add(image_dict[repo][image]['name'])
@@ -290,8 +291,8 @@ def parse_pending_transactions(project, repo, image_list, user):
 					r.rpush(trans_key, json.dumps(transaction))
 
 	except KeyError as e:
-		logging.error(e)
-		logging.error("Couldnt find image list for project %s", project)
+		logger.error(e)
+		logger.error("Couldnt find image list for project %s", project)
 		return False
 
 
