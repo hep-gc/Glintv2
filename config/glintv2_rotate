@@ -6,6 +6,7 @@
         delaycompress
         notifempty
         copytruncate
+        create 0644 celery celery
 }
 /var/log/glintv2/*.log {
         weekly
@@ -15,4 +16,5 @@
         delaycompress
         notifempty
         copytruncate
+        create 0644 apache apache
 }
