@@ -1,0 +1,18 @@
+/var/log/celery/*.log {
+        weekly
+        missingok
+        rotate 52
+        compress
+        delaycompress
+        notifempty
+        copytruncate
+}
+/var/log/glintv2/*.log {
+        weekly
+        missingok
+        rotate 52
+        compress
+        delaycompress
+        notifempty
+        copytruncate
+}
