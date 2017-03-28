@@ -37,7 +37,7 @@ class Glint_User(models.Model):
     # May need another table for these instead of just a generic string field
     authentication_method = models.CharField(max_length=32, default="x509")
     common_name = models.CharField(max_length=64, default="")
-    distinguished_name = models.CharField(max_length=64)   
+    distinguished_name = models.CharField(max_length=128)   
     active_project = models.CharField(max_length=64, default="", null=True, blank=True)
 
     def __str__(self):
