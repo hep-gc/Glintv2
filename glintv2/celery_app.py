@@ -12,8 +12,12 @@ import os
 import time
 import redis
  
+
+
 # Indicate Celery to use the default Django settings module
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'glintv2.settings')
+import django
+django.setup()
  
 app = Celery('glintv2', broker=config.celery_url, backend=config.celery_backend)
 app.config_from_object('django.conf:settings')

@@ -14,6 +14,7 @@
 {% endif %}
 <table class="main_table">
 	<tr class="main_table">
+		<th class="main_table">Alias</th>
 		<th class="main_table">Project</th>
 		<th class="main_table">Auth URL</th>
 		<th class="main_table">Username</th>
@@ -22,8 +23,11 @@
 	{% for repo in repo_list %}
 		<tr class="main_table">
 			<th class="main_table">
-				{{repo.tenant}}
+				{{repo.alias}}
 			</th>
+			<td class="main_table">
+				{{repo.tenant}}
+			</td>
 			<td class="main_table">
 				{{repo.auth_url}}
 			</td>

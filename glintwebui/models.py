@@ -15,6 +15,7 @@ Atributes:
     - password (glint user pw for that cloud)
 '''
 class Project(models.Model):
+    alias = models.CharField(max_length=64, default="")
     proj_id = models.AutoField(primary_key=True)
     project_name = models.CharField(max_length=32)
     auth_url = models.CharField(max_length=256, default="")
@@ -22,6 +23,7 @@ class Project(models.Model):
     #credentials? How to encrypt?
     username = models.CharField(max_length=64, default="")
     password = models.CharField(max_length=64, default="")
+
 
     def __str__(self):
         return self.project_name + ": " + self.tenant

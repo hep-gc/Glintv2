@@ -80,7 +80,10 @@ def project_details(request, project_name="null_project"):
 	user_obj.save()
 
 
-	repo_list = Project.objects.filter(project_name=project_name)
+	repo_list = Project.objects.all()
+	proj_alias_dict = {}
+	for repo in repo_list:
+		proj_alias_dict[repo.tenant] = repo.alias
 	try:
 		image_set = get_unique_image_list(project_name)
 		image_dict = json.loads(get_images_for_proj(project_name))
@@ -129,7 +132,8 @@ def project_details(request, project_name="null_project"):
 		'account_list': account_list,
 		'image_dict': image_dict,
 		'image_set': image_set,
-		'image_lookup': reverse_img_lookup
+		'image_lookup': reverse_img_lookup,
+		'proj_alias_dict': proj_alias_dict
 	}
 	return render(request, 'glintwebui/project_details.html', context)
 
@@ -162,7 +166,7 @@ def add_repo(request, project_name):
 					# this exception could be tightened around the django "DoesNotExist" exception
 					pass
 
-				new_repo = Project(project_name=project_name, auth_url=form.cleaned_data['auth_url'], tenant=form.cleaned_data['tenant'], username=form.cleaned_data['username'], password=form.cleaned_data['password'])
+				new_repo = Project(project_name=project_name, auth_url=form.cleaned_data['auth_url'], tenant=form.cleaned_data['tenant'], username=form.cleaned_data['username'], password=form.cleaned_data['password'], alias=form.cleaned_data['alias'])
 				new_repo.save()
 
 

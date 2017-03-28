@@ -102,7 +102,7 @@ th {
 		<tr>
 			<th/>
 		{% for repo in image_dict %}
-			<th>{{repo}}</th>
+			<th>{{proj_alias_dict|get_item:repo}}</th>
 		{% endfor %}
 		</tr>
 		{% comment %}
