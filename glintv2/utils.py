@@ -113,61 +113,30 @@ def update_pending_transactions(old_img_dict, new_img_dict):
 # returns a jsonified python dictionary containing the image list for a given project
 # If the image list doesn't exist in redis it returns False
 # Redis info should be moved to a config file
-def get_images_for_proj(project):
+def get_images_for_proj(account_name):
 	try:
 		r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
-		return r.get(project)
+		return r.get(account_name)
 	except KeyError as e:
-		logger.error("Couldnt find image list for project %s", project)
+		logger.error("Couldnt find image list for account %s", account_name)
 		return False
 
 # accepts a project as key string and a jsonified dictionary of the images and stores them in redis
 # Redis info should be moved to a config file 
-def set_images_for_proj(project, json_img_dict):
+def set_images_for_proj(account_name, json_img_dict):
 	try:
 		r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
-		r.set(project, json_img_dict)
+		r.set(account_name, json_img_dict)
 
 	except Exception as e:
-		logger.error ("Unknown exception while trying to set images for: %s", project)
-
-
-'''
-THIS FUNCTION IS NOT USED, SHOULD BE REMOVED LATER
-'''
-# Accepts a project as redis key and builds the image matrix in a dictionary
-# that will be parsed to display on the project details web page
-# The only problem with this is we discard the state and image name with this method
-def build_image_matrix(project):
-	image_dict=json.loads(get_images_for_proj(project))
-	img_matrix = {}
-	key_set = set()
-	# make a dictionary of all the images in the format key:value = image_id:list_of_repos
-	# start by making a list of the keys, using a set will keep them unique
-	for repo_key in image_dict:
-		for image_id in image_dict[repo_key]:
-			key_set.add(image_id)
-
-	# now with a unique set of keys fill out the dictionary
-	for key in key_set:
-		for repo_key in image_dict:
-			#try to get the image dict from the repo key, if there is a no key error it exists in that repo
-			try:
-				image_dict[repo_key][key]
-				img_matrix[key] = [repo_key]
-
-			#otherwise the image doesn't exist in that repo
-			except KeyError as e:
-				pass
-
-	return img_matrix
+		logger.error ("Unknown exception while trying to set images for: %s", account_name)
 
 
 # Returns a unique list of (image, name) tuples
 # May be a problem if two sites have the same image (id) but with different names
 # as the tuple will no longer be unique
-def get_unique_image_list(project):
-	image_dict=json.loads(get_images_for_proj(project))
+def get_unique_image_list(account_name):
+	image_dict=json.loads(get_images_for_proj(account_name))
 	image_set = set()
 	# make a dictionary of all the images in the format key:value = image_id:list_of_repos
 	# start by making a list of the keys, using a set will keep them unique
@@ -238,10 +207,10 @@ def check_for_duplicate_images(image_dict):
 # Cross references the image repo in redis against the given image list
 # Either returns a list of transactions or posts them to redis to be
 # picked up by another thread.
-def parse_pending_transactions(project, repo, image_list, user):
+def parse_pending_transactions(account_name, repo, image_list, user):
 	try:
 		r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
-		proj_dict = json.loads(r.get(project))
+		proj_dict = json.loads(r.get(account_name))
 		repo_dict = proj_dict[repo]
 
 		# This function takes a repo dictionary and returns a dictionary that has the format:
@@ -254,19 +223,19 @@ def parse_pending_transactions(project, repo, image_list, user):
 			if not img_translation.get(image, False):
 				#MAKE TRANSFER
 				#We need to get disk_format and container_format from another repo that has this image
-				img_details = __get_image_details(project=project, image=image)
+				img_details = __get_image_details(account_name=account_name, image=image)
 				disk_format = img_details[0]
 				container_format = img_details[1]
 				transaction = {
 				    'user': user,
 					'action':  'transfer',
-					'project': project,
+					'account_name': account_name,
 					'repo': repo,
 					'image_name': image,
 					'disk_format': disk_format,
 					'container_format': container_format
 				}
-				trans_key = project + "_pending_transactions"
+				trans_key = account_name + "_pending_transactions"
 				r.rpush(trans_key, json.dumps(transaction))
 			#else it is already there and do nothing
 			else:
@@ -282,17 +251,17 @@ def parse_pending_transactions(project, repo, image_list, user):
 					transaction = {
 					    'user': user,
 						'action':  'delete',
-						'project': project,
+						'account_name': account_name,
 						'repo': repo,
 						'image_id': image_key,
 						'image_name': repo_dict[image_key].get('name')
 					}
-					trans_key = project + "_pending_transactions"
+					trans_key = account_name + "_pending_transactions"
 					r.rpush(trans_key, json.dumps(transaction))
 
 	except KeyError as e:
 		logger.error(e)
-		logger.error("Couldnt find image list for project %s", project)
+		logger.error("Couldnt find image list for account %s", account_name)
 		return False
 
 
@@ -301,12 +270,12 @@ def parse_pending_transactions(project, repo, image_list, user):
 # uuid as the image key we need to connect to the repo and create a placeholder
 # image and retrieve the img id (uuid) to use as the repo image key
 # Then finally we can call the asynch celery tasks
-def process_pending_transactions(project, json_img_dict):
+def process_pending_transactions(account_name, json_img_dict):
 	from glintwebui.models import Project
 	from .celery_app import transfer_image, delete_image
 
 	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
-	trans_key = project + '_pending_transactions'
+	trans_key = account_name + '_pending_transactions'
 	img_dict = json.loads(json_img_dict)
 
 	# seems like there is no assignment in while conditionals for python so We will have to be smart and use break
@@ -320,7 +289,7 @@ def process_pending_transactions(project, json_img_dict):
 			
 			# First we need to create a placeholder img and get the new image_id
 			# This may cause an error if the same repo is added twice, perhaps we can screen for this when repos are added
-			repo_obj = Project.objects.get(project_name=transaction['project'], tenant=transaction['repo'])
+			repo_obj = Project.objects.get(account_name=transaction['account_name'], tenant=transaction['repo'])
 
 			rcon = repo_connector(auth_url=repo_obj.auth_url, project=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password)
 			new_img_id = rcon.create_placeholder_image(transaction['image_name'], transaction['disk_format'], transaction['container_format'])
@@ -334,24 +303,24 @@ def process_pending_transactions(project, json_img_dict):
 			img_dict[transaction['repo']][new_img_id] = new_img_dict
 
 			# queue transfer task
-			transfer_image.delay(image_name=transaction['image_name'], image_id=new_img_id, project=project, auth_url=repo_obj.auth_url, project_tenant=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password, requesting_user=transaction['user'])
+			transfer_image.delay(image_name=transaction['image_name'], image_id=new_img_id, account_name=account_name, auth_url=repo_obj.auth_url, project_tenant=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password, requesting_user=transaction['user'])
 
 		elif transaction['action'] == 'delete':
 			# First check if it exists in the redis dictionary, if it doesn't exist we can't delete it
 			if img_dict[transaction['repo']].get(transaction['image_id']) is not None:
 				# Set state and queue delete task
-				repo_obj = Project.objects.get(project_name=transaction['project'], tenant=transaction['repo'])
+				repo_obj = Project.objects.get(account_name=transaction['account_name'], tenant=transaction['repo'])
 				img_dict[transaction['repo']][transaction['image_id']]['state'] = 'Pending Delete'
-				delete_image.delay(image_id=transaction['image_id'], image_name=transaction['image_name'], project=project, auth_url=repo_obj.auth_url, project_tenant=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password, requesting_user=transaction['user'])
+				delete_image.delay(image_id=transaction['image_id'], image_name=transaction['image_name'], account_name=account_name, auth_url=repo_obj.auth_url, project_tenant=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password, requesting_user=transaction['user'])
 	return json.dumps(img_dict)
 
 
 # Queues a state change in redis for the periodic task to perform
 # Key will take the form of project_pending_state_changes
 # and thus there will be a seperate queue for each project
-def queue_state_change(project, repo, img_id, state):
+def queue_state_change(account_name, repo, img_id, state):
 	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
-	state_key = project + '_pending_state_changes'
+	state_key = account_name + '_pending_state_changes'
 	state_change = {
 		'state': state,
 		'image_id': img_id,
@@ -362,9 +331,9 @@ def queue_state_change(project, repo, img_id, state):
 
 
 
-def process_state_changes(project, json_img_dict):
+def process_state_changes(account_name, json_img_dict):
 	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
-	state_key = project + '_pending_state_changes'
+	state_key = account_name + '_pending_state_changes'
 	img_dict = json.loads(json_img_dict)
 	while(True):
 		raw_state_change = r.lpop(state_key)
@@ -383,23 +352,23 @@ def process_state_changes(project, json_img_dict):
 # This function accepts a project and an image name and looks through the image
 # dictionary until it finds a match where state='present' and returns a tuple of
 # (auth_url, tenant, username, password, img_id)
-def find_image_by_name(project, image_name):
+def find_image_by_name(account_name, image_name):
 	from glintwebui.models import Project
 
-	image_dict=json.loads(get_images_for_proj(project))
+	image_dict=json.loads(get_images_for_proj(account_name))
 	for repo in image_dict:
 		for image in image_dict[repo]:
 			if image_dict[repo][image]['name'] == image_name:
 				if image_dict[repo][image]['state'] == 'Present':
-					repo_obj = Project.objects.get(project_name=project, tenant=repo)
+					repo_obj = Project.objects.get(account_name=account_name, tenant=repo)
 					return (repo_obj.auth_url, repo, repo_obj.username, repo_obj.password, image)
 	return False
 
 # Applys the delete rules and returns True if its ok to delete, False otherwise
 # Rule 1: Can't delete a shared image
 # Rule 2: Can't delete the last copy of an image.
-def check_delete_restrictions(image_id, project, project_tenant):
-	json_dict = get_images_for_proj(project)
+def check_delete_restrictions(image_id, account_name, project_tenant):
+	json_dict = get_images_for_proj(account_name)
 	image_dict = json.loads(json_dict)
 
 	# Rule 1: check if image is shared
@@ -438,10 +407,10 @@ def __get_image_ids(repo_dict):
 	return img_trans_dict
 
 #Searches through the image dict until it finds this image and returns the disk/container formats
-def __get_image_details(project, image):
+def __get_image_details(account_name, image):
 
 	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
-	proj_dict = json.loads(r.get(project))
+	proj_dict = json.loads(r.get(account_name))
 	for repo in proj_dict:
 		for img in proj_dict[repo]:
 			if proj_dict[repo][img]['name'] == image:

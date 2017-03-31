@@ -64,7 +64,7 @@ def index(request):
 
 
 
-def project_details(request, project_name="null_project"):
+def project_details(request, account_name="null_project"):
 	# Since img name, img id is no longer a unique way to identify images across clouds
 	# We will instead only use image name, img id will be used as a unique ID inside a given repo
 	# this means we now have to create a new unique image set that is just the image names
@@ -72,11 +72,11 @@ def project_details(request, project_name="null_project"):
 		raise PermissionDenied
 	active_user = getUser(request)
 	user_obj = Glint_User.objects.get(common_name=active_user)
-	if project_name is None:
+	if account_name is None:
 		# First time user, lets put them at the first project the have access to
-		project_name = User_Account.objects.filter(user=user_obj).first()
+		account_name = User_Account.objects.filter(user=user_obj).first()
 
-	user_obj.active_project = project_name
+	user_obj.active_project = account_name
 	user_obj.save()
 
 
@@ -85,8 +85,8 @@ def project_details(request, project_name="null_project"):
 	for repo in repo_list:
 		proj_alias_dict[repo.tenant] = repo.alias
 	try:
-		image_set = get_unique_image_list(project_name)
-		image_dict = json.loads(get_images_for_proj(project_name))
+		image_set = get_unique_image_list(account_name)
+		image_dict = json.loads(get_images_for_proj(account_name))
 		# since we are using name as the unique identifer we need to pass in a dictionary
 		# that lets us get the image id (uuid) from the repo and image name
 		# We will have to implement logic here that spots two images with the same name
@@ -102,7 +102,7 @@ def project_details(request, project_name="null_project"):
 				problem_repo = duplicate_dict[image]['repo']
 			# Render page to resolve name difference
 			context = {
-				'project': project_name,
+				'account_name': account_name,
 				'repo': problem_repo,
 				'duplicate_dict': duplicate_dict
 			}
@@ -123,12 +123,12 @@ def project_details(request, project_name="null_project"):
 		act_name = acct.account_name
 		account_list.append(act_name)
 	try:
-		account_list.remove(project_name)
+		account_list.remove(account_name)
 	except ValueError as e:
 		#list is empty
 		pass
 	context = {
-		'project': project_name,
+		'account_name': account_name,
 		'account_list': account_list,
 		'image_dict': image_dict,
 		'image_set': image_set,
@@ -140,7 +140,7 @@ def project_details(request, project_name="null_project"):
 
 
 #displays the form for adding a repo to a project and handles the post request
-def add_repo(request, project_name):
+def add_repo(request, account_name):
 	if not verifyUser(request):
 		raise PermissionDenied
 	if request.method == 'POST':
@@ -155,10 +155,10 @@ def add_repo(request, project_name):
 			if (validate_resp[0]):
 				#check if repo/auth_url combo already exists
 				try:
-					if Project.objects.get(project_name=project_name, tenant=form.cleaned_data['tenant'], auth_url=form.cleaned_data['auth_url']) is not None:
+					if Project.objects.get(account_name=account_name, tenant=form.cleaned_data['tenant'], auth_url=form.cleaned_data['auth_url']) is not None:
 						#This combo already exists
 						context = {
-							'project_name': project_name,
+							'account_name': account_name,
 							'error_msg': "Repo already exists"
 						}
 						return render(request, 'glintwebui/add_repo.html', context, {'form': form})
@@ -166,12 +166,12 @@ def add_repo(request, project_name):
 					# this exception could be tightened around the django "DoesNotExist" exception
 					pass
 
-				new_repo = Project(project_name=project_name, auth_url=form.cleaned_data['auth_url'], tenant=form.cleaned_data['tenant'], username=form.cleaned_data['username'], password=form.cleaned_data['password'], alias=form.cleaned_data['alias'])
+				new_repo = Project(account_name=account_name, auth_url=form.cleaned_data['auth_url'], tenant=form.cleaned_data['tenant'], username=form.cleaned_data['username'], password=form.cleaned_data['password'], alias=form.cleaned_data['alias'])
 				new_repo.save()
 
 
 				#return to project details page after saving the new repo
-				repo_list = Project.objects.filter(project_name=project_name)
+				repo_list = Project.objects.filter(account_name=account_name)
 				image_list = ()
 				for repo in repo_list:
 					try:
@@ -183,12 +183,12 @@ def add_repo(request, project_name):
 
 					
 					logger.info("New repo: " + form.cleaned_data['tenant'] + " added.")
-					return manage_repos(request, project_name, feedback_msg="Project: " + form.cleaned_data['tenant'] + " added")
+					return manage_repos(request, account_name, feedback_msg="Project: " + form.cleaned_data['tenant'] + " added")
 			else:
 				#something in the repo information is bad
 				form = addRepoForm()
 				context = {
-					'project_name': project_name,
+					'account_name': account_name,
 					'error_msg': validate_resp[1]
 				}
 				logger.error("Failed to add repo.")
@@ -198,7 +198,7 @@ def add_repo(request, project_name):
 		else:
 			form = addRepoForm()
 			context = {
-				'project_name': project_name,
+				'account_name': account_name,
 				'error_msg': "Invalid form enteries."
 			}
 			return render(request, 'glintwebui/add_repo.html', context, {'form': form})
@@ -207,17 +207,17 @@ def add_repo(request, project_name):
 	else:
 		form = addRepoForm()
 		context = {
-			'project_name': project_name,
+			'account_name': account_name,
 		}
 		return render(request, 'glintwebui/add_repo.html', context, {'form': form})
 
-def save_images(request, project_name):
+def save_images(request, account_name):
 	if not verifyUser(request):
 		raise PermissionDenied
 	if request.method == 'POST':
 		user = getUser(request)
 		#get repos
-		repo_list = Project.objects.filter(project_name=project_name)
+		repo_list = Project.objects.filter(account_name=account_name)
 
 		# need to iterate thru a for loop of the repos in this project and get the list for each and
 		# check if we need to update any states
@@ -227,24 +227,24 @@ def save_images(request, project_name):
 			#these check lists will have all of the images that are checked and need to be cross referenced
 			#against the images stored in redis to detect changes in state
 			check_list = request.POST.getlist(repo.tenant)
-			parse_pending_transactions(project=project_name, repo=repo.tenant, image_list=check_list, user=user)
+			parse_pending_transactions(account_name=account_name, repo=repo.tenant, image_list=check_list, user=user)
 
 			
 		context = {
-			'redirect_url': "/ui/project_details/" + project_name,
+			'redirect_url': "/ui/project_details/" + account_name,
 		}
 		return render(request, 'glintwebui/proccessing_request.html', context)
 	#Not a post request, display matrix
 	else:
-		return project_details(request, project_name=project_name)
+		return project_details(request, account_name=account_name)
 
-def resolve_conflict(request, project_name, repo_name):
+def resolve_conflict(request, account_name, repo_name):
 	if not verifyUser(request):
 		raise PermissionDenied
 	if request.method == 'POST':
 		user = getUser(request)
-		repo_obj = Project.objects.get(project_name=project_name, tenant=repo_name)
-		image_dict = json.loads(get_images_for_proj(project_name))
+		repo_obj = Project.objects.get(account_name=account_name, tenant=repo_name)
+		image_dict = json.loads(get_images_for_proj(account_name))
 		changed_names = 0
 		for key, value in request.POST.items():
 			if key != 'csrfmiddlewaretoken':
@@ -263,12 +263,12 @@ def resolve_conflict(request, project_name, repo_name):
 			return render(request, 'glintwebui/index.html', context)
 
 	context = {
-		'redirect_url': "/ui/project_details/" + project_name,
+		'redirect_url': "/ui/project_details/" + account_name,
 	}
 	return render(request, 'glintwebui/proccessing_request.html', context)
 
 # may not need this def, could just render this page from the post views
-def processing_request(request, project_name):
+def processing_request(request, account_name):
 
 	context = {
 		'redirect_url': None,
@@ -280,13 +280,13 @@ def processing_request(request, project_name):
 # It would be a good idea to redesign the add repo page to be used to update existing repos
 # in addition to adding new ones. However it may be easier to just make a copy of it and modify
 # it slightly for use updating existing repos.
-def manage_repos(request, project_name, feedback_msg=None, error_msg=None):
+def manage_repos(request, account_name, feedback_msg=None, error_msg=None):
 	if not verifyUser(request):
 		raise PermissionDenied
 	active_user = getUser(request)
-	repo_list = Project.objects.filter(project_name=project_name)
+	repo_list = Project.objects.filter(account_name=account_name)
 	context = {
-		'account': project_name,
+		'account': account_name,
 		'repo_list': repo_list,
 		'feedback_msg': feedback_msg,
 		'error_msg': error_msg,
@@ -294,7 +294,7 @@ def manage_repos(request, project_name, feedback_msg=None, error_msg=None):
 	return render(request, 'glintwebui/manage_repos.html', context)
 
 
-def update_repo(request, project_name):
+def update_repo(request, account_name):
 	if not verifyUser(request):
 		raise PermissionDenied
 	logger.info("Attempting to update repo")
@@ -321,15 +321,15 @@ def update_repo(request, project_name):
 				repo_obj.save()
 			else:
 				#invalid changes, reload manage_repos page with error msg
-				return manage_repos(request=request, project_name=project_name, error_msg=validate_resp[1])
+				return manage_repos(request=request, account_name=account_name, error_msg=validate_resp[1])
 
-		return manage_repos(request=request, project_name=project_name, feedback_msg="Update Successful")
+		return manage_repos(request=request, account_name=account_name, feedback_msg="Update Successful")
 
 	else:
 		#not a post, shouldnt be coming here, redirect to matrix page
-		return project_details(request, project_name)
+		return project_details(request, account_name)
 
-def delete_repo(request, project_name):
+def delete_repo(request, account_name):
 	if not verifyUser(request):
 		logger.info("Verifying User")
 		raise PermissionDenied
@@ -349,4 +349,4 @@ def delete_repo(request, project_name):
 		return HttpResponse(False)
 	else:
 		#not a post, shouldnt be coming here, redirect to matrix page
-		return project_details(request, project_name)
+		return project_details(request, account_name)

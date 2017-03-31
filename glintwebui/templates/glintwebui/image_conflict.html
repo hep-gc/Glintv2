@@ -1,7 +1,7 @@
 
 {% load template_utils %}
 <h1> Image name conflict detected, please modify an image name</h1>
-<form action="/ui/resolve_conflict/{{project}}/{{repo}}/" method="post">
+<form action="/ui/resolve_conflict/{{account_name}}/{{repo}}/" method="post">
 	{% csrf_token %}
 
 	

@@ -84,7 +84,7 @@ th {
 	<td id='account_table'><b>Account:</b></td>
 	<td id='account_table'>
 		<div class="dropdown">
-			<button onclick="doDropdown()" class="dropbtn">{{project}}</button>
+			<button onclick="doDropdown()" class="dropbtn">{{account_name}}</button>
 				<div id="myDropdown" class="dropdown-content">
 				{% for account in account_list %}
 					<a href='/ui/project_details/{{account}}/'>{{account}}</a> 
@@ -92,12 +92,12 @@ th {
 			</div>
 		</div>
 	</td>
-	<td id='account_table'><a href="/ui/manage_repos/{{project}}">Manage '{{project}}' repos</a></td>
+	<td id='account_table'><a href="/ui/manage_repos/{{account_name}}">Manage '{{account_name}}' repos</a></td>
 </tr>
 </table>
 <br/>
 <table> <tr><th>Image Filter</th><td class='public' id='public_filter'> Public </td><td class='private' id='private_filter'>Private</td><td id='no_filter'> None </td></tr></table> <br/>
-<form action="/ui/save_images/{{project}}/" method="post">
+<form action="/ui/save_images/{{account_name}}/" method="post">
 	{% csrf_token %}
 	<table>
 		<tr>
