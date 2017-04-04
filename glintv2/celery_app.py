@@ -72,7 +72,7 @@ def image_collection(self):
 # Must find and download the appropriate image (by name) and then upload it
 # to the given image ID
 @app.task(bind=True)
-def transfer_image(self, image_name, image_id, account_name, auth_url, project_tenant, username, password, requesting_user):
+def transfer_image(self, image_name, image_id, account_name, auth_url, project_tenant, username, password, requesting_user, project_alias):
     logger.info("User %s attempting to transfer %s - %s to repo '%s'" % (requesting_user, image_name, image_id, project_tenant))
     #First check if this thread's scratch folder exists:
     scratch_dir = "/tmp/" + self.request.id + "/"
@@ -94,26 +94,26 @@ def transfer_image(self, image_name, image_id, account_name, auth_url, project_t
     dest_rcon = repo_connector(auth_url=auth_url, project=project_tenant, username=username, password=password)
     dest_rcon.upload_image(image_id=image_id, image_name=image_name, scratch_dir=scratch_dir)
  
-    queue_state_change(account_name=account_name, repo=project_tenant, img_id=image_id, state='Present')
+    queue_state_change(account_name=account_name, repo=project_alias, img_id=image_id, state='Present')
     logger.info("Image transfer finished")
     return False
 
 # Accepts image id, project name, and repo object to delete image ID from.
 @app.task(bind=True)
-def delete_image(self, image_id, image_name, account_name, auth_url, project_tenant, username, password, requesting_user):
+def delete_image(self, image_id, image_name, account_name, auth_url, project_tenant, username, password, requesting_user, project_alias):
     logger.info("User %s attempting to delete %s - %s from repo '%s'" % (requesting_user, image_name, image_id, project_tenant))
-    if check_delete_restrictions(image_id=image_id, account_name=account_name, project_tenant=project_tenant):
+    if check_delete_restrictions(image_id=image_id, account_name=account_name, project_alias=project_alias):
         rcon = repo_connector(auth_url=auth_url, project=project_tenant, username=username, password=password)
         result = rcon.delete_image(image_id)
         if result:
-            queue_state_change(account_name=account_name, repo=project_tenant, img_id=image_id, state='deleted')
+            queue_state_change(account_name=account_name, repo=project_alias, img_id=image_id, state='deleted')
             logger.info("Image Delete finished")
             return True
         logger.error("Unknown error deleting %s  (result = %s)" % (image_id, result))
         return False
     else:
         logger.error("Delete request violates delete rules, image either shared or the last copy.")
-        queue_state_change(account_name=account_name, repo=project_tenant, img_id=image_id, state='present')
+        queue_state_change(account_name=account_name, repo=project_alias, img_id=image_id, state='present')
 
 # CELERY workers can get their own ID with self.request.id
 # This will be useful during image transfers so there will be no conflicts

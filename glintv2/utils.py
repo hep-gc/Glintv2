@@ -11,7 +11,7 @@ Recieves a tuple of 3-tuples (repo, img_name, img_id) that uniquely identify an 
 then sorts them based on their repo and returns them in a json dictionary string
 Format:
 Proj_dict{
-	Repo1{
+	Repo1Alias{
 		Img_ID1{
 			name
 			state
@@ -37,13 +37,13 @@ Proj_dict{
 			visibility
 		}
 	}
-	Repo2{
+	Repo2Alias{
 	...
 	}
 	.
 	.
 	.
-	RepoX{
+	RepoXAlias{
 	...
 	}
 }
@@ -64,7 +64,7 @@ def jsonify_image_list(image_list, repo_list):
 				img['visibility'] = image[5]
 				img_dict[image[2]] = img
 
-		repo_dict[repo.tenant] = img_dict
+		repo_dict[repo.alias] = img_dict
 	return json.dumps(repo_dict)
 
 
@@ -207,11 +207,11 @@ def check_for_duplicate_images(image_dict):
 # Cross references the image repo in redis against the given image list
 # Either returns a list of transactions or posts them to redis to be
 # picked up by another thread.
-def parse_pending_transactions(account_name, repo, image_list, user):
+def parse_pending_transactions(account_name, repo_alias, image_list, user):
 	try:
 		r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
 		proj_dict = json.loads(r.get(account_name))
-		repo_dict = proj_dict[repo]
+		repo_dict = proj_dict[repo_alias]
 
 		# This function takes a repo dictionary and returns a dictionary that has the format:
 		# image_name: image_id
@@ -230,7 +230,7 @@ def parse_pending_transactions(account_name, repo, image_list, user):
 				    'user': user,
 					'action':  'transfer',
 					'account_name': account_name,
-					'repo': repo,
+					'repo': repo_alias,
 					'image_name': image,
 					'disk_format': disk_format,
 					'container_format': container_format
@@ -252,7 +252,7 @@ def parse_pending_transactions(account_name, repo, image_list, user):
 					    'user': user,
 						'action':  'delete',
 						'account_name': account_name,
-						'repo': repo,
+						'repo': repo_alias,
 						'image_id': image_key,
 						'image_name': repo_dict[image_key].get('name')
 					}
@@ -289,7 +289,7 @@ def process_pending_transactions(account_name, json_img_dict):
 			
 			# First we need to create a placeholder img and get the new image_id
 			# This may cause an error if the same repo is added twice, perhaps we can screen for this when repos are added
-			repo_obj = Project.objects.get(account_name=transaction['account_name'], tenant=transaction['repo'])
+			repo_obj = Project.objects.get(account_name=transaction['account_name'], alias=transaction['repo'])
 
 			rcon = repo_connector(auth_url=repo_obj.auth_url, project=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password)
 			new_img_id = rcon.create_placeholder_image(transaction['image_name'], transaction['disk_format'], transaction['container_format'])
@@ -303,15 +303,15 @@ def process_pending_transactions(account_name, json_img_dict):
 			img_dict[transaction['repo']][new_img_id] = new_img_dict
 
 			# queue transfer task
-			transfer_image.delay(image_name=transaction['image_name'], image_id=new_img_id, account_name=account_name, auth_url=repo_obj.auth_url, project_tenant=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password, requesting_user=transaction['user'])
+			transfer_image.delay(image_name=transaction['image_name'], image_id=new_img_id, account_name=account_name, auth_url=repo_obj.auth_url, project_tenant=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password, requesting_user=transaction['user'], project_alias=repo_obj.alias)
 
 		elif transaction['action'] == 'delete':
 			# First check if it exists in the redis dictionary, if it doesn't exist we can't delete it
 			if img_dict[transaction['repo']].get(transaction['image_id']) is not None:
 				# Set state and queue delete task
-				repo_obj = Project.objects.get(account_name=transaction['account_name'], tenant=transaction['repo'])
+				repo_obj = Project.objects.get(account_name=transaction['account_name'], alias=transaction['repo'])
 				img_dict[transaction['repo']][transaction['image_id']]['state'] = 'Pending Delete'
-				delete_image.delay(image_id=transaction['image_id'], image_name=transaction['image_name'], account_name=account_name, auth_url=repo_obj.auth_url, project_tenant=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password, requesting_user=transaction['user'])
+				delete_image.delay(image_id=transaction['image_id'], image_name=transaction['image_name'], account_name=account_name, auth_url=repo_obj.auth_url, project_tenant=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password, requesting_user=transaction['user'], project_alias=repo_obj.alias)
 	return json.dumps(img_dict)
 
 
@@ -360,26 +360,26 @@ def find_image_by_name(account_name, image_name):
 		for image in image_dict[repo]:
 			if image_dict[repo][image]['name'] == image_name:
 				if image_dict[repo][image]['state'] == 'Present':
-					repo_obj = Project.objects.get(account_name=account_name, tenant=repo)
-					return (repo_obj.auth_url, repo, repo_obj.username, repo_obj.password, image)
+					repo_obj = Project.objects.get(account_name=account_name, alias=repo)
+					return (repo_obj.auth_url, repo_obj.tenant, repo_obj.username, repo_obj.password, image)
 	return False
 
 # Applys the delete rules and returns True if its ok to delete, False otherwise
 # Rule 1: Can't delete a shared image
 # Rule 2: Can't delete the last copy of an image.
-def check_delete_restrictions(image_id, account_name, project_tenant):
+def check_delete_restrictions(image_id, account_name, project_alias):
 	json_dict = get_images_for_proj(account_name)
 	image_dict = json.loads(json_dict)
 
 	# Rule 1: check if image is shared
-	if image_dict[project_tenant][image_id]['visibility'] is "public":
+	if image_dict[project_alias][image_id]['visibility'] is "public":
 		return False
 
 	# Rule 2: check if its the last copy of the image
 	for repo in image_dict:
-		if repo is not project_tenant:
+		if repo is not project_alias:
 			for image in image_dict[repo]:
-				if image_dict[repo][image]['name'] is image_dict[project_tenant][image_id]['name']:
+				if image_dict[repo][image]['name'] is image_dict[project_alias][image_id]['name']:
 					#found one, its ok to delete
 					return True
 

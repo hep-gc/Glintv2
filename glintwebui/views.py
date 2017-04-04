@@ -226,8 +226,9 @@ def save_images(request, account_name):
 			#try:
 			#these check lists will have all of the images that are checked and need to be cross referenced
 			#against the images stored in redis to detect changes in state
-			check_list = request.POST.getlist(repo.tenant)
-			parse_pending_transactions(account_name=account_name, repo=repo.tenant, image_list=check_list, user=user)
+			check_list = request.POST.getlist(repo.alias)
+			#logger.debug(check_list)
+			parse_pending_transactions(account_name=account_name, repo_alias=repo.alias, image_list=check_list, user=user)
 
 			
 		context = {

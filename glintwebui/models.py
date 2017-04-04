@@ -8,14 +8,14 @@ from django.contrib.auth.models import User
 '''
 The project table will contain all information about a given project.
 Atributes:
-    - Project Name
     - URI
     - tenant(repo)
+    - Account Name
     - username (glint user for that cloud)
     - password (glint user pw for that cloud)
 '''
 class Project(models.Model):
-    alias = models.CharField(max_length=64, default="")
+    alias = models.CharField(max_length=64, unique=True, default="")
     proj_id = models.AutoField(primary_key=True)
     account_name = models.CharField(max_length=32)
     auth_url = models.CharField(max_length=256, default="")
