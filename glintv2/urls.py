@@ -17,6 +17,8 @@ from django.conf.urls import include, url
 from django.contrib import admin
 from django.views.generic import RedirectView
 
+from .celery_app import image_collection
+
 urlpatterns = [
     #url(r'^glintwebui/', include('glintwebui.urls')),
     url(r'^admin/', admin.site.urls),
@@ -26,3 +28,5 @@ urlpatterns = [
     url(r'^projects/', include('glintwebui.urls')), 
     url(r'^project_details/', include('glintwebui.urls')), 
 ]
+
+image_collection.delay()

@@ -36,36 +36,40 @@ def image_collection(self):
     from glintwebui.models import Project, User_Account, Account
     from glintwebui.glint_api import repo_connector
 
-    logger.info("Start Image collection")
-    account_list = Account.objects.all()
+    #perminant for loop to monitor image states and to queue up tasks
+    while(True):
+        logger.info("Start Image collection")
+        account_list = Account.objects.all()
 
-    for account in account_list:
-        repo_list = Project.objects.filter(account_name=account.account_name)
-        image_list = ()
-        for repo in repo_list:
-            try:
-                rcon = repo_connector(auth_url=repo.auth_url, project=repo.tenant, username=repo.username, password=repo.password)
-                image_list= image_list + rcon.image_list
-    			
-            except Exception as e:
-                logger.error(e)
-                logger.error("Could not connet to repo: %s at %s", (repo.tenant, repo.auth_url))
+        for account in account_list:
+            repo_list = Project.objects.filter(account_name=account.account_name)
+            image_list = ()
+            for repo in repo_list:
+                try:
+                    rcon = repo_connector(auth_url=repo.auth_url, project=repo.tenant, username=repo.username, password=repo.password)
+                    image_list= image_list + rcon.image_list
+        			
+                except Exception as e:
+                    logger.error(e)
+                    logger.error("Could not connet to repo: %s at %s", (repo.tenant, repo.auth_url))
 
-        # take the new json and compare it to the previous one
-        # and merge the differences, generally the new one will be used but if there are any images awaiting
-        # transfer or deletion they must be added to the list
-        updated_img_list = update_pending_transactions(get_images_for_proj(account.account_name), jsonify_image_list(image_list=image_list, repo_list=repo_list))
-        
-        # now we have the most current version of the image matrix for this account
-        # The last thing that needs to be done here is to proccess the PROJECTX_pending_transactions
-        logger.info("Updating pending Transactions")
-        updated_img_list = process_pending_transactions(account_name=account.account_name, json_img_dict=updated_img_list)
-        logger.info("Proccessing state changes")
-        updated_img_list = process_state_changes(account_name=account.account_name, json_img_dict=updated_img_list)
-        set_images_for_proj(account_name=account.account_name, json_img_dict=updated_img_list)
+            # take the new json and compare it to the previous one
+            # and merge the differences, generally the new one will be used but if there are any images awaiting
+            # transfer or deletion they must be added to the list
+            updated_img_list = update_pending_transactions(get_images_for_proj(account.account_name), jsonify_image_list(image_list=image_list, repo_list=repo_list))
+            
+            # now we have the most current version of the image matrix for this account
+            # The last thing that needs to be done here is to proccess the PROJECTX_pending_transactions
+            logger.info("Updating pending Transactions")
+            updated_img_list = process_pending_transactions(account_name=account.account_name, json_img_dict=updated_img_list)
+            logger.info("Proccessing state changes")
+            updated_img_list = process_state_changes(account_name=account.account_name, json_img_dict=updated_img_list)
+            set_images_for_proj(account_name=account.account_name, json_img_dict=updated_img_list)
 
 
-    logger.info("Image collection complete")
+        logger.info("Image collection complete")
+        sleep(1)
+
 
 
 # Accepts Image info, project name, and a repo object
