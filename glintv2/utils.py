@@ -395,8 +395,10 @@ def check_collection_task():
 	state = r.get("collection_started")
 	if state is None:
 		return False
-	else:
-		return state
+	if "True" in state:
+		return True
+	if "False" in state:
+		return False
 
 def set_collection_task(state):
 	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
@@ -412,7 +414,6 @@ def term_image_collection():
 def check_collection_signal():
 	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
 	state = r.get("term_collection")
-	logger.info(state)
 	if state is None:
 		return False
 	if "False" in state:

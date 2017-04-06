@@ -41,7 +41,7 @@ def image_collection(self):
     while(True):
         # First check for term signal
         term_signal = check_collection_signal()
-        logger.info("Term signal: %s" % term_signal)
+        logger.debug("Term signal: %s" % term_signal)
         if term_signal is True:
             #term signal detected, break while loop
             logger.info("Term signal detected, shutting down")
