@@ -401,6 +401,25 @@ def check_collection_task():
 def set_collection_task(state):
 	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
 	r.set("collection_started", state)
+	if state is True:
+		r.set("term_collection", False)
+
+
+def term_image_collection():
+	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
+	r.set("term_collection", True)
+
+def check_collection_signal():
+	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
+	state = r.get("term_collection")
+	logger.info(state)
+	if state is None:
+		return False
+	if "False" in state:
+		return False
+	if "True" in state:
+		return True
+
 
 '''
 added image_name to transaction
