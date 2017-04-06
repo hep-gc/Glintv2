@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.views.generic import RedirectView
 
 from .celery_app import image_collection
+from .utils import check_collection_task, set_collection_task
 
 urlpatterns = [
     #url(r'^glintwebui/', include('glintwebui.urls')),
@@ -29,4 +30,8 @@ urlpatterns = [
     url(r'^project_details/', include('glintwebui.urls')), 
 ]
 
-image_collection.delay()
+# Check if the image collection task is running, if not start it and set it to running
+collection_started = check_collection_task()
+if not collection_started:
+    image_collection.delay()
+    set_collection_task(True)

@@ -387,6 +387,22 @@ def check_delete_restrictions(image_id, account_name, project_alias):
 
 
 '''
+This function checks if image collection has started so we don't accidentally make
+multiple image collection threads
+'''
+def check_collection_task():
+	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
+	state = r.get("collection_started")
+	if state is None:
+		return False
+	else:
+		return state
+
+def set_collection_task(state):
+	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
+	r.set("collection_started", state)
+
+'''
 added image_name to transaction
 this function should no longer be needed
 '''

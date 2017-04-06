@@ -10,6 +10,7 @@ from .forms import addRepoForm
 from .glint_api import repo_connector, validate_repo, change_image_name
 from glintv2.utils import get_unique_image_list, get_images_for_proj, parse_pending_transactions, build_id_lookup_dict, check_for_duplicate_images
 
+import time
 import json
 import logging
 
@@ -230,11 +231,16 @@ def save_images(request, account_name):
 			#logger.debug(check_list)
 			parse_pending_transactions(account_name=account_name, repo_alias=repo.alias, image_list=check_list, user=user)
 
-			
+		''' removing waiting page	
 		context = {
 			'redirect_url': "/ui/project_details/" + account_name,
 		}
 		return render(request, 'glintwebui/proccessing_request.html', context)
+		'''
+		#give collection thread a couple seconds to process the request
+		#ideally this will be removed in the future
+		time.sleep(1)
+		return project_details(request, account_name=account_name)
 	#Not a post request, display matrix
 	else:
 		return project_details(request, account_name=account_name)

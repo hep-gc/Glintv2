@@ -36,6 +36,7 @@ def image_collection(self):
     from glintwebui.models import Project, User_Account, Account
     from glintwebui.glint_api import repo_connector
 
+
     #perminant for loop to monitor image states and to queue up tasks
     while(True):
         logger.info("Start Image collection")
@@ -48,7 +49,7 @@ def image_collection(self):
                 try:
                     rcon = repo_connector(auth_url=repo.auth_url, project=repo.tenant, username=repo.username, password=repo.password)
                     image_list= image_list + rcon.image_list
-        			
+
                 except Exception as e:
                     logger.error(e)
                     logger.error("Could not connet to repo: %s at %s", (repo.tenant, repo.auth_url))
@@ -58,18 +59,17 @@ def image_collection(self):
             # transfer or deletion they must be added to the list
             updated_img_list = update_pending_transactions(get_images_for_proj(account.account_name), jsonify_image_list(image_list=image_list, repo_list=repo_list))
             
+        
             # now we have the most current version of the image matrix for this account
             # The last thing that needs to be done here is to proccess the PROJECTX_pending_transactions
-            logger.info("Updating pending Transactions")
+            logger.info("Updating pending Transactions for account: %s" % account.account_name)
             updated_img_list = process_pending_transactions(account_name=account.account_name, json_img_dict=updated_img_list)
-            logger.info("Proccessing state changes")
+            logger.info("Proccessing state changes for account: %s" % account.account_name)
             updated_img_list = process_state_changes(account_name=account.account_name, json_img_dict=updated_img_list)
             set_images_for_proj(account_name=account.account_name, json_img_dict=updated_img_list)
 
-
-        logger.info("Image collection complete")
-        sleep(1)
-
+        logger.info("Image collection complete")#, sleeping for 1 second")
+        #time.sleep(1)
 
 
 # Accepts Image info, project name, and a repo object
@@ -100,7 +100,7 @@ def transfer_image(self, image_name, image_id, account_name, auth_url, project_t
  
     queue_state_change(account_name=account_name, repo=project_alias, img_id=image_id, state='Present')
     logger.info("Image transfer finished")
-    return False
+    return True
 
 # Accepts image id, project name, and repo object to delete image ID from.
 @app.task(bind=True)
