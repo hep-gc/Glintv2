@@ -64,7 +64,7 @@ def index(request):
 
 
 
-def project_details(request, account_name="null_project"):
+def project_details(request, account_name="null_project", message=None):
 	# Since img name, img id is no longer a unique way to identify images across clouds
 	# We will instead only use image name, img id will be used as a unique ID inside a given repo
 	# this means we now have to create a new unique image set that is just the image names
@@ -133,7 +133,8 @@ def project_details(request, account_name="null_project"):
 		'image_dict': image_dict,
 		'image_set': image_set,
 		'image_lookup': reverse_img_lookup,
-		'proj_alias_dict': proj_alias_dict
+		'proj_alias_dict': proj_alias_dict,
+		'message': message
 	}
 	return render(request, 'glintwebui/project_details.html', context)
 
@@ -160,6 +161,18 @@ def add_repo(request, account_name):
 						context = {
 							'account_name': account_name,
 							'error_msg': "Repo already exists"
+						}
+						return render(request, 'glintwebui/add_repo.html', context, {'form': form})
+				except Exception as e:
+					# this exception could be tightened around the django "DoesNotExist" exception
+					pass
+				#check if alias is already in use
+				try:
+					if Project.objects.get(alias=form.cleaned_data['alias']) is not None:
+						#This alias already exists
+						context = {
+							'account_name': account_name,
+							'error_msg': "Alias already in use"
 						}
 						return render(request, 'glintwebui/add_repo.html', context, {'form': form})
 				except Exception as e:
@@ -233,7 +246,8 @@ def save_images(request, account_name):
 		#give collection thread a couple seconds to process the request
 		#ideally this will be removed in the future
 		time.sleep(2)
-		return project_details(request, account_name=account_name)
+		message = "Please allow glint a few seconds to proccess your request."
+		return project_details(request, account_name=account_name, message=message)
 	#Not a post request, display matrix
 	else:
 		return project_details(request, account_name=account_name)
