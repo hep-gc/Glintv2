@@ -15,7 +15,7 @@ Atributes:
     - password (glint user pw for that cloud)
 '''
 class Project(models.Model):
-    alias = models.CharField(max_length=64, unique=True, default="")
+    alias = models.CharField(max_length=64, default="")
     proj_id = models.AutoField(primary_key=True)
     account_name = models.CharField(max_length=32)
     auth_url = models.CharField(max_length=256, default="")

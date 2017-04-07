@@ -168,7 +168,7 @@ def add_repo(request, account_name):
 					pass
 				#check if alias is already in use
 				try:
-					if Project.objects.get(alias=form.cleaned_data['alias']) is not None:
+					if Project.objects.get(account_name=account_name, alias=form.cleaned_data['alias']) is not None:
 						#This alias already exists
 						context = {
 							'account_name': account_name,
