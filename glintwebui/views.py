@@ -32,7 +32,6 @@ def verifyUser(request):
 	return False
 
 
-
 def index(request):
 
 	if not verifyUser(request):
@@ -231,12 +230,6 @@ def save_images(request, account_name):
 			#logger.debug(check_list)
 			parse_pending_transactions(account_name=account_name, repo_alias=repo.alias, image_list=check_list, user=user)
 
-		''' removing waiting page	
-		context = {
-			'redirect_url': "/ui/project_details/" + account_name,
-		}
-		return render(request, 'glintwebui/proccessing_request.html', context)
-		'''
 		#give collection thread a couple seconds to process the request
 		#ideally this will be removed in the future
 		time.sleep(1)
@@ -271,14 +264,6 @@ def resolve_conflict(request, account_name, repo_name):
 
 	context = {
 		'redirect_url': "/ui/project_details/" + account_name,
-	}
-	return render(request, 'glintwebui/proccessing_request.html', context)
-
-# may not need this def, could just render this page from the post views
-def processing_request(request, account_name):
-
-	context = {
-		'redirect_url': None,
 	}
 	return render(request, 'glintwebui/proccessing_request.html', context)
 
