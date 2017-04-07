@@ -1,5 +1,5 @@
 <head>
-<meta http-equiv="refresh" content="15">
+<meta http-equiv="refresh" content="3">
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 <style>
 table, th, td {
@@ -152,6 +152,8 @@ $( "#public_filter" ).click(function() {
 	$("#private_filter").css("border","1px solid black");
 	$("#public_filter").css("font-weight","Bold");
 	$("#public_filter").css("border","3px solid black");
+	var filter = "public";
+	localStorage.setItem("filter", filter);
 });
 
 $( "#private_filter" ).click(function() {
@@ -167,6 +169,8 @@ $( "#private_filter" ).click(function() {
 	$("#private_filter").css("border","3px solid black");
 	$("#public_filter").css("font-weight","normal");
 	$("#public_filter").css("border","1px solid black");
+	var filter = "private";
+	localStorage.setItem("filter", filter);
 });
 
 $( "#no_filter" ).click(function() {
@@ -182,6 +186,8 @@ $( "#no_filter" ).click(function() {
 	$("#private_filter").css("border","1px solid black");
 	$("#public_filter").css("font-weight","normal");
 	$("#public_filter").css("border","1px solid black");
+	var filter = "none";
+	localStorage.setItem("filter", filter);
 });
 
 /* When the user clicks on the button,
@@ -204,6 +210,52 @@ window.onclick = function(event) {
     }
   }
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    var filter = localStorage.getItem("filter");
+    if (filter == "public"){
+    	$("tr.image_row").filter(function(){
+			return $(this).find("td.public").length == 0;
+		}).hide();
+		$("tr.image_row").filter(function(){
+			return $(this).find("td.private").length == 0;
+		}).show();
+		$("#no_filter").css("font-weight","normal");
+		$("#no_filter").css("border","1px solid black");
+		$("#private_filter").css("font-weight","normal");
+		$("#private_filter").css("border","1px solid black");
+		$("#public_filter").css("font-weight","Bold");
+		$("#public_filter").css("border","3px solid black");
+    }
+    else if (filter == "private"){
+	    $("tr.image_row").filter(function(){
+			return $(this).find("td.private").length == 0;
+		}).hide();
+		$("tr.image_row").filter(function(){
+			return $(this).find("td.public").length == 0;
+		}).show();
+		$("#no_filter").css("font-weight","normal");
+		$("#no_filter").css("border","1px solid black");
+		$("#private_filter").css("font-weight","Bold");
+		$("#private_filter").css("border","3px solid black");
+		$("#public_filter").css("font-weight","normal");
+		$("#public_filter").css("border","1px solid black");
+    }
+    else{
+	    $("tr.image_row").filter(function(){
+			return $(this).find("td.private").length == 0;
+		}).show();
+		$("tr.image_row").filter(function(){
+			return $(this).find("td.public").length == 0;
+		}).show();
+		$("#no_filter").css("font-weight","Bold");
+		$("#no_filter").css("border","3px solid black");
+		$("#private_filter").css("font-weight","normal");
+		$("#private_filter").css("border","1px solid black");
+		$("#public_filter").css("font-weight","normal");
+		$("#public_filter").css("border","1px solid black");
+    }
+}, false);
 </script>
 
 
