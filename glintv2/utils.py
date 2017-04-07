@@ -421,6 +421,16 @@ def check_collection_signal():
 	if "True" in state:
 		return True
 
+def post_transfer_progress(key, progress):
+	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
+	r.set(key, progress)
+
+def get_transfer_progress(key):
+	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
+	progress = r.get(key)
+	return progress
+
+
 
 '''
 added image_name to transaction

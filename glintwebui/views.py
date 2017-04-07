@@ -232,7 +232,7 @@ def save_images(request, account_name):
 
 		#give collection thread a couple seconds to process the request
 		#ideally this will be removed in the future
-		time.sleep(1)
+		time.sleep(2)
 		return project_details(request, account_name=account_name)
 	#Not a post request, display matrix
 	else:
