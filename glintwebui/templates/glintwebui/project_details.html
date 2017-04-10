@@ -96,7 +96,9 @@ th {
 </tr>
 </table>
 <br/>
-<table> <tr><th>Image Filter</th><td class='public' id='public_filter'> Public </td><td class='private' id='private_filter'>Private</td><td id='no_filter'> None </td></tr></table> <br/>
+<table> <tr><th>Image Filter</th><td class='public' id='public_filter'> Public </td><td class='private' id='private_filter'>Private</td><td id='no_filter'> None </td>
+<td> <input type="text" id="image_search" autofocus="autofocus" placeholder="Search by Image Name"> </td>
+</tr></table> <br/>
 {% if message is not None%}
 	<p style="color:green; font-weight:bold">{{message}}</p>
 {% endif%}
@@ -258,7 +260,23 @@ document.addEventListener('DOMContentLoaded', function() {
 		$("#public_filter").css("font-weight","normal");
 		$("#public_filter").css("border","1px solid black");
     }
+    var $rows = $('.image_row');
+    var val = $.trim($('#image_search').val()).replace(/ +/g, ' ').toLowerCase();
+    $rows.show().filter(function() {
+        var text = $(this).text().replace(/\s+/g, ' ').toLowerCase();
+        return !~text.indexOf(val);
+    }).hide();
 }, false);
+
+var $rows = $('.image_row');
+$('#image_search').keyup(function() {
+    var val = $.trim($(this).val()).replace(/ +/g, ' ').toLowerCase();
+
+    $rows.show().filter(function() {
+        var text = $(this).text().replace(/\s+/g, ' ').toLowerCase();
+        return !~text.indexOf(val);
+    }).hide();
+});
 
 </script>
 
