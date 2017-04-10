@@ -81,9 +81,6 @@ def project_details(request, account_name="null_project", message=None):
 
 
 	repo_list = Project.objects.all()
-	proj_alias_dict = {}
-	for repo in repo_list:
-		proj_alias_dict[repo.tenant] = repo.alias
 	try:
 		image_set = get_unique_image_list(account_name)
 		image_dict = json.loads(get_images_for_proj(account_name))
@@ -133,7 +130,6 @@ def project_details(request, account_name="null_project", message=None):
 		'image_dict': image_dict,
 		'image_set': image_set,
 		'image_lookup': reverse_img_lookup,
-		'proj_alias_dict': proj_alias_dict,
 		'message': message
 	}
 	return render(request, 'glintwebui/project_details.html', context)
