@@ -159,6 +159,12 @@ $( "#public_filter" ).click(function() {
 	$("#public_filter").css("border","3px solid black");
 	var filter = "public";
 	localStorage.setItem("filter", filter);
+    var $rows = $('.image_row');
+    var val = $.trim($('#image_search').val()).replace(/ +/g, ' ').toLowerCase();
+    $rows.filter(function() {
+        var text = $(this).text().replace(/\s+/g, ' ').toLowerCase();
+        return !~text.indexOf(val);
+    }).hide();
 });
 
 $( "#private_filter" ).click(function() {
@@ -176,6 +182,12 @@ $( "#private_filter" ).click(function() {
 	$("#public_filter").css("border","1px solid black");
 	var filter = "private";
 	localStorage.setItem("filter", filter);
+	var $rows = $('.image_row');
+    var val = $.trim($('#image_search').val()).replace(/ +/g, ' ').toLowerCase();
+    $rows.filter(function() {
+        var text = $(this).text().replace(/\s+/g, ' ').toLowerCase();
+        return !~text.indexOf(val);
+    }).hide();
 });
 
 $( "#no_filter" ).click(function() {
@@ -193,6 +205,12 @@ $( "#no_filter" ).click(function() {
 	$("#public_filter").css("border","1px solid black");
 	var filter = "none";
 	localStorage.setItem("filter", filter);
+	var $rows = $('.image_row');
+    var val = $.trim($('#image_search').val()).replace(/ +/g, ' ').toLowerCase();
+    $rows.filter(function() {
+        var text = $(this).text().replace(/\s+/g, ' ').toLowerCase();
+        return !~text.indexOf(val);
+    }).hide();
 });
 
 /* When the user clicks on the button,
@@ -262,20 +280,46 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     var $rows = $('.image_row');
     var val = $.trim($('#image_search').val()).replace(/ +/g, ' ').toLowerCase();
-    $rows.show().filter(function() {
+    $rows.filter(function() {
         var text = $(this).text().replace(/\s+/g, ' ').toLowerCase();
         return !~text.indexOf(val);
     }).hide();
 }, false);
 
-var $rows = $('.image_row');
-$('#image_search').keyup(function() {
-    var val = $.trim($(this).val()).replace(/ +/g, ' ').toLowerCase();
 
-    $rows.show().filter(function() {
-        var text = $(this).text().replace(/\s+/g, ' ').toLowerCase();
-        return !~text.indexOf(val);
-    }).hide();
+
+$('#image_search').keyup(function() {
+	var filter = localStorage.getItem("filter");
+	var $rows = $('.image_row');
+
+	if(filter != "none"){
+	    var val = $.trim($(this).val()).replace(/ +/g, ' ').toLowerCase();
+
+	    $rows.show().filter(function() {
+	        var text = $(this).text().replace(/\s+/g, ' ').toLowerCase();
+	        return !~text.indexOf(val);
+	    }).hide();
+	    if (filter == "private"){
+	    	$("tr.image_row").filter(function(){
+				return $(this).find("td.private").length == 0;
+			}).hide();
+	    }
+	    if (filter == "public"){
+	    	$("tr.image_row").filter(function(){
+				return $(this).find("td.public").length == 0;
+			}).hide();
+	    }
+
+	}
+	else{
+		
+		var val = $.trim($(this).val()).replace(/ +/g, ' ').toLowerCase();
+
+	    $rows.show().filter(function() {
+	        var text = $(this).text().replace(/\s+/g, ' ').toLowerCase();
+	        return !~text.indexOf(val);
+	    }).hide();
+	}
 });
 
 </script>
