@@ -367,19 +367,19 @@ def find_image_by_name(account_name, image_name):
 # Applys the delete rules and returns True if its ok to delete, False otherwise
 # Rule 1: Can't delete a shared image
 # Rule 2: Can't delete the last copy of an image.
-def check_delete_restrictions(image_name, account_name, project_alias):
+def check_delete_restrictions(image_id, account_name, project_alias):
 	json_dict = get_images_for_proj(account_name)
 	image_dict = json.loads(json_dict)
 
 	# Rule 1: check if image is shared
-	if image_dict[project_alias][image_name]['visibility'] is "public":
+	if image_dict[project_alias][image_id]['visibility'] is "public":
 		return False
 
 	# Rule 2: check if its the last copy of the image
 	for repo in image_dict:
 		if repo is not project_alias:
 			for image in image_dict[repo]:
-				if image_dict[repo][image]['name'] is image_dict[project_alias][image_name]['name']:
+				if image_dict[repo][image]['name'] is image_dict[project_alias][image_id]['name']:
 					#found one, its ok to delete
 					return True
 

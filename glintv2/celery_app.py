@@ -114,7 +114,7 @@ def transfer_image(self, image_name, image_id, account_name, auth_url, project_t
 @app.task(bind=True)
 def delete_image(self, image_id, image_name, account_name, auth_url, project_tenant, username, password, requesting_user, project_alias):
     logger.info("User %s attempting to delete %s - %s from repo '%s'" % (requesting_user, image_name, image_id, project_tenant))
-    if check_delete_restrictions(image_name=image_name, account_name=account_name, project_alias=project_alias):
+    if check_delete_restrictions(image_id=image_id, account_name=account_name, project_alias=project_alias):
         rcon = repo_connector(auth_url=auth_url, project=project_tenant, username=username, password=password)
         result = rcon.delete_image(image_id)
         if result:
