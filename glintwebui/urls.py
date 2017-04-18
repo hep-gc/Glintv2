@@ -16,4 +16,9 @@ urlpatterns = [
     url(r'^add_user/$', views.add_user, name='add_user'),
     url(r'^delete_user/$', views.delete_user, name='delete_user'),
     url(r'^manage_accounts/$', views.manage_accounts, name='manage_accounts'), 
+    url(r'^delete_account/$', views.delete_account, name='delete_account'), 
+    url(r'^add_account/$', views.add_account, name='add_account'), 
+    url(r'^update_account/$', views.update_account, name='update_account'), 
+    url(r'^delete_user_account/$', views.delete_user_account, name='delete_user_account'),
+    url(r'^add_user_account/$', views.add_user_account, name='add_user_account'),
 ]

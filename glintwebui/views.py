@@ -6,7 +6,7 @@ from django.core.exceptions import PermissionDenied
 
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.models import User
-from .models import Project, User_Account, Glint_User
+from .models import Project, User_Account, Glint_User, Account
 from .forms import addRepoForm
 from .glint_api import repo_connector, validate_repo, change_image_name
 from glintv2.utils import get_unique_image_list, get_images_for_proj, parse_pending_transactions, build_id_lookup_dict, check_for_duplicate_images
@@ -371,7 +371,7 @@ def add_user(request):
 		user = request.POST.get('username')
 		common_name = request.POST.get('common_name')
 		distinguished_name = request.POST.get('distinguished_name')
-		logging.info("Adding user %s" % user)
+		logger.info("Adding user %s" % user)
 		try:
 			#check if username exists, if not add it
 			Glint_User.objects.filter(user_name=user)
@@ -399,7 +399,7 @@ def update_user(request):
 		user = request.POST.get('username')
 		common_name = request.POST.get('common_name')
 		distinguished_name = request.POST.get('distinguished_name')
-		logging.info("Updating info for user %s" % original_user)
+		logger.info("Updating info for user %s" % original_user)
 		try:
 			glint_user_obj = Glint_User.objects.get(user_name=original_user)
 			glint_user_obj.user_name = user
@@ -408,8 +408,8 @@ def update_user(request):
 			glint_user_obj.save()
 			message = "User " + user + " updated successfully."
 		except Exception as e:
-			logging.error("Unable to retrieve user %s, there may be a database inconsistency." % original_user)
-			logging.error(e)
+			logger.error("Unable to retrieve user %s, there may be a database inconsistency." % original_user)
+			logger.error(e)
 			return manage_users(request)
 		return manage_users(request, message) 
 	else:
@@ -422,7 +422,7 @@ def delete_user(request):
 		raise PermissionDenied
 	if request.method == 'POST':
 		user = request.POST.get('user')
-		logging.info("Attempting to delete user %s" % user)
+		logger.info("Attempting to delete user %s" % user)
 		user_obj = Glint_User.objects.get(user_name=user)
 		user_obj.delete()
 		message = "User %s deleted." % user
@@ -445,6 +445,102 @@ def manage_users(request, message=None):
 	return render(request, 'glintwebui/manage_users.html', context)
 
 
+def delete_user_account(request):
+	if not verifyUser(request):
+		raise PermissionDenied
+	if not getSuperUserStatus(request):
+		raise PermissionDenied
+	if request.method == 'POST':
+		user = request.POST.get('user')
+		account = request.POST.get('account')
+		logger.info("Attempting to delete user %s from account %s" % (user, account))
+		user_obj = Glint_User.objects.get(user_name=user)
+		account_obj = Account.objects.get(account_name=account)
+		user_account_obj = User_Account.objects.get(user=user_obj, account_name=account_obj)
+		user_account_obj.delete()
+		message = "User %s deleted from %s" % (user, account)
+		return manage_users(request, message)
+	else:
+		#not a post
+		pass
+
+def add_user_account(request):
+	if not verifyUser(request):
+		raise PermissionDenied
+	if not getSuperUserStatus(request):
+		raise PermissionDenied
+	if request.method == 'POST':
+		user = request.POST.get('user')
+		account = request.POST.get('account')
+		user_obj = None
+		account_obj = None
+		logger.info("Attempting to add user %s to account %s" % (user, account))
+		try:
+			user_obj = Glint_User.objects.get(user_name=user)
+			account_obj = Account.objects.get(account_name=account)
+		except Exception as e:
+			logger.error("Either user or account does not exist, could not add user_account.")
+			logger.error(e)
+		try:
+			#check to make sure it's not already there
+			User_Account.objects.get(user=user_obj, account_name=account_obj)
+			#if we continue here the user account already exists and we can return without adding it
+			message = "%s already has access to %s" % (user, account)
+			return manage_accounts(request, message)
+		except Exception as e:
+			#If we get here the user account wasn't present and we can safely add it
+			new_usr_act = User_Account(user=user_obj, account_name=account_obj)
+			new_usr_act.save()
+			message = "User %s added to %s" % (user, account)
+			return manage_accounts(request=request, message=message)
+	else:
+		#not a post
+		pass
+
+def delete_account(request):
+	if not verifyUser(request):
+		raise PermissionDenied
+	if not getSuperUserStatus(request):
+		raise PermissionDenied
+	if request.method == 'POST':
+		account = request.POST.get('account')
+		logger.info("Attempting to delete account %s" % account)
+		account_obj = Account.objects.get(account_name=account)
+		account_obj.delete()
+		message = "Account %s deleted." % account
+		logger.info("Successfull delete of account %s" % account)
+		return manage_accounts(request=request, message=message)
+	else:
+		#not a post
+		pass
+def update_account(request):
+	if not verifyUser(request):
+		raise PermissionDenied
+	if not getSuperUserStatus(request):
+		raise PermissionDenied
+	if request.method == 'POST':
+		old_account = request.POST.get('old_account')
+		new_account = request.POST.get('account')
+		logger.info("Attempting to update account name %s to %s" % (old_account, new_account))
+		#check for accounts with the new name
+		try:
+			new_account_obj = Account.objects.get(account_name=new_account)\
+			#name already taken, don't edit the name and return
+			logger.info("Could not update account name to %s, name already in use" % new_account)
+			message = "Could not update account name to %s, name already in use" % new_account
+			return manage_accounts(request=request, message=message)
+		except Exception as e:
+			#No account has the new name, proceed freely
+			account_obj = Account.objects.get(account_name=old_account)
+			account_obj.account_name = new_account
+			account_obj.save()
+			message = "Successfully updated account name to %s" % new_account
+			logger.info("Successfully updated account name to %s" % new_account)
+			return manage_accounts(request=request, message=message)
+	else:
+		#not a post
+		pass
+
 #only glint admins can add new accounts
 def add_account(request):
 	if not verifyUser(request):
@@ -452,16 +548,51 @@ def add_account(request):
 	if not getSuperUserStatus(request):
 		raise PermissionDenied
 	if request.method == 'POST':
-		#do stuff
+		account = request.POST.get('account')
+		logger.info("Attempting to add account %s" % account)
+		try:
+			account_obj = Account.objects.get(account_name=account)
+			#account exists, return without adding
+			message = "Account with that name already exists"
+			logger.info("Could not add account %s, name already in use." % account)
+			return manage_accounts(request=request, message=message)
+		except Exception as e:
+			#account doesnt exist, we can go ahead and add it.
+			new_act = Account(account_name=account)
+			new_act.save()
+			logging.info("Account '%s' created successfully" % account)
+			message = "Account '%s' created successfully" % account
+			return manage_accounts(request=request, message=message)
 		pass
 	else:
 		#not a post should never come to this page, redirect to matrix?
 		pass
 
-def manage_accounts(request):
+def manage_accounts(request, message=None):
 	if not verifyUser(request):
 		raise PermissionDenied
 	if not getSuperUserStatus(request):
 		raise PermissionDenied
 
-	return HttpResponse(False)
+	#Retrieve accounts, build account:user dictionary
+	account_user_dict = {}
+	account_list = Account.objects.all()
+	user_accounts = User_Account.objects.all()
+	user_list = Glint_User.objects.all()
+	for usr_act in user_accounts:
+		#check if this account is in dict yet
+		if usr_act.account_name in account_user_dict:
+			#if so append this user to that key
+			account_user_dict[usr_act.account_name].append(usr_act.user.user_name)
+		else:
+			#else create new key with user
+			account_user_dict[usr_act.account_name] = list()
+			account_user_dict[usr_act.account_name].append(usr_act.user.user_name)
+
+	context = {
+		'account_list': account_list,
+		'account_user_dict': account_user_dict,
+		'user_list': user_list,
+		'message': message
+	}
+	return render(request, 'glintwebui/manage_accounts.html', context)

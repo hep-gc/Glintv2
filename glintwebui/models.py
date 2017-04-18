@@ -60,7 +60,7 @@ Attributes:
 class User_Account(models.Model):
     account_name = models.ForeignKey(Account, on_delete=models.CASCADE)
     user = models.ForeignKey(Glint_User, on_delete=models.CASCADE)
-    last_used = models.DateTimeField()
+    last_used = models.DateTimeField(null=True, blank=True)
 
 
     def __str__(self):
