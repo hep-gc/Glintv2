@@ -5,6 +5,7 @@ from django.core.exceptions import PermissionDenied
 
 
 from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.models import User
 from .models import Project, User_Account, Glint_User
 from .forms import addRepoForm
 from .glint_api import repo_connector, validate_repo, change_image_name
@@ -30,6 +31,12 @@ def verifyUser(request):
 			return True
 
 	return False
+
+def getSuperUserStatus(request):
+	cert_user = getUser(request)
+	auth_user = User.objects.get(username=cert_user)
+	return auth_user.is_superuser
+
 
 
 def index(request):
@@ -130,7 +137,8 @@ def project_details(request, account_name="null_project", message=None):
 		'image_dict': image_dict,
 		'image_set': image_set,
 		'image_lookup': reverse_img_lookup,
-		'message': message
+		'message': message,
+		'is_superuser': getSuperUserStatus(request)
 	}
 	return render(request, 'glintwebui/project_details.html', context)
 
@@ -302,7 +310,7 @@ def update_repo(request, account_name):
 	logger.info("Attempting to update repo")
 	active_user = getUser(request)
 	if request.method == 'POST':
-		#handle update
+		#handle update may want to do some data cleansing here? I think django utils deals with most of it tho
 		usr = request.POST.get('username')
 		pwd = request.POST.get('password')
 		auth_url = request.POST.get('auth_url')
@@ -352,3 +360,108 @@ def delete_repo(request, account_name):
 	else:
 		#not a post, shouldnt be coming here, redirect to matrix page
 		return project_details(request, account_name)
+
+
+def add_user(request):
+	if not verifyUser(request):
+		raise PermissionDenied
+	if not getSuperUserStatus(request):
+		raise PermissionDenied
+	if request.method == 'POST':
+		user = request.POST.get('username')
+		common_name = request.POST.get('common_name')
+		distinguished_name = request.POST.get('distinguished_name')
+		logging.info("Adding user %s" % user)
+		try:
+			#check if username exists, if not add it
+			Glint_User.objects.filter(user_name=user)
+			#if we get here it means the user already exists
+			message = "Unable to add user, username already exists"
+			return manage_users(request, message)
+		except Exception as e:
+			#If we are here we are good since the username doesnt exist. add it and return
+			glint_user = Glint_User(user_name=user, common_name=common_name, distinguished_name=distinguished_name)
+			glint_user.save()
+			message = "User %s added successfully" % user
+			return manage_users(request, message)
+
+	else:
+		#not a post should never come to this page, redirect to matrix?
+		pass
+
+def update_user(request):
+	if not verifyUser(request):
+		raise PermissionDenied
+	if not getSuperUserStatus(request):
+		raise PermissionDenied
+	if request.method == 'POST':
+		original_user = request.POST.get('old_usr')
+		user = request.POST.get('username')
+		common_name = request.POST.get('common_name')
+		distinguished_name = request.POST.get('distinguished_name')
+		logging.info("Updating info for user %s" % original_user)
+		try:
+			glint_user_obj = Glint_User.objects.get(user_name=original_user)
+			glint_user_obj.user_name = user
+			glint_user_obj.common_name = common_name
+			glint_user_obj.distinguished_name = distinguished_name
+			glint_user_obj.save()
+			message = "User " + user + " updated successfully."
+		except Exception as e:
+			logging.error("Unable to retrieve user %s, there may be a database inconsistency." % original_user)
+			logging.error(e)
+			return manage_users(request)
+		return manage_users(request, message) 
+	else:
+		#not a post should never come to this page, redirect to matrix?
+		pass
+def delete_user(request):
+	if not verifyUser(request):
+		raise PermissionDenied
+	if not getSuperUserStatus(request):
+		raise PermissionDenied
+	if request.method == 'POST':
+		user = request.POST.get('user')
+		logging.info("Attempting to delete user %s" % user)
+		user_obj = Glint_User.objects.get(user_name=user)
+		user_obj.delete()
+		message = "User %s deleted." % user
+		return manage_users(request, message)
+	else:
+		#not a post
+		pass
+
+#only glint admins can manage glint users
+def manage_users(request, message=None):
+	if not verifyUser(request):
+		raise PermissionDenied
+	if not getSuperUserStatus(request):
+		raise PermissionDenied
+	user_list = Glint_User.objects.all()
+	context = {
+		'user_list': user_list,
+		'message': message
+	}
+	return render(request, 'glintwebui/manage_users.html', context)
+
+
+#only glint admins can add new accounts
+def add_account(request):
+	if not verifyUser(request):
+		raise PermissionDenied
+	if not getSuperUserStatus(request):
+		raise PermissionDenied
+	if request.method == 'POST':
+		#do stuff
+		pass
+	else:
+		#not a post should never come to this page, redirect to matrix?
+		pass
+
+def manage_accounts(request):
+	if not verifyUser(request):
+		raise PermissionDenied
+	if not getSuperUserStatus(request):
+		raise PermissionDenied
+
+	return HttpResponse(False)

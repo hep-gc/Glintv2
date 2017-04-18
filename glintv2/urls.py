@@ -25,9 +25,8 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^$', RedirectView.as_view(url='ui/')), #root index goes to the glintwebui
     url(r'^ui/', include('glintwebui.urls')), 
-    url(r'^users/', include('glintwebui.urls')), 
-    url(r'^projects/', include('glintwebui.urls')), 
-    url(r'^project_details/', include('glintwebui.urls')), 
+    url(r'^users/', include('glintwebui.urls')),  
+    url(r'^project_details/', include('glintwebui.urls')),
 ]
 
 # Check if the image collection task is running, if not start it and set it to running
