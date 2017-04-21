@@ -21,6 +21,9 @@ django.setup()
  
 app = Celery('glintv2', broker=config.celery_url, backend=config.celery_backend)
 app.config_from_object('django.conf:settings')
+
+
+
 # This line will tell Celery to autodiscover all your tasks.py that are in your app folders
 # However it seems to have issues in an apache/django enviroment
 #app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)

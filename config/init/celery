@@ -24,7 +24,7 @@ CELERYD_CHDIR="/opt/Glintv2"
 CELERYD_MULTI="celery multi"
 
 # Extra command-line arguments to the worker
-CELERYD_OPTS="-A glintv2 --concurrency=1 -Ofair"
+CELERYD_OPTS="-Q:w1 image_collection -Q:w2,w3,w4 celery -A glintv2 --concurrency=1 -Ofair"
 
 # %N will be replaced with the first part of the nodename.
 CELERYD_LOG_FILE="/var/log/celery/%N.log"

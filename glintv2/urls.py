@@ -32,5 +32,5 @@ urlpatterns = [
 # Check if the image collection task is running, if not start it and set it to running
 collection_started = check_collection_task()
 if not collection_started:
-    image_collection.delay()
+    image_collection.apply_async(queue='image_collection')
     set_collection_task(True)

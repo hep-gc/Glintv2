@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/1.10/ref/settings/
 
 import os
 import config
+from kombu import Queue
 
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -189,3 +190,12 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Canada/Pacific'
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_DEFAULT_QUEUE = 'celery'
+CELERY_DEFAULT_EXCHANGE = "celery"
+CELERY_QUEUES = {
+    "celery": {"exchange": "celery"},
+    "image_collection": {"exchange": "image_collection"},
+}
+CELERY_ROUTES = {
+    'Glintv2.glintv2.tasks.image_collection': {'queue': 'image_collection'},
+}
