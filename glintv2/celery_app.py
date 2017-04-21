@@ -2,7 +2,7 @@ from __future__ import absolute_import, unicode_literals
 from celery import Celery
 from celery.utils.log import get_task_logger
 from django.conf import settings
-from .utils import  jsonify_image_list, update_pending_transactions, get_images_for_proj, set_images_for_proj, process_pending_transactions, process_state_changes, queue_state_change, find_image_by_name, check_delete_restrictions, check_collection_signal, set_collection_task, decrement_transactions, get_num_transactions
+from .utils import  jsonify_image_list, update_pending_transactions, get_images_for_proj, set_images_for_proj, process_pending_transactions, process_state_changes, queue_state_change, find_image_by_name, check_delete_restrictions, check_collection_signal, set_collection_task, decrement_transactions, get_num_transactions, repo_proccesed, check_for_repo_changes
 from glintwebui.glint_api import repo_connector
 import glintv2.config as config
  
@@ -88,9 +88,15 @@ def image_collection(self):
         while(loop_counter<wait_period):
             time.sleep(5)
             num_tx = get_num_transactions()
+            #check for new transactions
             if(num_tx>0):
                 break
+            #check if repos have been added or deleted
+            if(check_for_repo_changes()):
+                repo_proccesed()
+                break
             term_signal = check_collection_signal()
+            #check if there is a shut down signal
             if term_signal is True:
                 break
             loop_counter = loop_counter+1

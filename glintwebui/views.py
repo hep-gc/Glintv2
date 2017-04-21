@@ -9,7 +9,7 @@ from django.contrib.auth.models import User
 from .models import Project, User_Account, Glint_User, Account
 from .forms import addRepoForm
 from .glint_api import repo_connector, validate_repo, change_image_name
-from glintv2.utils import get_unique_image_list, get_images_for_proj, parse_pending_transactions, build_id_lookup_dict, check_for_duplicate_images
+from glintv2.utils import get_unique_image_list, get_images_for_proj, parse_pending_transactions, build_id_lookup_dict, check_for_duplicate_images, repo_modified
 
 import time
 import json
@@ -185,22 +185,11 @@ def add_repo(request, account_name):
 
 				new_repo = Project(account_name=account_name, auth_url=form.cleaned_data['auth_url'], tenant=form.cleaned_data['tenant'], username=form.cleaned_data['username'], password=form.cleaned_data['password'], alias=form.cleaned_data['alias'])
 				new_repo.save()
+				repo_modified()
 
 
-				#return to project details page after saving the new repo
-				repo_list = Project.objects.filter(account_name=account_name)
-				image_list = ()
-				for repo in repo_list:
-					try:
-						rcon = repo_connector(auth_url=repo.auth_url, project=repo.tenant, username=repo.username, password=repo.password)
-						image_list = image_list + rcon.image_list
-						
-					except:
-						logger.error("Could not connet to repo: %s at %s", (repo.tenant, repo.auth_url))
-
-					
-					logger.info("New repo: " + form.cleaned_data['tenant'] + " added.")
-					return manage_repos(request, account_name, feedback_msg="Project: " + form.cleaned_data['tenant'] + " added")
+				#return to manage repos page after saving the new repo
+				return manage_repos(request, account_name, feedback_msg="Project: " + form.cleaned_data['tenant'] + " added")
 			else:
 				#something in the repo information is bad
 				form = addRepoForm()
@@ -332,7 +321,7 @@ def update_repo(request, account_name):
 			else:
 				#invalid changes, reload manage_repos page with error msg
 				return manage_repos(request=request, account_name=account_name, error_msg=validate_resp[1])
-
+		repo_modified()
 		return manage_repos(request=request, account_name=account_name, feedback_msg="Update Successful")
 
 	else:
@@ -351,6 +340,7 @@ def delete_repo(request, account_name):
 		if repo is not None and repo_id is not None:
 			logger.info("Attempting to delete repo: %s" % repo)
 			Project.objects.filter(tenant=repo, proj_id=repo_id).delete()
+			repo_modified()
 			return HttpResponse(True)
 		else:
 			#invalid post, return false

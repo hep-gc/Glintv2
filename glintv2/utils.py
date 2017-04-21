@@ -455,6 +455,25 @@ def get_num_transactions():
 		r.set("num_transactions", num_tx)
 	return int(num_tx)
 
+def repo_modified():
+	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
+	r.incr("repos_modified")
+	return True
+
+def check_for_repo_changes():
+	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
+	result = r.get("repos_modified")
+	if result is None:
+		return False
+	elif(int(result)>0):
+		return True
+	else:
+		return False
+
+def repo_proccesed():
+	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
+	r.set("repos_modified", 0)
+
 
 '''
 added image_name to transaction
