@@ -237,6 +237,7 @@ def parse_pending_transactions(account_name, repo_alias, image_list, user):
 				}
 				trans_key = account_name + "_pending_transactions"
 				r.rpush(trans_key, json.dumps(transaction))
+				increment_transactions()
 			#else it is already there and do nothing
 			else:
 				pass
@@ -258,6 +259,7 @@ def parse_pending_transactions(account_name, repo_alias, image_list, user):
 					}
 					trans_key = account_name + "_pending_transactions"
 					r.rpush(trans_key, json.dumps(transaction))
+					increment_transactions()
 
 	except KeyError as e:
 		logger.error(e)
@@ -421,6 +423,10 @@ def check_collection_signal():
 	if "True" in state:
 		return True
 
+
+'''
+THESE FUNCTIONS ARE UNUSED BUT MAY BE USEFULL TO PROVIDE REAL TIME FEEDBACK ABOUT TRANSFERS
+
 def post_transfer_progress(key, progress):
 	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
 	r.set(key, progress)
@@ -429,7 +435,25 @@ def get_transfer_progress(key):
 	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
 	progress = r.get(key)
 	return progress
+'''
 
+def increment_transactions():
+	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
+	r.incr("num_transactions", 1)
+	return True
+
+def decrement_transactions():
+	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
+	r.decr("num_transactions", 1)
+	return True
+
+def get_num_transactions():
+	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
+	num_tx = r.get("num_transactions")
+	if(num_tx < 0 or num_tx is None):
+		num_tx = 0
+		r.set("num_transactions", num_tx)
+	return int(num_tx)
 
 
 '''

@@ -2,7 +2,7 @@ from __future__ import absolute_import, unicode_literals
 from celery import Celery
 from celery.utils.log import get_task_logger
 from django.conf import settings
-from .utils import  jsonify_image_list, update_pending_transactions, get_images_for_proj, set_images_for_proj, process_pending_transactions, process_state_changes, queue_state_change, find_image_by_name, check_delete_restrictions, check_collection_signal, set_collection_task
+from .utils import  jsonify_image_list, update_pending_transactions, get_images_for_proj, set_images_for_proj, process_pending_transactions, process_state_changes, queue_state_change, find_image_by_name, check_delete_restrictions, check_collection_signal, set_collection_task, decrement_transactions, get_num_transactions
 from glintwebui.glint_api import repo_connector
 import glintv2.config as config
  
@@ -36,6 +36,8 @@ def image_collection(self):
     from glintwebui.models import Project, User_Account, Account
     from glintwebui.glint_api import repo_connector
 
+    wait_period = 0
+    num_tx = get_num_transactions()
 
     #perminant for loop to monitor image states and to queue up tasks
     while(True):
@@ -76,8 +78,25 @@ def image_collection(self):
             updated_img_list = process_state_changes(account_name=account.account_name, json_img_dict=updated_img_list)
             set_images_for_proj(account_name=account.account_name, json_img_dict=updated_img_list)
 
-        logger.info("Image collection complete")#, sleeping for 1 second")
-        #time.sleep(1)
+        logger.info("Image collection complete, entering downtime")#, sleeping for 1 second")
+        loop_counter = 0
+        if(num_tx == 0):
+            wait_period = config.image_collection_interval
+        else:
+            wait_period = 0
+            
+        while(loop_counter<wait_period):
+            time.sleep(5)
+            num_tx = get_num_transactions()
+            if(num_tx>0):
+                break
+            term_signal = check_collection_signal()
+            if term_signal is True:
+                break
+            loop_counter = loop_counter+1
+        num_tx = get_num_transactions()
+
+
 
 
 # Accepts Image info, project name, and a repo object
@@ -108,6 +127,7 @@ def transfer_image(self, image_name, image_id, account_name, auth_url, project_t
  
     queue_state_change(account_name=account_name, repo=project_alias, img_id=image_id, state='Present')
     logger.info("Image transfer finished")
+    decrement_transactions()
     return True
 
 # Accepts image id, project name, and repo object to delete image ID from.
@@ -120,12 +140,14 @@ def delete_image(self, image_id, image_name, account_name, auth_url, project_ten
         if result:
             queue_state_change(account_name=account_name, repo=project_alias, img_id=image_id, state='deleted')
             logger.info("Image Delete finished")
+            decrement_transactions()
             return True
         logger.error("Unknown error deleting %s  (result = %s)" % (image_id, result))
+        decrement_transactions()
         return False
     else:
         logger.error("Delete request violates delete rules, image either shared or the last copy.")
         queue_state_change(account_name=account_name, repo=project_alias, img_id=image_id, state='present')
+        decrement_transactions()
+        return False
 
-# CELERY workers can get their own ID with self.request.id
-# This will be useful during image transfers so there will be no conflicts

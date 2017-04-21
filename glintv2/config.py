@@ -13,6 +13,7 @@ celery_backend = "redis://localhost:6379/"
 redis_host = "localhost"
 redis_port = 6379
 redis_db = 0
+image_collection_interval = 12
 
 
 # find config file by first checking the /etc/glintv2 location
@@ -60,6 +61,10 @@ if config_file.has_option("general", "database_path"):
 
 if config_file.has_option("general", "database_name"):
     database_name = config_file.get("general", "database_name")
+
+if config_file.has_option("general", "image_collection_interval"):
+    image_collection_interval = int(config_file.get("general", "image_collection_interval"))
+
 
 
 
