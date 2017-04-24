@@ -1,3 +1,6 @@
+# Glint v2
+
+## Overview
 Glint Version 2 aims to replicate the functionality of the original Glint
 while simplifying it by decoupling it from an Openstack instance.
 
@@ -12,8 +15,9 @@ to glint which in turn populates a matrix of virtual machine images (VMs) and
 openstack projects. Users are then able to use the check boxes in the matrix
 to queue transfers or deletions of VMs.
 
-<img src="Glintv2.jpeg" />
+<img src="Glintv2.jpg" />
 
+## Deployment
 Deployment of glint is mostly automated using an [ansible playbook](https://github.com/hep-gc/ansible-systems/tree/glintv2/heprc/glintv2).
 However there is some manual setup due to the confidentiality of the server
 certificates. The certificates should be placed at the paths matching the
