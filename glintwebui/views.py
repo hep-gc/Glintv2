@@ -245,19 +245,20 @@ def save_images(request, account_name):
 	else:
 		return project_details(request, account_name=account_name)
 
-def resolve_conflict(request, account_name, repo_name):
+def resolve_conflict(request, account_name, repo_alias):
 	if not verifyUser(request):
 		raise PermissionDenied
 	if request.method == 'POST':
 		user = getUser(request)
-		repo_obj = Project.objects.get(account_name=account_name, tenant=repo_name)
+		repo_obj = Project.objects.get(account_name=account_name, alias=repo_alias)
 		image_dict = json.loads(get_images_for_proj(account_name))
 		changed_names = 0
+		#key is img_id, calue is image name
 		for key, value in request.POST.items():
 			if key != 'csrfmiddlewaretoken':
 				# check if the name has been changed, if it is different, send update
-				if value != image_dict[repo_name][key]['name']:
-					change_image_name(repo_obj=repo_obj, img_id=key, old_img_name=image_dict[repo_name][key]['name'], new_img_name=value, user=user)
+				if value != image_dict[repo_alias][key]['name']:
+					change_image_name(repo_obj=repo_obj, img_id=key, old_img_name=image_dict[repo_alias][key]['name'], new_img_name=value, user=user)
 					changed_names=changed_names+1
 		if changed_names == 0:
 			# Re render resolve conflict page
@@ -269,10 +270,11 @@ def resolve_conflict(request, account_name, repo_name):
 			}
 			return render(request, 'glintwebui/index.html', context)
 
-	context = {
-		'redirect_url': "/ui/project_details/" + account_name,
-	}
-	return render(request, 'glintwebui/proccessing_request.html', context)
+	repo_modified()
+	#give the collection thread a couple seconds to update matrix or we will end right back at this page
+	#This entire function will change as we change the way glint deals with duplicate images.
+	time.sleep(6)
+	return project_details(request, account_name)
 
 
 # This page will render manage_repos.html which will allow users to add, edit, or delete repos
