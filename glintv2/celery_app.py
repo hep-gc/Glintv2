@@ -100,12 +100,7 @@ def image_collection(self):
             if(check_for_repo_changes()):
                 repo_proccesed()
                 break
-            '''
-            term_signal = check_collection_signal()
-            #check if there is a shut down signal
-            if term_signal is True:
-                break
-            '''
+
             #check if httpd is running
             output = subprocess.check_output(['ps', '-A'])
             if 'httpd' not in output:

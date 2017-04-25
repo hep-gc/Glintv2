@@ -459,18 +459,6 @@ def repo_proccesed():
 	r.set("repos_modified", 0)
 
 
-'''
-added image_name to transaction
-this function should no longer be needed
-'''
-# Returns the name of the img_id that was passed in or False if it doesn't exist
-def __find_image_name(img_dict, img_id):
-	for repo_key in img_dict:
-		for key in img_dict[repo_key]:
-			if key == img_id:
-				return img_dict[repo_key][key]['name']
-	return False
-
 
 def __get_image_ids(repo_dict):
 	img_trans_dict = {}
