@@ -494,12 +494,14 @@ def add_user_account(request):
 			logger.error(e)
 		try:
 			#check to make sure it's not already there
+			logger.info("Checking if user already has access.")
 			User_Account.objects.get(user=user_obj, account_name=account_obj)
 			#if we continue here the user account already exists and we can return without adding it
 			message = "%s already has access to %s" % (user, account)
 			return manage_accounts(request, message)
 		except Exception as e:
 			#If we get here the user account wasn't present and we can safely add it
+			logger.info("No previous entry, adding new user_account")
 			new_usr_act = User_Account(user=user_obj, account_name=account_obj)
 			new_usr_act.save()
 			message = "User %s added to %s" % (user, account)
