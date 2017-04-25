@@ -38,6 +38,13 @@
 						    <td><input type="text" name="common_name" id="" value="{{user.common_name}}" /></td></tr>
 						    <tr><td><label for="distinguished_name">Distinguished Name</label></td>
 						    <td><input type="text" name="distinguished_name" id="" value="{{user.distinguished_name}}" /></td></tr>
+						    <tr><td><label for="admin">Administrator</label></td>
+						    {% if user.common_name in admin_list %}
+						    	<td><input name="admin" type="checkbox" value="{{user.common_name}}" checked></td>
+						    {% else %}
+						    	<td><input name="admin" type="checkbox" value="{{user.common_name}}"></td>
+						    {% endif %}
+							</tr>
 						    <input type="hidden" name="old_usr" value="{{user.user_name}}" />
 
 						    <tr><td><input type="submit" value="Update User" /></td>

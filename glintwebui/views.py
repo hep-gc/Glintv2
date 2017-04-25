@@ -391,6 +391,12 @@ def update_user(request):
 		user = request.POST.get('username')
 		common_name = request.POST.get('common_name')
 		distinguished_name = request.POST.get('distinguished_name')
+		admin_status = request.POST.get('admin')
+		if admin_status is None:
+			admin_status = False
+		else:
+			admin_status = True
+
 		logger.info("Updating info for user %s" % original_user)
 		try:
 			glint_user_obj = Glint_User.objects.get(user_name=original_user)
@@ -403,6 +409,14 @@ def update_user(request):
 			logger.error("Unable to retrieve user %s, there may be a database inconsistency." % original_user)
 			logger.error(e)
 			return manage_users(request)
+		try:
+			user_obj = User.objects.get(username=common_name)
+			user_obj.is_superuser = admin_status
+			user_obj.save()
+		except Exception as e:
+			logger.error("Could not update admin status for: %s. Their certificate is likely not yet registered. \n Attempting to connect will automatically register their certificate with glint." % user)
+			logger.error("Continuing with update..")
+			message = "Failed to update admin status"
 		return manage_users(request, message) 
 	else:
 		#not a post should never come to this page, redirect to matrix?
@@ -430,8 +444,13 @@ def manage_users(request, message=None):
 	if not getSuperUserStatus(request):
 		raise PermissionDenied
 	user_list = Glint_User.objects.all()
+	user_obj_list = User.objects.filter(is_superuser=1)
+	admin_list = []
+	for usr in user_obj_list:
+		admin_list.append(usr.username)
 	context = {
 		'user_list': user_list,
+		'admin_list': admin_list,
 		'message': message
 	}
 	return render(request, 'glintwebui/manage_users.html', context)
