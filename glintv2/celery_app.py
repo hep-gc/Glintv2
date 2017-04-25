@@ -2,7 +2,7 @@ from __future__ import absolute_import, unicode_literals
 from celery import Celery
 from celery.utils.log import get_task_logger
 from django.conf import settings
-from .utils import  jsonify_image_list, update_pending_transactions, get_images_for_proj, set_images_for_proj, process_pending_transactions, process_state_changes, queue_state_change, find_image_by_name, check_delete_restrictions, check_collection_signal, set_collection_task, decrement_transactions, get_num_transactions, repo_proccesed, check_for_repo_changes
+from .utils import  jsonify_image_list, update_pending_transactions, get_images_for_proj, set_images_for_proj, process_pending_transactions, process_state_changes, queue_state_change, find_image_by_name, check_delete_restrictions, decrement_transactions, get_num_transactions, repo_proccesed, check_for_repo_changes, set_collection_task
 from glintwebui.glint_api import repo_connector
 import glintv2.config as config
  
@@ -11,6 +11,8 @@ logger = get_task_logger(__name__)
 import os
 import time
 import redis
+import subprocess
+
  
 
 
@@ -40,12 +42,12 @@ def image_collection(self):
     from glintwebui.glint_api import repo_connector
 
     wait_period = 0
+    term_signal = False
     num_tx = get_num_transactions()
 
     #perminant for loop to monitor image states and to queue up tasks
     while(True):
         # First check for term signal
-        term_signal = check_collection_signal()
         logger.debug("Term signal: %s" % term_signal)
         if term_signal is True:
             #term signal detected, break while loop
@@ -98,9 +100,18 @@ def image_collection(self):
             if(check_for_repo_changes()):
                 repo_proccesed()
                 break
+            '''
             term_signal = check_collection_signal()
             #check if there is a shut down signal
             if term_signal is True:
+                break
+            '''
+            #check if httpd is running
+            output = subprocess.check_output(['ps', '-A'])
+            if 'httpd' not in output:
+                #apache has shut down, time for image collection to do the same
+                logger.info("httpd offile, terminating")
+                term_signal = True
                 break
             loop_counter = loop_counter+1
         num_tx = get_num_transactions()

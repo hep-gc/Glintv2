@@ -389,9 +389,10 @@ def check_delete_restrictions(image_id, account_name, project_alias):
 
 
 '''
-This function checks if image collection has started so we don't accidentally make
-multiple image collection threads
+This function checks if image collection has started so we don't accidentally queue
+multiple image collection jobs
 '''
+
 def check_collection_task():
 	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
 	state = r.get("collection_started")
@@ -405,23 +406,6 @@ def check_collection_task():
 def set_collection_task(state):
 	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
 	r.set("collection_started", state)
-	if state is True:
-		r.set("term_collection", False)
-
-
-def term_image_collection():
-	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
-	r.set("term_collection", True)
-
-def check_collection_signal():
-	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
-	state = r.get("term_collection")
-	if state is None:
-		return False
-	if "False" in state:
-		return False
-	if "True" in state:
-		return True
 
 
 '''
