@@ -9,7 +9,7 @@ from django.contrib.auth.models import User
 from .models import Project, User_Account, Glint_User, Account
 from .forms import addRepoForm
 from .glint_api import repo_connector, validate_repo, change_image_name
-from glintv2.utils import get_unique_image_list, get_images_for_proj, parse_pending_transactions, build_id_lookup_dict, check_for_duplicate_images, repo_modified
+from glintv2.utils import get_unique_image_list, get_images_for_proj, parse_pending_transactions, build_id_lookup_dict, repo_modified, get_conflicts_for_acc
 
 import time
 import json
@@ -97,6 +97,12 @@ def project_details(request, account_name="null_project", message=None):
 		# and forces the user to resolve
 		reverse_img_lookup = build_id_lookup_dict(image_dict)
 
+
+		''' THIS FUNCTIONALITY IS BEING CHANGED, THE DETECTION OF CONFLICTS WILL NOW HAPPEN
+		    AT IMAGE COLLECTION TIME AND WILL BE PASSED HERE AS A DATA OBJECT WHICH WILL BE
+		    DISPLAYED ON THE MATRIX PAGE IN A TABLE AS A LIST OF CONFLICTS, AUTOMATED
+		    RESOLUTION WILL BE ADDED AT A LATER DATE.
+
 		# Check if there are any duplicate image names in a given repo and
 		# if so render a different page that attempts to resolve that
 		duplicate_dict = check_for_duplicate_images(image_dict)
@@ -111,6 +117,7 @@ def project_details(request, account_name="null_project", message=None):
 				'duplicate_dict': duplicate_dict
 			}
 			return render(request, 'glintwebui/image_conflict.html', context)
+		'''
 
 	except:
 		# No images in database yet, may want some logic here forcing it to wait a little on start up
@@ -131,6 +138,8 @@ def project_details(request, account_name="null_project", message=None):
 	except ValueError as e:
 		#list is empty
 		pass
+
+	conflict_dict = get_conflicts_for_acc(account_name)
 	context = {
 		'account_name': account_name,
 		'account_list': account_list,
@@ -138,7 +147,8 @@ def project_details(request, account_name="null_project", message=None):
 		'image_set': image_set,
 		'image_lookup': reverse_img_lookup,
 		'message': message,
-		'is_superuser': getSuperUserStatus(request)
+		'is_superuser': getSuperUserStatus(request),
+		'conflict_dict': conflict_dict
 	}
 	return render(request, 'glintwebui/project_details.html', context)
 

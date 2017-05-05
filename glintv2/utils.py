@@ -18,6 +18,7 @@ Proj_dict{
 			disk_format
 			container_format
 			visibility
+			checksum
 		}
 		Img_ID2{
 			name
@@ -25,6 +26,7 @@ Proj_dict{
 			disk_format
 			container_format
 			visibility
+			checksum
 		}
 		.
 		.
@@ -35,6 +37,7 @@ Proj_dict{
 			disk_format
 			container_format
 			visibility
+			checksum
 		}
 	}
 	Repo2Alias{
@@ -62,6 +65,7 @@ def jsonify_image_list(image_list, repo_list):
 				img['disk_format'] = image[3]
 				img['container_format'] = image[4]
 				img['visibility'] = image[5]
+				img['checksum'] = image[6]
 				img_dict[image[2]] = img
 
 		repo_dict[repo.alias] = img_dict
@@ -132,6 +136,31 @@ def set_images_for_proj(account_name, json_img_dict):
 		logger.error ("Unknown exception while trying to set images for: %s", account_name)
 
 
+# returns dictionary containing any conflicts for a given account name
+def get_conflicts_for_acc(account_name):
+	try:
+		r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
+		conflict_key = account_name + "_conflicts"
+		json_conflict_dict = r.get(conflict_key)
+		if json_conflict_dict is not None:
+			return json.loads(json_conflict_dict)
+		else:
+			return None
+	except KeyError as e:
+		logger.info("Couldnt find conflict list for account %s", account_name)
+		return None
+
+def set_conflicts_for_acc(account_name, conflict_dict):
+	try:
+		json_conflict_dict = json.dumps(conflict_dict)
+		conflict_key = account_name + "_conflicts"
+		r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
+		r.set(conflict_key, json_conflict_dict)
+
+	except Exception as e:
+		logger.error ("Unknown exception while trying to set conflicts for: %s", account_name)
+
+
 # Returns a unique list of (image, name) tuples
 # May be a problem if two sites have the same image (id) but with different names
 # as the tuple will no longer be unique
@@ -165,42 +194,95 @@ def build_id_lookup_dict(image_dict):
 	return reverse_dict
 
 
-# Accepts the image dictionary and checks if there are any repos that
-# have multiple images with the same name, if none are found return true
-# otherwise return a dictionary that contains the images with conflicting names
-def check_for_duplicate_images(image_dict):
+# Accepts the image dictionary and checks if there are any repos that contain conflicts
+#
+#   Type 1 - Image1 and Image2 have the same name but are different images.
+#   Type 2 - Image1 and Image2 have the same name and are the same image.
+#   Type 3 - Image1 and image 2 have different names but are the same image.
+
+def check_for_image_conflicts(json_img_dict):
+	image_dict=json.loads(json_img_dict)
+	conflicts_dict = {}
 	for repo in image_dict:
-		image_set = set()
+		conflicts = list()
 		for image in image_dict[repo]:
-			if image_dict[repo][image]['name'] in image_set:
-				# Mayday we have a duplicate
-				duplicate_dict = {}
-				duplicate_img = {
-					'name': image_dict[repo][image]['name'],
-					'repo': repo,
-					'disk_format': image_dict[repo][image]['disk_format'],
-					'container_format': image_dict[repo][image]['container_format']
-				}
-				duplicate_dict[image] = duplicate_img
-				# we need to go find the other one
-				for second_image in image_dict[repo]:
-					if (image_dict[repo][second_image]['name'] == image_dict[repo][image]['name'] and image != second_image):
-						# We found it, return the duplicate dictionary
-						duplicate_img = {
-							'name': image_dict[repo][second_image]['name'],
-							'repo': repo,
-							'disk_format': image_dict[repo][second_image]['disk_format'],
-							'container_format': image_dict[repo][second_image]['container_format']
-						}
-						duplicate_dict[second_image] = duplicate_img
-						return duplicate_dict
-				# We should never get here
-				logger.error("An error occured, couldn't find duplicate image")
+			if image_dict[repo][image]['checksum'] == "No Checksum":
+				continue
+			for image2 in image_dict[repo]:
+				if image_dict[repo][image2]['checksum'] == "No Checksum":
+					continue
+				if image is not image2:
+					try:
+						#Check for name conflicts (type 1/type 2)
+						if image_dict[repo][image]['name'] == image_dict[repo][image2]['name']:
+							# Mayday we have a duplicate
+							# check if it is type 1 or type 2 conflint
 
-			else:
-				image_set.add(image_dict[repo][image]['name'])
+							if image_dict[repo][image]['checksum'] == image_dict[repo][image2]['checksum']:
+								logging.error("Type 2 image conflict detected.")
+								# Type 2
+								conflict = {
+									'type': 2,
+									'image_one': image,
+									'image_one_name': image_dict[repo][image]['name'],
+									'image_two': image2,
+									'image_two_name': image_dict[repo][image2]['name']
+								}
+								duplicate_entry = False
+								for entry in conflicts:
+									if(entry['image_one'] == conflict['image_two'] and entry['image_two'] == conflict['image_one']):
+										duplicate_entry = True
+										break
+								if not duplicate_entry:
+									conflicts.append(conflict)
 
-	return None
+							else:
+								logging.error("Type 1 image conflict detected.")
+								# Type 1
+								conflict = {
+									'type': 1,
+									'image_one': image,
+									'image_one_name': image_dict[repo][image]['name'],
+									'image_two': image2,
+									'image_two_name': image_dict[repo][image2]['name']
+								}
+								duplicate_entry = False
+								for entry in conflicts:
+									if(entry['image_one'] == conflict['image_two'] and entry['image_two'] == conflict['image_one']):
+										duplicate_entry = True
+										break
+								if not duplicate_entry:
+									conflicts.append(conflict)
+
+						#Check for checksum conflicts (type 3, since type 2 will be caught by the first check)
+						if image_dict[repo][image]['checksum'] == image_dict[repo][image2]['checksum']:
+							logging.error("Type 3 image conflict detected.")
+							# Type 3
+							conflict = {
+								'type': 3,
+								'image_one': image,
+								'image_two': image2,
+								'image_one_name': image_dict[repo][image]['name'],
+								'image_two': image2,
+								'image_two_name': image_dict[repo][image2]['name']
+							}
+							duplicate_entry = False
+							for entry in conflicts:
+								if(entry['image_one'] == conflict['image_two'] and entry['image_two'] == conflict['image_one']):
+									duplicate_entry = True
+									break
+							if not duplicate_entry:
+								conflicts.append(conflict)
+					except Exception as e:
+						logger.error("Error when checking for conflicts on images: %s and %s" % (image, image2))
+						logger.error(e)
+						logger.error(image_dict)
+		if conflicts:
+			conflicts_dict[repo] = conflicts
+
+
+
+	return conflicts_dict
 
 
 # Accepts a list of images (names), a project and a repo
@@ -300,7 +382,8 @@ def process_pending_transactions(account_name, json_img_dict):
 				'name': transaction['image_name'],
 				'state': 'Pending Transfer',
 				'disk_format': transaction['disk_format'],
-				'container_format': transaction['container_format']
+				'container_format': transaction['container_format'],
+				'checksum': "No Checksum"
 			}
 			img_dict[transaction['repo']][new_img_id] = new_img_dict
 

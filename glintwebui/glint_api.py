@@ -1,4 +1,4 @@
-from keystoneclient.auth.identity import v2
+from keystoneclient.auth.identity import v2, v3
 from keystoneauth1 import session
 from keystoneauth1 import exceptions
 import glanceclient
@@ -28,6 +28,8 @@ class repo_connector(object):
 		self.cacert = config.cert_auth_bundle_path
 		self.sess = self._get_keystone_session()
 		self.image_list = self._get_images()
+		authsplit = self.auth_url.split('/')
+		self.version = int(float(authsplit[-1][1:])) if len(authsplit[-1]) > 0 else int(float(authsplit[-2][1:]))
 
 	# Borrowed from cloud schedular and modified to match this enviroment
 	# This was a nightmare to get working behind apache but it turns out 
@@ -47,12 +49,16 @@ class repo_connector(object):
 
 		# Do things with images
 		for image in glance.images.list():
+			img_checksum = "No Checksum"
 			img_id = image['id']
 			img_name = image['name']
 			img_disk_format = image['disk_format']
 			img_containter_format = image['container_format']
 			img_visibility = image['visibility']
-			image_list += ((self.project, img_name, img_id, img_disk_format, img_containter_format, img_visibility),)
+			if image['checksum'] is not None:
+				img_checksum = image['checksum']
+
+			image_list += ((self.project, img_name, img_id, img_disk_format, img_containter_format, img_visibility, img_checksum),)
 
 		return image_list
 
