@@ -198,7 +198,7 @@ def build_id_lookup_dict(image_dict):
 #
 #   Type 1 - Image1 and Image2 have the same name but are different images.
 #   Type 2 - Image1 and Image2 have the same name and are the same image.
-#   Type 3 - Image1 and image 2 have different names but are the same image.
+#   Type 3 - Image1 and Image2 have different names but are the same image.
 
 def check_for_image_conflicts(json_img_dict):
 	image_dict=json.loads(json_img_dict)
@@ -225,8 +225,10 @@ def check_for_image_conflicts(json_img_dict):
 									'type': 2,
 									'image_one': image,
 									'image_one_name': image_dict[repo][image]['name'],
+									'image_one_visibility': image_dict[repo][image]['visibility'],
 									'image_two': image2,
-									'image_two_name': image_dict[repo][image2]['name']
+									'image_two_name': image_dict[repo][image2]['name'],
+									'image_two_visibility': image_dict[repo][image2]['visibility']
 								}
 								duplicate_entry = False
 								for entry in conflicts:
@@ -243,8 +245,10 @@ def check_for_image_conflicts(json_img_dict):
 									'type': 1,
 									'image_one': image,
 									'image_one_name': image_dict[repo][image]['name'],
+									'image_one_visibility': image_dict[repo][image]['visibility'],
 									'image_two': image2,
-									'image_two_name': image_dict[repo][image2]['name']
+									'image_two_name': image_dict[repo][image2]['name'],
+									'image_two_visibility': image_dict[repo][image2]['visibility']
 								}
 								duplicate_entry = False
 								for entry in conflicts:
@@ -261,10 +265,11 @@ def check_for_image_conflicts(json_img_dict):
 							conflict = {
 								'type': 3,
 								'image_one': image,
-								'image_two': image2,
 								'image_one_name': image_dict[repo][image]['name'],
+								'image_one_visibility': image_dict[repo][image]['visibility'],
 								'image_two': image2,
-								'image_two_name': image_dict[repo][image2]['name']
+								'image_two_name': image_dict[repo][image2]['name'],
+								'image_two_visibility': image_dict[repo][image2]['visibility']
 							}
 							duplicate_entry = False
 							for entry in conflicts:
