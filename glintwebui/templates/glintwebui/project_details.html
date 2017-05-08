@@ -130,7 +130,15 @@ th {
 	<table class="conflict_table" hidden="true"> 
 	{% for conflict_repo in conflict_dict %}
 		<tr><th style="text-align:left">{{conflict_repo}}</th></tr>
-		<tr ><th style="text-align:center">Conflict Type</th><th style="text-align:center">Image 1</th><th style="text-align:center">Image 1 ID</th><th style="text-align:center">Image 2</th><th style="text-align:center">Image 2 ID</th></tr>
+		<tr>
+			<th style="text-align:center">Conflict Type</th>
+			<th style="text-align:center">Image 1</th>
+			<th style="text-align:center">Image 1 ID</th>
+			<th style="text-align:center">Image 1 Visibility</th>
+			<th style="text-align:center">Image 2</th>
+			<th style="text-align:center">Image 2 ID</th>
+			<th style="text-align:center">Image 2 Visibility</th>
+		</tr>
 		{% for conflict in conflict_dict|get_item:conflict_repo %}
 			<tr><td style="text-align:center">{{conflict|get_item:"type"}} <img 
 			{% if conflict|get_item:"type" == 3 %}
@@ -141,7 +149,14 @@ th {
 				title = "Type 1 - Image1 and Image2 have the same name but are different images."
 			{% endif %}
 			 src="/static/glintwebui/img/red_info_icon.png" style="width:15px;height:15px; float:right;"/>
-			</td><td>{{conflict|get_item:"image_one_name"}}</td><td>{{conflict|get_item:"image_one"}}</td><td>{{conflict|get_item:"image_two_name"}}</td><td>{{conflict|get_item:"image_two"}}</td></tr> 
+			</td>
+			<td>{{conflict|get_item:"image_one_name"}}</td>
+			<td>{{conflict|get_item:"image_one"}}</td>
+			<td>{{conflict|get_item:"image_one_visibility"}}</td>
+			<td>{{conflict|get_item:"image_two_name"}}</td>
+			<td>{{conflict|get_item:"image_two"}}</td>
+			<td>{{conflict|get_item:"image_two_visibility"}}</td>
+			</tr> 
 		{% endfor %}
 	{% endfor %}
 	</table>
