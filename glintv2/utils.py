@@ -451,7 +451,13 @@ def find_image_by_name(account_name, image_name):
 			if image_dict[repo][image]['name'] == image_name:
 				if image_dict[repo][image]['state'] == 'Present':
 					repo_obj = Project.objects.get(account_name=account_name, alias=repo)
-					return (repo_obj.auth_url, repo_obj.tenant, repo_obj.username, repo_obj.password, image)
+					return (repo_obj.auth_url, repo_obj.tenant, repo_obj.username, repo_obj.password, image, image_dict[repo][image]['checksum'])
+	return False
+
+# This function accepts info to uniquely identify an image regardless of account
+# as well as the local location of the image such that the image can be used for
+# download or a transfer without having to download the image again.
+def add_cached_image(account, project_id, image_id, image_name, image_checksum, full_path):
 	return False
 
 # Applys the delete rules and returns True if its ok to delete, False otherwise

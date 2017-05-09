@@ -1,4 +1,5 @@
 from django.http import HttpResponse
+from django.http import StreamingHttpResponse
 #from django.template import loader
 
 from django.core.exceptions import PermissionDenied
@@ -9,9 +10,10 @@ from django.contrib.auth.models import User
 from .models import Project, User_Account, Glint_User, Account
 from .forms import addRepoForm
 from .glint_api import repo_connector, validate_repo, change_image_name
-from glintv2.utils import get_unique_image_list, get_images_for_proj, parse_pending_transactions, build_id_lookup_dict, repo_modified, get_conflicts_for_acc
+from glintv2.utils import get_unique_image_list, get_images_for_proj, parse_pending_transactions, build_id_lookup_dict, repo_modified, get_conflicts_for_acc, find_image_by_name
 
 import time
+import os
 import json
 import logging
 
@@ -619,3 +621,38 @@ def manage_accounts(request, message=None):
 		'message': message
 	}
 	return render(request, 'glintwebui/manage_accounts.html', context)
+
+
+def download_image(request, account_name, image_name):
+	if not verifyUser(request):
+		raise PermissionDenied
+
+	logger.info("Preparing to download image file.")
+	# returns (repo_obj.auth_url, repo_obj.tenant, repo_obj.username, repo_obj.password, image_id, img_checksum)
+	image_info = find_image_by_name(account_name=account_name, image_name=image_name)
+
+	# Find image location
+	image_id=image_info[4]
+
+	# Check download location to see if image is there already, may need to maintain table in redis
+	# tenative_path = check_cached_images(account, project_id, image_id, image_name)
+	# Download image
+	if not os.path.exists("/var/www/glintv2/scratch/"):
+		os.makedirs("/var/www/glintv2/scratch/")
+
+	rcon = repo_connector(auth_url=image_info[0], project=image_info[1], username=image_info[2], password=image_info[3])
+	rcon.download_image(image_name=image_name, image_id=image_id, scratch_dir="/var/www/glintv2/scratch/")
+	# add to download table in redis
+	# add_cached_image(account, project_id, image_id, image_name, image_checksum, full_path)
+
+
+
+	filename = image_name
+	file_full_path = "/var/www/glintv2/scratch/" + image_name
+	response = StreamingHttpResponse((line for line in open(file_full_path,'r')))
+	response['Content-Disposition'] = "attachment; filename={0}".format(filename)
+	response['Content-Length'] = os.path.getsize(file_full_path)
+	return response
+
+def upload_image():
+	return

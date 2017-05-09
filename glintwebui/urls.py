@@ -21,4 +21,5 @@ urlpatterns = [
     url(r'^update_account/$', views.update_account, name='update_account'), 
     url(r'^delete_user_account/$', views.delete_user_account, name='delete_user_account'),
     url(r'^add_user_account/$', views.add_user_account, name='add_user_account'),
+    url(r'^download_image/(?P<account_name>.+)/(?P<image_name>.+)/$', views.download_image, name='download_image'),
 ]

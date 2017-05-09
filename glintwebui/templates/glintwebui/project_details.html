@@ -1,5 +1,5 @@
 <head>
-<meta http-equiv="refresh" content="5">
+<meta http-equiv="refresh" content="6">
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 <style>
 table, th, td {
@@ -179,7 +179,7 @@ th {
 		{% endcomment %}
 		{% if image_set is not None %}
 			{% for image in image_set %}
-				<tr class="image_row"><th> {{image}}</th>
+				<tr class="image_row"><th> {{image}}  <img title="Download Image" src="/static/glintwebui/img/green_download_icon.png" onclick="downloadImage('{{image}}');" style="width:20px;height:20px; float:right; padding-left:5px; cursor: pointer;"/></th>
 				{% for repo_key, repo_value in image_dict.items %}
 					{% with image_id=image_lookup|get_item:repo_key|get_item:image %}
 					{% if repo_value|get_item:image_id is not None %}
@@ -308,6 +308,13 @@ function doDropdown() {
 
 function doAdminDropdown() {
     document.getElementById("myAdminDropdown").classList.toggle("show");
+}
+
+function downloadImage(image) {
+	if (confirm("Are you sure you want to download: " + image) == true) {;
+		//could put a "preparing download screen here, as it will take quite some time for the large images"
+		window.location.href = "/ui/download_image/{{account_name}}/" + image;
+	}
 }
 
 // Close the dropdown menu if the user clicks outside of it
