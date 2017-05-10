@@ -1,7 +1,9 @@
 import json
 import redis
+import time
 import logging
 from glintwebui.glint_api import repo_connector
+from ast import literal_eval
 import config
 
 logger =  logging.getLogger('glintv2')
@@ -454,11 +456,35 @@ def find_image_by_name(account_name, image_name):
 					return (repo_obj.auth_url, repo_obj.tenant, repo_obj.username, repo_obj.password, image, image_dict[repo][image]['checksum'])
 	return False
 
-# This function accepts info to uniquely identify an image regardless of account
-# as well as the local location of the image such that the image can be used for
+# This function accepts info to uniquely identify an image as well as
+# the local location of the image such that the image can be used for
 # download or a transfer without having to download the image again.
-def add_cached_image(account, project_id, image_id, image_name, image_checksum, full_path):
+# Tuple format: (image_name, image_checksum, full_path, current_time)
+def add_cached_image(image_name, image_checksum, full_path):
+	current_time = int(time.time())
+	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
+	img_tuple = (image_name, image_checksum, full_path, current_time)
+	r.rpush("glint_img_cache", img_tuple)
 	return False
+
+# This function checks the cache for a local copy of a given image file
+# if found it updates the timestamp and returns the filepath
+# Tuple format: (image_name, image_checksum, full_path, current_time)
+def check_cached_images(image_name, image_checksum):
+	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
+	cache_tuple_list = r.lrange("glint_img_cache", 0, -1)
+
+	for img_tuple in cache_tuple_list:
+		img_tuple = literal_eval(img_tuple)
+		if(image_name == str(img_tuple[0]) and image_checksum == str(img_tuple[1])):
+			#update entry and return path
+			r.lrem("glint_img_cache", 0, str(img_tuple))
+			new_tuple = (img_tuple[0], img_tuple[1], img_tuple[2], int(time.time()))
+			r.rpush("glint_img_cache", new_tuple)
+			return img_tuple[2]
+
+	return None
+
 
 # Applys the delete rules and returns True if its ok to delete, False otherwise
 # Rule 1: Can't delete a shared image

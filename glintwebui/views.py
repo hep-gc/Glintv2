@@ -10,7 +10,7 @@ from django.contrib.auth.models import User
 from .models import Project, User_Account, Glint_User, Account
 from .forms import addRepoForm
 from .glint_api import repo_connector, validate_repo, change_image_name
-from glintv2.utils import get_unique_image_list, get_images_for_proj, parse_pending_transactions, build_id_lookup_dict, repo_modified, get_conflicts_for_acc, find_image_by_name
+from glintv2.utils import get_unique_image_list, get_images_for_proj, parse_pending_transactions, build_id_lookup_dict, repo_modified, get_conflicts_for_acc, find_image_by_name, add_cached_image, check_cached_images
 
 import time
 import os
@@ -634,21 +634,32 @@ def download_image(request, account_name, image_name):
 	# Find image location
 	image_id=image_info[4]
 
-	# Check download location to see if image is there already, may need to maintain table in redis
-	# tenative_path = check_cached_images(account, project_id, image_id, image_name)
+	# Check download location to see if image is there already
+	# This function should update the timestamp if it finds a hit
+	tentative_path = check_cached_images(image_name, image_info[5])
+	if tentative_path is not None:
+		#return the image using this path
+		logger.info("Found cached local copy...")
+		filename = image_name
+		response = StreamingHttpResponse((line for line in open(tentative_path,'r')))
+		response['Content-Disposition'] = "attachment; filename={0}".format(filename)
+		response['Content-Length'] = os.path.getsize(tentative_path)
+		return response
+
 	# Download image
+
 	if not os.path.exists("/var/www/glintv2/scratch/"):
 		os.makedirs("/var/www/glintv2/scratch/")
-
+	logger.info("No cached copy found, downloading image file.")
 	rcon = repo_connector(auth_url=image_info[0], project=image_info[1], username=image_info[2], password=image_info[3])
 	rcon.download_image(image_name=image_name, image_id=image_id, scratch_dir="/var/www/glintv2/scratch/")
+
 	# add to download table in redis
-	# add_cached_image(account, project_id, image_id, image_name, image_checksum, full_path)
-
-
-
 	filename = image_name
 	file_full_path = "/var/www/glintv2/scratch/" + image_name
+	add_cached_image(image_name, image_checksum=image_info[5], full_path=file_full_path)
+
+
 	response = StreamingHttpResponse((line for line in open(file_full_path,'r')))
 	response['Content-Disposition'] = "attachment; filename={0}".format(filename)
 	response['Content-Length'] = os.path.getsize(file_full_path)
