@@ -22,4 +22,5 @@ urlpatterns = [
     url(r'^delete_user_account/$', views.delete_user_account, name='delete_user_account'),
     url(r'^add_user_account/$', views.add_user_account, name='add_user_account'),
     url(r'^download_image/(?P<account_name>.+)/(?P<image_name>.+)/$', views.download_image, name='download_image'),
+    url(r'^upload_image/(?P<account_name>.+)/$', views.upload_image, name='upload_image'),
 ]

@@ -150,6 +150,19 @@ def transfer_image(self, image_name, image_id, account_name, auth_url, project_t
     decrement_transactions()
     return True
 
+# Accepts Image info (name, local path, and format), project name, repo object info, and the requesting user
+# Uploads the given image to the target cloud (repo object)
+# 
+@app.task(bind=True)
+def upload_image(self, image_name, image_path, account_name, auth_url, project_tenant, username, password, requesting_user, project_alias, disk_format, container_format):
+    # Upload said image to the new repo
+    logger.info("Attempting to upload Image to %s for user: %s" % (project_tenant, requesting_user))
+    dest_rcon = repo_connector(auth_url=auth_url, project=project_tenant, username=username, password=password)
+    dest_rcon.upload_image(image_id=None, image_name=image_name, scratch_dir=image_path, disk_format=disk_format, container_format=container_format)
+    logger.info("Image upload finished")
+    decrement_transactions()
+    return True
+
 # Accepts image id, project name, and repo object to delete image ID from.
 @app.task(bind=True)
 def delete_image(self, image_id, image_name, account_name, auth_url, project_tenant, username, password, requesting_user, project_alias):

@@ -10,12 +10,15 @@ from django.contrib.auth.models import User
 from .models import Project, User_Account, Glint_User, Account
 from .forms import addRepoForm
 from .glint_api import repo_connector, validate_repo, change_image_name
-from glintv2.utils import get_unique_image_list, get_images_for_proj, parse_pending_transactions, build_id_lookup_dict, repo_modified, get_conflicts_for_acc, find_image_by_name, add_cached_image, check_cached_images
+from glintv2.utils import get_unique_image_list, get_images_for_proj, parse_pending_transactions, build_id_lookup_dict, repo_modified, get_conflicts_for_acc, find_image_by_name, add_cached_image, check_cached_images, increment_transactions
 
+import glintv2.config as config
 import time
 import os
 import json
 import logging
+import redis
+
 
 logger =  logging.getLogger('glintv2')
 
@@ -665,5 +668,56 @@ def download_image(request, account_name, image_name):
 	response['Content-Length'] = os.path.getsize(file_full_path)
 	return response
 
-def upload_image():
-	return
+def upload_image(request, account_name):
+	if not verifyUser(request):
+		raise PermissionDenied
+
+	if request.method == 'POST' and request.FILES['myfile']:
+		#process image upload
+		image_file = request.FILES['myfile']
+		file_path = "/var/www/glintv2/scratch/" + image_file.name
+		with open(file_path, 'wb+') as destination:
+			for chunk in image_file.chunks():
+				destination.write(chunk)
+
+		disk_format = request.POST.get('disk_format')
+		# now queue the uploads to the destination clouds
+		cloud_alias_list = request.POST.get('clouds').split(',')
+		r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
+		user = getUser(request)
+		for cloud in cloud_alias_list:
+				logger.error(cloud)
+				transaction = {
+				    'user': user,
+					'action':  'upload',
+					'account_name': account_name,
+					'repo': cloud,
+					'image_name': image_file.name,
+					'local_path': file_path,
+					'disk_format': disk_format,
+					'container_format': "bare"
+				}
+				trans_key = account_name + "_pending_transactions"
+				r.rpush(trans_key, json.dumps(transaction))
+				increment_transactions()
+			
+
+		#return to project details page with message
+		message = "Image upload queued, please allow a few minutes for the uploads."
+		return project_details(request, account_name, message)
+
+	elif request.method == 'POST' and request.POST.get('myfileurl'):
+		#download the image then upload it to the cloud
+		img_url = request.POST.get('myfileurl')
+
+		# now upload it to the destination clouds
+		cloud_alias_list = request.POST.get('clouds')
+	else:
+		#render page to upload image
+
+		image_dict = json.loads(get_images_for_proj(account_name))
+		context = {
+			'account_name': account_name,
+			'image_dict': image_dict
+		}
+		return render(request, 'glintwebui/upload_image.html', context)

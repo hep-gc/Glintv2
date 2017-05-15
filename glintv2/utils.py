@@ -363,7 +363,7 @@ def parse_pending_transactions(account_name, repo_alias, image_list, user):
 # Then finally we can call the asynch celery tasks
 def process_pending_transactions(account_name, json_img_dict):
 	from glintwebui.models import Project
-	from .celery_app import transfer_image, delete_image
+	from .celery_app import transfer_image, delete_image, upload_image
 
 	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
 	trans_key = account_name + '_pending_transactions'
@@ -404,6 +404,16 @@ def process_pending_transactions(account_name, json_img_dict):
 				repo_obj = Project.objects.get(account_name=transaction['account_name'], alias=transaction['repo'])
 				img_dict[transaction['repo']][transaction['image_id']]['state'] = 'Pending Delete'
 				delete_image.delay(image_id=transaction['image_id'], image_name=transaction['image_name'], account_name=account_name, auth_url=repo_obj.auth_url, project_tenant=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password, requesting_user=transaction['user'], project_alias=repo_obj.alias)
+	
+		elif transaction['action'] == 'upload':
+			req_user = transaction['user']
+			img_name = transaction['image_name']
+			image_path = transaction['local_path']
+			disk_format = transaction['disk_format']
+			container_format = transaction['container_format']
+			repo_obj = Project.objects.get(account_name=transaction['account_name'], alias=transaction['repo'])
+			upload_image.delay(image_name=img_name, image_path=image_path, account_name=account_name, auth_url=repo_obj.auth_url, project_tenant=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password, requesting_user=req_user, project_alias=repo_obj.alias, disk_format=disk_format, container_format=container_format)
+
 	return json.dumps(img_dict)
 
 
