@@ -57,14 +57,14 @@
 			<td>
 				<section class="container">
 					<div>
-						<select id="leftValues" name="clouds" size="{{image_dict.len}}" multiple></select>
+						<select id="leftValues" name="clouds" size="{{max_repos}}" multiple></select>
 					</div>
 					<div>
 						<input type="button" id="btnLeft" value="&lt;&lt;" />
 						<input type="button" id="btnRight" value="&gt;&gt;" />
 					</div>
 					<div>
-						<select id="rightValues" size="{{image_dict.len}}" multiple>
+						<select id="rightValues" size="{{max_repos}}" multiple>
 							{% for repo in image_dict %}
 								<option>{{repo}}</option>
 							{% endfor %}

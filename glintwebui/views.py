@@ -18,6 +18,7 @@ import os
 import json
 import logging
 import redis
+import urllib2
 
 
 logger =  logging.getLogger('glintv2')
@@ -682,24 +683,25 @@ def upload_image(request, account_name):
 
 		disk_format = request.POST.get('disk_format')
 		# now queue the uploads to the destination clouds
-		cloud_alias_list = request.POST.get('clouds').split(',')
+		logger.error(request.POST.getlist('clouds'))
+		cloud_alias_list = request.POST.getlist('clouds')#.split(',')
 		r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
 		user = getUser(request)
 		for cloud in cloud_alias_list:
-				logger.error(cloud)
-				transaction = {
-				    'user': user,
-					'action':  'upload',
-					'account_name': account_name,
-					'repo': cloud,
-					'image_name': image_file.name,
-					'local_path': file_path,
-					'disk_format': disk_format,
-					'container_format': "bare"
-				}
-				trans_key = account_name + "_pending_transactions"
-				r.rpush(trans_key, json.dumps(transaction))
-				increment_transactions()
+			logger.error(cloud)
+			transaction = {
+			    'user': user,
+				'action':  'upload',
+				'account_name': account_name,
+				'repo': cloud,
+				'image_name': image_file.name,
+				'local_path': file_path,
+				'disk_format': disk_format,
+				'container_format': "bare"
+			}
+			trans_key = account_name + "_pending_transactions"
+			r.rpush(trans_key, json.dumps(transaction))
+			increment_transactions()
 			
 
 		#return to project details page with message
@@ -707,17 +709,52 @@ def upload_image(request, account_name):
 		return project_details(request, account_name, message)
 
 	elif request.method == 'POST' and request.POST.get('myfileurl'):
-		#download the image then upload it to the cloud
+		#download the image
 		img_url = request.POST.get('myfileurl')
+		image_name = img_url.rsplit("/", 1)[-1]
+		file_path = "/var/www/glintv2/scratch/" + image_name
+		# check if a file with that name already exists
+		if(os.path.exists(file_path)):
+			#if there is a local file with the same name, chances are the file already exists in the cloud
+			# but to be sure check the cache list for an image at this location and return an error if it is listed
+			return None
 
+		image_data = urllib2.urlopen(img_url)
+
+		with open(file_path, "wb") as image_file:
+			image_file.write(image_data.read())
+		
+		disk_format = request.POST.get('disk_format')
 		# now upload it to the destination clouds
-		cloud_alias_list = request.POST.get('clouds')
+		cloud_alias_list = request.POST.get('clouds').split(',')
+		r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
+		user = getUser(request)
+		for cloud in cloud_alias_list:
+			transaction = {
+			    'user': user,
+				'action':  'upload',
+				'account_name': account_name,
+				'repo': cloud,
+				'image_name': image_name,
+				'local_path': file_path,
+				'disk_format': disk_format,
+				'container_format': "bare"
+			}
+			trans_key = account_name + "_pending_transactions"
+			r.rpush(trans_key, json.dumps(transaction))
+			increment_transactions()
+			
+
+		#return to project details page with message
+		message = "Image upload queued, please allow a few minutes for the uploads."
+		return project_details(request, account_name, message)
 	else:
 		#render page to upload image
 
 		image_dict = json.loads(get_images_for_proj(account_name))
 		context = {
 			'account_name': account_name,
-			'image_dict': image_dict
+			'image_dict': image_dict,
+			'max_repos': len(image_dict)
 		}
 		return render(request, 'glintwebui/upload_image.html', context)
