@@ -512,15 +512,14 @@ def do_cache_cleanup():
 			file_found = False
 			for cached_item in cache_tuple_list:
 				cached_item = literal_eval(cached_item)
-				logger.info("Cached item: " + cached_item[2])
 				if path + "/" + f == cached_item[2]:
 					#file in cache, break and go onto next file
 					file_found = True
 					break
 			if not file_found:
 				try:
-					logger.info("No cache entry found removing: " + path + "/" + f)
 					os.remove(path + "/" + f)
+					logger.info("No cache entry found, removed: " + path + "/" + f)
 				except OSError as e:
 					# Catch attempts to delete directories
 					pass
