@@ -10,7 +10,7 @@ from django.contrib.auth.models import User
 from .models import Project, User_Account, Glint_User, Account
 from .forms import addRepoForm
 from .glint_api import repo_connector, validate_repo, change_image_name
-from glintv2.utils import get_unique_image_list, get_images_for_proj, parse_pending_transactions, build_id_lookup_dict, repo_modified, get_conflicts_for_acc, find_image_by_name, add_cached_image, check_cached_images, increment_transactions
+from glintv2.utils import get_unique_image_list, get_images_for_proj, parse_pending_transactions, build_id_lookup_dict, repo_modified, get_conflicts_for_acc, find_image_by_name, add_cached_image, check_cached_images, increment_transactions, check_for_existing_images
 
 import glintv2.config as config
 import time
@@ -674,21 +674,75 @@ def upload_image(request, account_name):
 		raise PermissionDenied
 
 	if request.method == 'POST' and request.FILES['myfile']:
+		#standard message
+		message = "Image upload queued, please allow a few minutes for the uploads."
+
 		#process image upload
 		image_file = request.FILES['myfile']
 		file_path = "/var/www/glintv2/scratch/" + image_file.name
+
+		#before we save it locally let us check if it is already in the repos
+		cloud_alias_list = request.POST.getlist('clouds')
+		bad_clouds = check_for_existing_images(account_name, cloud_alias_list, image_file.name)
+		if len(bad_clouds)>0:
+			for cloud in bad_clouds:
+				cloud_alias_list.remove(cloud)
+			message = "Upload failed for one or more projects because the image name was already in use."
+
+		if len(cloud_alias_list)==0:
+			#if we have eliminated all the target clouds, return with error message
+			message = "Upload failed to all target projects because the image name was already in use."
+			image_dict = json.loads(get_images_for_proj(account_name))
+			context = {
+				'account_name': account_name,
+				'image_dict': image_dict,
+				'max_repos': len(image_dict),
+				'message': message
+			}
+			return render(request, 'glintwebui/upload_image.html', context)
+
+		#And finally before we save locally double check that file doesn't already exist
+		valid_path = True
+		if(os.path.exists(file_path)):
+			valid_path = False
+			# Filename exists locally, we need to use a temp folder
+			for x in range(0,10):
+				#first check if the temp folder exists
+				file_path = "/var/www/glintv2/scratch/" + str(x)
+				if not os.path.exists(file_path):
+					#create temp folder and break since it is definitly empty
+					os.makedirs(file_path)
+					file_path = "/var/www/glintv2/scratch/" + str(x) + "/" + image_file.name
+					valid_path = True
+					break
+
+				#then check if the file is in that folder
+				file_path = "/var/www/glintv2/scratch/" + str(x) + "/" + image_file.name
+				if not os.path.exists(file_path):
+					valid_path = True
+					break
+
+		if not valid_path:
+			#turn away request since there is already multiple files with this name being uploaded
+			image_dict = json.loads(get_images_for_proj(account_name))
+			context = {
+				'account_name': account_name,
+				'image_dict': image_dict,
+				'max_repos': len(image_dict),
+				'message': "Too many images by that name being uploaded, please try again in a few minutes."
+			}
+			return render(request, 'glintwebui/upload_image.html', context)
+
+		disk_format = request.POST.get('disk_format')
 		with open(file_path, 'wb+') as destination:
 			for chunk in image_file.chunks():
 				destination.write(chunk)
 
-		disk_format = request.POST.get('disk_format')
 		# now queue the uploads to the destination clouds
-		logger.error(request.POST.getlist('clouds'))
-		cloud_alias_list = request.POST.getlist('clouds')#.split(',')
 		r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
 		user = getUser(request)
 		for cloud in cloud_alias_list:
-			logger.error(cloud)
+			logger.info("Queing image upload to %s" % cloud)
 			transaction = {
 			    'user': user,
 				'action':  'upload',
@@ -705,10 +759,12 @@ def upload_image(request, account_name):
 			
 
 		#return to project details page with message
-		message = "Image upload queued, please allow a few minutes for the uploads."
 		return project_details(request, account_name, message)
 
 	elif request.method == 'POST' and request.POST.get('myfileurl'):
+		#standard message
+		message = "Image upload queued, please allow a few minutes for the uploads."
+
 		#download the image
 		img_url = request.POST.get('myfileurl')
 		image_name = img_url.rsplit("/", 1)[-1]
@@ -726,7 +782,7 @@ def upload_image(request, account_name):
 		
 		disk_format = request.POST.get('disk_format')
 		# now upload it to the destination clouds
-		cloud_alias_list = request.POST.get('clouds').split(',')
+		cloud_alias_list = request.POST.getlist('clouds')
 		r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
 		user = getUser(request)
 		for cloud in cloud_alias_list:
@@ -746,7 +802,6 @@ def upload_image(request, account_name):
 			
 
 		#return to project details page with message
-		message = "Image upload queued, please allow a few minutes for the uploads."
 		return project_details(request, account_name, message)
 	else:
 		#render page to upload image
@@ -755,6 +810,7 @@ def upload_image(request, account_name):
 		context = {
 			'account_name': account_name,
 			'image_dict': image_dict,
-			'max_repos': len(image_dict)
+			'max_repos': len(image_dict),
+			'message': None
 		}
 		return render(request, 'glintwebui/upload_image.html', context)

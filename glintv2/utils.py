@@ -5,6 +5,7 @@ import logging
 from glintwebui.glint_api import repo_connector
 from ast import literal_eval
 import config
+import os
 
 logger =  logging.getLogger('glintv2')
 
@@ -494,6 +495,54 @@ def check_cached_images(image_name, image_checksum):
 			return img_tuple[2]
 
 	return None
+
+# This function checks all the cache folders for files that aren't in the image cache and removes them
+def do_cache_cleanup():
+	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
+	cache_tuple_list = r.lrange("glint_img_cache", 0, -1)
+	for x in range(0,11):
+		#this is to clean top level folder, range will need to be adjusted once it is configurable
+		if x == 10:
+			path = "/var/www/glintv2/scratch"
+		else:
+			path = "/var/www/glintv2/scratch/" + str(x)
+		files = os.listdir(path)
+		for f in files:
+			#check if it is in cache
+			file_found = False
+			for cached_item in cache_tuple_list:
+				cached_item = literal_eval(cached_item)
+				logger.info("Cached item: " + cached_item[2])
+				if path + "/" + f == cached_item[2]:
+					#file in cache, break and go onto next file
+					file_found = True
+					break
+			if not file_found:
+				try:
+					logger.info("No cache entry found removing: " + path + "/" + f)
+					os.remove(path + "/" + f)
+				except OSError as e:
+					# Catch attempts to delete directories
+					pass
+
+
+	return None
+
+# This function accepts account name, a list of project alias' and an image name
+# Using the image dictionary it checks the provided alias' for the given image name
+# It returns a list of alias' where the image was found, if none were found it returns empty list
+def check_for_existing_images(account_name, project_alias_list, image_name):
+	json_dict = get_images_for_proj(account_name)
+	image_dict = json.loads(json_dict)
+
+	image_found_alias = list()
+
+	for alias in project_alias_list:
+		for image in image_dict[alias]:
+			if image_dict[alias][image]['name'] == image_name:
+				image_found_alias.append(alias)
+
+	return image_found_alias
 
 
 # Applys the delete rules and returns True if its ok to delete, False otherwise

@@ -23,6 +23,9 @@
 </style>
 
 <div class="image upload">
+	{% if message is not None%}
+		<p style="color:red; font-weight:bold">{{message}}</p>
+	{% endif%}
 	<form method="post" action="/ui/upload_image/{{account_name}}/" enctype="multipart/form-data">
 	{% csrf_token %}
 	<table style="width: 30%;">

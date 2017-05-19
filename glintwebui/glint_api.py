@@ -70,7 +70,7 @@ class repo_connector(object):
 		image = glance.images.create( name=image_name, disk_format=disk_format, container_format=container_format)
 		return image.id
 
-	# Upload an image to repo, returns True if successful or False if not
+	# Upload an image to repo, returns image id if successful
 	# if there is no image_id it is a direct upload and no placeholder exists
 	def upload_image(self, image_id, image_name, scratch_dir, disk_format=None, container_format=None):
 		if image_id is not None:
@@ -83,14 +83,14 @@ class repo_connector(object):
 			logger.info("Upload complete, deleting temp file")
 			os.remove(file_path)
 			os.rmdir(scratch_dir)
-			return True
+			return image_id
 		else:
 			#this is a straight upload not part of a transfer
 			glance = glanceclient.Client('2', session=self.sess)
 			image = glance.images.create(name=image_name, disk_format=disk_format, container_format=container_format)
 			glance.images.upload(image.id, open(scratch_dir, 'rb'))
 			logger.info("Upload complete")
-			return True
+			return image.id
 
 	# Download an image from the repo, returns True if successful or False if not
 	def download_image(self, image_name, image_id, scratch_dir):
@@ -116,6 +116,11 @@ class repo_connector(object):
 	def update_image_name(self, image_id, image_name):
 		glance = glanceclient.Client('2', session=self.sess)
 		glance.images.update(image_id, name=image_name)
+
+	def get_checksum(self, image_id):
+		glance = glanceclient.Client('2', session=self.sess)
+		image = glance.images.get(image_id)
+		return image['checksum']
 
 
 def validate_repo(auth_url, username, password, tenant_name):

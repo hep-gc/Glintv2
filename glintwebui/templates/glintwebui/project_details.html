@@ -1,5 +1,5 @@
 <head>
-<meta http-equiv="refresh" content="6">
+<meta http-equiv="refresh" content="6; url=/ui">
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 <style>
 table, th, td {
@@ -333,6 +333,7 @@ window.onclick = function(event) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+
     var filter = localStorage.getItem("filter");
     if (filter == "public"){
     	$("tr.image_row").filter(function(){

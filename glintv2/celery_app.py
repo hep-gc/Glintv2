@@ -2,7 +2,7 @@ from __future__ import absolute_import, unicode_literals
 from celery import Celery
 from celery.utils.log import get_task_logger
 from django.conf import settings
-from .utils import  jsonify_image_list, update_pending_transactions, get_images_for_proj, set_images_for_proj, process_pending_transactions, process_state_changes, queue_state_change, find_image_by_name, check_delete_restrictions, decrement_transactions, get_num_transactions, repo_proccesed, check_for_repo_changes, set_collection_task, check_for_image_conflicts, set_conflicts_for_acc
+from .utils import  jsonify_image_list, update_pending_transactions, get_images_for_proj, set_images_for_proj, process_pending_transactions, process_state_changes, queue_state_change, find_image_by_name, check_delete_restrictions, decrement_transactions, get_num_transactions, repo_proccesed, check_for_repo_changes, set_collection_task, check_for_image_conflicts, set_conflicts_for_acc, check_cached_images, add_cached_image, do_cache_cleanup
 from glintwebui.glint_api import repo_connector
 import glintv2.config as config
  
@@ -45,6 +45,16 @@ def image_collection(self):
     term_signal = False
     num_tx = get_num_transactions()
 
+    '''
+    These folders need to be accessable by both the apche and celery users and need to be setup before runtime
+    #create temp cache folders
+    for x in range(0,10):
+        #first check if the temp folder exists
+        file_path = "/var/www/glintv2/scratch/" + str(x)
+        if not os.path.exists(file_path):
+            os.makedirs(file_path)
+    '''
+
     #perminant for loop to monitor image states and to queue up tasks
     while(True):
         # First check for term signal
@@ -56,6 +66,10 @@ def image_collection(self):
             return
         logger.info("Start Image collection")
         account_list = Account.objects.all()
+
+        #if there are no active transactions clean up the cache folders
+        if(num_tx == 0):
+            do_cache_cleanup()
 
         for account in account_list:
             repo_list = Project.objects.filter(account_name=account.account_name)
@@ -158,7 +172,14 @@ def upload_image(self, image_name, image_path, account_name, auth_url, project_t
     # Upload said image to the new repo
     logger.info("Attempting to upload Image to %s for user: %s" % (project_tenant, requesting_user))
     dest_rcon = repo_connector(auth_url=auth_url, project=project_tenant, username=username, password=password)
-    dest_rcon.upload_image(image_id=None, image_name=image_name, scratch_dir=image_path, disk_format=disk_format, container_format=container_format)
+    image_id = dest_rcon.upload_image(image_id=None, image_name=image_name, scratch_dir=image_path, disk_format=disk_format, container_format=container_format)
+    img_checksum = dest_rcon.get_checksum(image_id)
+
+    if(check_cached_images(image_name, img_checksum) is None):
+        #image isn't in cache and it's unique add it to the cache list
+         add_cached_image(image_name, img_checksum, image_path)
+
+
     logger.info("Image upload finished")
     decrement_transactions()
     return True
