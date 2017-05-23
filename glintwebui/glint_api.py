@@ -79,10 +79,6 @@ class repo_connector(object):
 			images = glance.images.list()
 			file_path = scratch_dir + image_name
 			glance.images.upload(image_id, open(file_path, 'rb'))
-			# Delete the file when we are done with it
-			logger.info("Upload complete, deleting temp file")
-			os.remove(file_path)
-			os.rmdir(scratch_dir)
 			return image_id
 		else:
 			#this is a straight upload not part of a transfer

@@ -139,30 +139,74 @@ def image_collection(self):
 @app.task(bind=True)
 def transfer_image(self, image_name, image_id, account_name, auth_url, project_tenant, username, password, requesting_user, project_alias):
     logger.info("User %s attempting to transfer %s - %s to repo '%s'" % (requesting_user, image_name, image_id, project_tenant))
-    #First check if this thread's scratch folder exists:
-    scratch_dir = "/tmp/" + self.request.id + "/"
-    if not os.path.exists(scratch_dir):
-        os.makedirs(scratch_dir)
 
     # Find image by name in another repo where the state=present
-    # returns tuple: (auth_url, tenant, username, password, img_id)
+    # returns tuple: (auth_url, tenant, username, password, img_id, checksum)
     src_img_info = find_image_by_name(account_name=account_name, image_name=image_name)
 
+    #check if this image is cached locally
+    image_path = check_cached_images(image_name, src_img_info[5])
 
-    # Download said img to a scratch folder /tmp/ for now
-    logger.info("Downloading Image from %s" % src_img_info[1])
-    src_rcon = repo_connector(auth_url=src_img_info[0], project=src_img_info[1], username=src_img_info[2], password=src_img_info[3])
-    src_rcon.download_image(image_name=image_name, image_id=src_img_info[4], scratch_dir=scratch_dir)
+    if image_path is not None:
+        logger.info("Found cached copy at: %s uploading image" % image_path)
+        #upload cached image
+        image_path = image_path.rsplit('/', 1)[0]+ "/"
+        logger.info("Uploading Image to %s" % project_tenant)
+        dest_rcon = repo_connector(auth_url=auth_url, project=project_tenant, username=username, password=password)
+        dest_rcon.upload_image(image_id=image_id, image_name=image_name, scratch_dir=image_path)
+     
+        queue_state_change(account_name=account_name, repo=project_alias, img_id=image_id, state='Present')
+        logger.info("Image transfer finished")
+        decrement_transactions()
+        return True
 
-    # Upload said image to the new repo
-    logger.info("Uploading Image to %s" % project_tenant)
-    dest_rcon = repo_connector(auth_url=auth_url, project=project_tenant, username=username, password=password)
-    dest_rcon.upload_image(image_id=image_id, image_name=image_name, scratch_dir=scratch_dir)
- 
-    queue_state_change(account_name=account_name, repo=project_alias, img_id=image_id, state='Present')
-    logger.info("Image transfer finished")
-    decrement_transactions()
-    return True
+    else:
+        logger.info("No cached copy found, downloading image")
+        # Download img to the cache folder
+
+        # First check if a file by this name exists in the cache folder
+        image_path = "/var/www/glintv2/scratch/" + image_name
+
+        valid_path = True
+        if(os.path.exists(image_path)):
+            valid_path = False
+            # Filename exists locally, we need to use a temp folder
+            for x in range(0,10):
+                #first check if the temp folder exists
+                image_path = "/var/www/glintv2/scratch/" + str(x)
+                if not os.path.exists(image_path):
+                    #create temp folder and break since it is definitly empty
+                    os.makedirs(image_path)
+                    image_path = "/var/www/glintv2/scratch/" + str(x) + "/" + image_file.name
+                    valid_path = True
+                    break
+
+                #then check if the file is in that folder
+                image_path = "/var/www/glintv2/scratch/" + str(x) + "/" + image_file.name
+                if not os.path.exists(image_path):
+                    valid_path = True
+                    break
+
+        # remove file name from path
+        image_path = image_path.rsplit('/', 1)[0]
+        image_path = image_path + "/"
+        logger.error("Path= %s" % image_path)
+
+        logger.info("Downloading Image from %s" % src_img_info[1])
+        src_rcon = repo_connector(auth_url=src_img_info[0], project=src_img_info[1], username=src_img_info[2], password=src_img_info[3])
+        src_rcon.download_image(image_name=image_name, image_id=src_img_info[4], scratch_dir=image_path)
+        logger.info("Image transfer finished")
+
+        # Upload said image to the new repo
+        logger.info("Uploading Image to %s" % project_tenant)
+        dest_rcon = repo_connector(auth_url=auth_url, project=project_tenant, username=username, password=password)
+        dest_rcon.upload_image(image_id=image_id, image_name=image_name, scratch_dir=image_path)
+     
+        queue_state_change(account_name=account_name, repo=project_alias, img_id=image_id, state='Present')
+        image_path = image_path + image_name
+        add_cached_image(image_name, src_img_info[5], image_path)
+        decrement_transactions()
+        return True
 
 # Accepts Image info (name, local path, and format), project name, repo object info, and the requesting user
 # Uploads the given image to the target cloud (repo object)
