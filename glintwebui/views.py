@@ -5,7 +5,7 @@ from django.http import StreamingHttpResponse
 from django.core.exceptions import PermissionDenied
 
 
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.models import User
 from .models import Project, User_Account, Glint_User, Account
 from .forms import addRepoForm
@@ -759,7 +759,7 @@ def upload_image(request, account_name):
 			
 
 		#return to project details page with message
-		return project_details(request, account_name, message)
+		return redirect('project_details', account_name=account_name)
 
 	elif request.method == 'POST' and request.POST.get('myfileurl'):
 		#standard message
@@ -802,7 +802,7 @@ def upload_image(request, account_name):
 			
 
 		#return to project details page with message
-		return project_details(request, account_name, message)
+		return redirect('project_details', account_name=account_name)
 	else:
 		#render page to upload image
 
