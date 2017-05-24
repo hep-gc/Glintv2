@@ -673,9 +673,13 @@ def upload_image(request, account_name):
 	if not verifyUser(request):
 		raise PermissionDenied
 
-	if request.method == 'POST' and request.FILES['myfile']:
-		#standard message
-		message = "Image upload queued, please allow a few minutes for the uploads."
+	try:
+		image_file = request.FILES['myfile']
+	except Exception as e:
+		# no file means it's not a POST or it's an upload by URL
+		image_file = False
+
+	if request.method == 'POST' and image_file:
 
 		#process image upload
 		image_file = request.FILES['myfile']
@@ -762,19 +766,47 @@ def upload_image(request, account_name):
 		return redirect('project_details', account_name=account_name)
 
 	elif request.method == 'POST' and request.POST.get('myfileurl'):
-		#standard message
-		message = "Image upload queued, please allow a few minutes for the uploads."
 
 		#download the image
 		img_url = request.POST.get('myfileurl')
 		image_name = img_url.rsplit("/", 1)[-1]
 		file_path = "/var/www/glintv2/scratch/" + image_name
 		# check if a file with that name already exists
+		valid_path = True
 		if(os.path.exists(file_path)):
-			#if there is a local file with the same name, chances are the file already exists in the cloud
-			# but to be sure check the cache list for an image at this location and return an error if it is listed
-			return None
+			valid_path = False
+			# Filename exists locally, we need to use a temp folder
+			for x in range(0,10):
+				#first check if the temp folder exists
+				file_path = "/var/www/glintv2/scratch/" + str(x)
+				if not os.path.exists(file_path):
+					#create temp folder and break since it is definitly empty
+					os.makedirs(file_path)
+					file_path = "/var/www/glintv2/scratch/" + str(x) + "/" + image_name
+					valid_path = True
+					break
 
+				#then check if the file is in that folder
+				file_path = "/var/www/glintv2/scratch/" + str(x) + "/" + image_name
+				if not os.path.exists(file_path):
+					valid_path = True
+					break
+
+		if not valid_path:
+			#turn away request since there is already multiple files with this name being uploaded
+			image_dict = json.loads(get_images_for_proj(account_name))
+			context = {
+				'account_name': account_name,
+				'image_dict': image_dict,
+				'max_repos': len(image_dict),
+				'message': "Too many images by that name being uploaded or bad URL, please check the url and try again in a few minutes."
+			}
+			return render(request, 'glintwebui/upload_image.html', context)
+
+		# Probably could use some checks here to make sure it is a valid image file.
+		# In reality the user should be smart enough to only put in an image file and
+		# in the case where they aren't openstack will still except the garbage file
+		# as a raw image.
 		image_data = urllib2.urlopen(img_url)
 
 		with open(file_path, "wb") as image_file:
