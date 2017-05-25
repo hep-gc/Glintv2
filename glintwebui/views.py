@@ -11,6 +11,7 @@ from .models import Project, User_Account, Glint_User, Account
 from .forms import addRepoForm
 from .glint_api import repo_connector, validate_repo, change_image_name
 from glintv2.utils import get_unique_image_list, get_images_for_proj, parse_pending_transactions, build_id_lookup_dict, repo_modified, get_conflicts_for_acc, find_image_by_name, add_cached_image, check_cached_images, increment_transactions, check_for_existing_images
+from glintv2.__version__ import version
 
 import glintv2.config as config
 import time
@@ -154,7 +155,8 @@ def project_details(request, account_name="null_project", message=None):
 		'image_lookup': reverse_img_lookup,
 		'message': message,
 		'is_superuser': getSuperUserStatus(request),
-		'conflict_dict': conflict_dict
+		'conflict_dict': conflict_dict,
+		'version': version
 	}
 	return render(request, 'glintwebui/project_details.html', context)
 
