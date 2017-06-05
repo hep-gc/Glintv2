@@ -244,7 +244,7 @@ th {
 			{% endfor %}
 		{% endif %}
 	</table>
-	<input style="margin-left:250px" type="submit" value="Hide Images" />
+	<input style="margin-left:250px" type="submit" value="Hide/Show Images" />
 </form></div>
 
 
@@ -260,14 +260,7 @@ th {
 
 <script>
 $( "#public_filter" ).click(function() {
- 	/*
-   $("tr.image_row").filter(function(){
-		return $(this).find("td.public").length == 0;
-	}).hide();
-	$("tr.image_row").filter(function(){
-		return $(this).find("td.private").length == 0;
-	}).show();
-	*/
+
 	$("#no_filter").css("font-weight","normal");
 	$("#no_filter").css("border","1px solid black");
 	$("#private_filter").css("font-weight","normal");
@@ -276,29 +269,13 @@ $( "#public_filter" ).click(function() {
 	$("#public_filter").css("border","3px solid black");
 	var filter = "public";
 	localStorage.setItem("filter", filter);
-	/* We are no longer filtering rows based on the click filter
-	 * it now changes whether the hidden images or the glint images are displayed
-    var $rows = $('.image_row');
-    var val = $.trim($('#image_search').val()).replace(/ +/g, ' ').toLowerCase();
-    $rows.filter(function() {
-        var text = $(this).text().replace(/\s+/g, ' ').toLowerCase();
-        return !~text.indexOf(val);
-    }).hide();
-    */
     $("#glint_matrix").hide()
     $("#hidden_matrix").show()
 
 });
 
 $( "#private_filter" ).click(function() {
-	/*
-    $("tr.image_row").filter(function(){
-		return $(this).find("td.private").length == 0;
-	}).hide();
-	$("tr.image_row").filter(function(){
-		return $(this).find("td.public").length == 0;
-	}).show();
-	*/
+
 	$("#no_filter").css("font-weight","normal");
 	$("#no_filter").css("border","1px solid black");
 	$("#private_filter").css("font-weight","Bold");
@@ -307,14 +284,6 @@ $( "#private_filter" ).click(function() {
 	$("#public_filter").css("border","1px solid black");
 	var filter = "private";
 	localStorage.setItem("filter", filter);
-	/*
-	var $rows = $('.image_row');
-    var val = $.trim($('#image_search').val()).replace(/ +/g, ' ').toLowerCase();
-    $rows.filter(function() {
-        var text = $(this).text().replace(/\s+/g, ' ').toLowerCase();
-        return !~text.indexOf(val);
-    }).hide();
-	*/
 
     $("#hidden_matrix").hide()
     $("#glint_matrix").show()
@@ -322,14 +291,7 @@ $( "#private_filter" ).click(function() {
 });
 
 $( "#no_filter" ).click(function() {
-	/*
-    $("tr.image_row").filter(function(){
-		return $(this).find("td.private").length == 0;
-	}).show();
-	$("tr.image_row").filter(function(){
-		return $(this).find("td.public").length == 0;
-	}).show();
-	*/
+
 	$("#no_filter").css("font-weight","Bold");
 	$("#no_filter").css("border","3px solid black");
 	$("#private_filter").css("font-weight","normal");
@@ -338,14 +300,7 @@ $( "#no_filter" ).click(function() {
 	$("#public_filter").css("border","1px solid black");
 	var filter = "none";
 	localStorage.setItem("filter", filter);
-	/*
-	var $rows = $('.image_row');
-    var val = $.trim($('#image_search').val()).replace(/ +/g, ' ').toLowerCase();
-    $rows.filter(function() {
-        var text = $(this).text().replace(/\s+/g, ' ').toLowerCase();
-        return !~text.indexOf(val);
-    }).hide();
-	*/
+
 });
 
 function showConflicts(){
@@ -412,14 +367,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     var filter = localStorage.getItem("filter");
     if (filter == "public"){
-    	/*
-    	$("tr.image_row").filter(function(){
-			return $(this).find("td.public").length == 0;
-		}).hide();
-		$("tr.image_row").filter(function(){
-			return $(this).find("td.private").length == 0;
-		}).show();
-		*/
+
 		$("#no_filter").css("font-weight","normal");
 		$("#no_filter").css("border","1px solid black");
 		$("#private_filter").css("font-weight","normal");
@@ -431,14 +379,7 @@ document.addEventListener('DOMContentLoaded', function() {
         $("#hidden_matrix").show()
     }
     else if (filter == "private"){
-    	/*
-	    $("tr.image_row").filter(function(){
-			return $(this).find("td.private").length == 0;
-		}).hide();
-		$("tr.image_row").filter(function(){
-			return $(this).find("td.public").length == 0;
-		}).show();
-		*/
+
 		$("#no_filter").css("font-weight","normal");
 		$("#no_filter").css("border","1px solid black");
 		$("#private_filter").css("font-weight","Bold");
@@ -450,14 +391,6 @@ document.addEventListener('DOMContentLoaded', function() {
     	$("#glint_matrix").show()
     }
     else{
-    	/*
-	    $("tr.image_row").filter(function(){
-			return $(this).find("td.private").length == 0;
-		}).show();
-		$("tr.image_row").filter(function(){
-			return $(this).find("td.public").length == 0;
-		}).show();
-		*/
 		$("#no_filter").css("font-weight","Bold");
 		$("#no_filter").css("border","3px solid black");
 		$("#private_filter").css("font-weight","normal");
