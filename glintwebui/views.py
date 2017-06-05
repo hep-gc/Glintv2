@@ -10,7 +10,7 @@ from django.contrib.auth.models import User
 from .models import Project, User_Account, Glint_User, Account
 from .forms import addRepoForm
 from .glint_api import repo_connector, validate_repo, change_image_name
-from glintv2.utils import get_unique_image_list, get_images_for_proj, parse_pending_transactions, build_id_lookup_dict, repo_modified, get_conflicts_for_acc, find_image_by_name, add_cached_image, check_cached_images, increment_transactions, check_for_existing_images
+from glintv2.utils import get_unique_image_list, get_images_for_proj, parse_pending_transactions, build_id_lookup_dict, repo_modified, get_conflicts_for_acc, find_image_by_name, add_cached_image, check_cached_images, increment_transactions, check_for_existing_images, get_hidden_image_list, parse_hidden_images
 from glintv2.__version__ import version
 
 import glintv2.config as config
@@ -97,6 +97,7 @@ def project_details(request, account_name="null_project", message=None):
 	repo_list = Project.objects.all()
 	try:
 		image_set = get_unique_image_list(account_name)
+		hidden_image_set = get_hidden_image_list(account_name)
 		image_dict = json.loads(get_images_for_proj(account_name))
 		# since we are using name as the unique identifer we need to pass in a dictionary
 		# that lets us get the image id (uuid) from the repo and image name
@@ -104,31 +105,11 @@ def project_details(request, account_name="null_project", message=None):
 		# and forces the user to resolve
 		reverse_img_lookup = build_id_lookup_dict(image_dict)
 
-
-		''' THIS FUNCTIONALITY IS BEING CHANGED, THE DETECTION OF CONFLICTS WILL NOW HAPPEN
-		    AT IMAGE COLLECTION TIME AND WILL BE PASSED HERE AS A DATA OBJECT WHICH WILL BE
-		    DISPLAYED ON THE MATRIX PAGE IN A TABLE AS A LIST OF CONFLICTS, AUTOMATED
-		    RESOLUTION WILL BE ADDED AT A LATER DATE.
-
-		# Check if there are any duplicate image names in a given repo and
-		# if so render a different page that attempts to resolve that
-		duplicate_dict = check_for_duplicate_images(image_dict)
-		if duplicate_dict is not None:
-			# Find the problem repo:
-			for image in duplicate_dict:
-				problem_repo = duplicate_dict[image]['repo']
-			# Render page to resolve name difference
-			context = {
-				'account_name': account_name,
-				'repo': problem_repo,
-				'duplicate_dict': duplicate_dict
-			}
-			return render(request, 'glintwebui/image_conflict.html', context)
-		'''
-
 	except:
 		# No images in database yet, may want some logic here forcing it to wait a little on start up
+		logger.info("No images yet in database, or possible error collecting image sets")
 		image_set = None
+		hidden_image_set = None
 		image_dict = None
 		reverse_img_lookup = None
 		# Should render a page here that says no image info available please refresh in 20 seconds
@@ -152,6 +133,7 @@ def project_details(request, account_name="null_project", message=None):
 		'account_list': account_list,
 		'image_dict': image_dict,
 		'image_set': image_set,
+		'hidden_image_set': hidden_image_set,
 		'image_lookup': reverse_img_lookup,
 		'message': message,
 		'is_superuser': getSuperUserStatus(request),
@@ -247,11 +229,9 @@ def save_images(request, account_name):
 		# check if we need to update any states
 		# Every image will have to be checked since if they are not present it means they need to be deleted
 		for repo in repo_list:
-			#try:
 			#these check lists will have all of the images that are checked and need to be cross referenced
 			#against the images stored in redis to detect changes in state
 			check_list = request.POST.getlist(repo.alias)
-			#logger.debug(check_list)
 			parse_pending_transactions(account_name=account_name, repo_alias=repo.alias, image_list=check_list, user=user)
 
 		#give collection thread a couple seconds to process the request
@@ -262,6 +242,26 @@ def save_images(request, account_name):
 	#Not a post request, display matrix
 	else:
 		return project_details(request, account_name=account_name)
+
+
+# this function accepts a post request and updates the hidden status of any images within.
+def save_hidden_images(request, account_name):
+	if not verifyUser(request):
+		raise PermissionDenied
+	if request.method == 'POST':
+		user = getUser(request)
+		#get repos
+		repo_list = Project.objects.filter(account_name=account_name)
+
+		# need to iterate thru a for loop of the repos in this project and get the list for each and
+		# check if we need to change any of the hidden states
+		for repo in repo_list:
+			check_list = request.POST.getlist(repo.alias)
+			parse_hidden_images(account_name=account_name, repo_alias=repo.alias, image_list=check_list, user=user)
+
+	message = "Please allow glint a few seconds to proccess your request."
+	return project_details(request=request, account_name=account_name, message=message)
+
 
 def resolve_conflict(request, account_name, repo_alias):
 	if not verifyUser(request):
@@ -292,7 +292,7 @@ def resolve_conflict(request, account_name, repo_alias):
 	#give the collection thread a couple seconds to update matrix or we will end right back at this page
 	#This entire function will change as we change the way glint deals with duplicate images.
 	time.sleep(6)
-	return project_details(request, account_name)
+	return project_details(request, account_name, "")
 
 
 # This page will render manage_repos.html which will allow users to add, edit, or delete repos
@@ -396,7 +396,7 @@ def add_user(request):
 			return manage_users(request, message)
 
 	else:
-		#not a post should never come to this page, redirect to matrix?
+		#not a post, should never come to this page
 		pass
 
 def update_user(request):
@@ -437,8 +437,10 @@ def update_user(request):
 			message = "Failed to update admin status"
 		return manage_users(request, message) 
 	else:
-		#not a post should never come to this page, redirect to matrix?
+		#not a post should never come to this page
 		pass
+
+		
 def delete_user(request):
 	if not verifyUser(request):
 		raise PermissionDenied

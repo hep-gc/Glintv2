@@ -144,6 +144,11 @@ def transfer_image(self, image_name, image_id, account_name, auth_url, project_t
     # returns tuple: (auth_url, tenant, username, password, img_id, checksum)
     src_img_info = find_image_by_name(account_name=account_name, image_name=image_name)
 
+    if src_img_info is False:
+        logger.error("Could not find suitable source image for transfer, cancelling transfer")
+        decrement_transactions()
+        return False
+
     #check if this image is cached locally
     image_path = check_cached_images(image_name, src_img_info[5])
 
@@ -155,7 +160,7 @@ def transfer_image(self, image_name, image_id, account_name, auth_url, project_t
         dest_rcon = repo_connector(auth_url=auth_url, project=project_tenant, username=username, password=password)
         dest_rcon.upload_image(image_id=image_id, image_name=image_name, scratch_dir=image_path)
      
-        queue_state_change(account_name=account_name, repo=project_alias, img_id=image_id, state='Present')
+        queue_state_change(account_name=account_name, repo=project_alias, img_id=image_id, state='Present', hidden=None)
         logger.info("Image transfer finished")
         decrement_transactions()
         return True
@@ -190,7 +195,6 @@ def transfer_image(self, image_name, image_id, account_name, auth_url, project_t
         # remove file name from path
         image_path = image_path.rsplit('/', 1)[0]
         image_path = image_path + "/"
-        logger.error("Path= %s" % image_path)
 
         logger.info("Downloading Image from %s" % src_img_info[1])
         src_rcon = repo_connector(auth_url=src_img_info[0], project=src_img_info[1], username=src_img_info[2], password=src_img_info[3])
@@ -202,7 +206,7 @@ def transfer_image(self, image_name, image_id, account_name, auth_url, project_t
         dest_rcon = repo_connector(auth_url=auth_url, project=project_tenant, username=username, password=password)
         dest_rcon.upload_image(image_id=image_id, image_name=image_name, scratch_dir=image_path)
      
-        queue_state_change(account_name=account_name, repo=project_alias, img_id=image_id, state='Present')
+        queue_state_change(account_name=account_name, repo=project_alias, img_id=image_id, state='Present', hidden=None)
         image_path = image_path + image_name
         add_cached_image(image_name, src_img_info[5], image_path)
         decrement_transactions()
@@ -236,7 +240,7 @@ def delete_image(self, image_id, image_name, account_name, auth_url, project_ten
         rcon = repo_connector(auth_url=auth_url, project=project_tenant, username=username, password=password)
         result = rcon.delete_image(image_id)
         if result:
-            queue_state_change(account_name=account_name, repo=project_alias, img_id=image_id, state='deleted')
+            queue_state_change(account_name=account_name, repo=project_alias, img_id=image_id, state='deleted', hidden=None)
             logger.info("Image Delete finished")
             decrement_transactions()
             return True
@@ -245,7 +249,7 @@ def delete_image(self, image_id, image_name, account_name, auth_url, project_ten
         return False
     else:
         logger.error("Delete request violates delete rules, image either shared or the last copy.")
-        queue_state_change(account_name=account_name, repo=project_alias, img_id=image_id, state='present')
+        queue_state_change(account_name=account_name, repo=project_alias, img_id=image_id, state='present', hidden=None)
         decrement_transactions()
         return False
 

@@ -22,6 +22,7 @@ Proj_dict{
 			container_format
 			visibility
 			checksum
+			hidden
 		}
 		Img_ID2{
 			name
@@ -30,6 +31,7 @@ Proj_dict{
 			container_format
 			visibility
 			checksum
+			hidden
 		}
 		.
 		.
@@ -41,6 +43,7 @@ Proj_dict{
 			container_format
 			visibility
 			checksum
+			hidden
 		}
 	}
 	Repo2Alias{
@@ -70,6 +73,10 @@ def jsonify_image_list(image_list, repo_list):
 				img['visibility'] = image[5]
 				img['checksum'] = image[6]
 				img_dict[image[2]] = img
+				if img['visibility'] != "private":
+					img['hidden'] = True
+				else:
+					img['hidden'] = False
 
 		repo_dict[repo.alias] = img_dict
 	return json.dumps(repo_dict)
@@ -114,6 +121,15 @@ def update_pending_transactions(old_img_dict, new_img_dict):
 					# if it was a pending transfer and it still doesnt exist: add it as Pending Xfer
 					if repo_dict[img_key]['state'] == "Pending Transfer":
 						new_dict[repo_key][img_key] = repo_dict[img_key]
+
+			# we also need to check for changes in the hidden status of images
+			# the simple way is to just assign the old value to the new dict
+			# however if the image is newly created it won't yet have a hidden attribute
+			# new images will always be private and recieve "False" for the hidden attribute
+			try:
+				new_dict[repo_key][img_key]['hidden'] = repo_dict[img_key]['hidden']
+			except:
+				new_dict[repo_key][img_key]['hidden'] = False
 				
 	return json.dumps(new_dict)
 
@@ -164,10 +180,24 @@ def set_conflicts_for_acc(account_name, conflict_dict):
 		logger.error ("Unknown exception while trying to set conflicts for: %s", account_name)
 
 
-# Returns a unique list of (image, name) tuples
+# Returns a unique list of (image, name) tuples that are not hidden in glint
 # May be a problem if two sites have the same image (id) but with different names
 # as the tuple will no longer be unique
 def get_unique_image_list(account_name):
+	image_dict=json.loads(get_images_for_proj(account_name))
+	image_set = set()
+	# make a dictionary of all the images in the format key:value = image_id:list_of_repos
+	# start by making a list of the keys, using a set will keep them unique
+	for repo_key in image_dict:
+		for image_id in image_dict[repo_key]:
+			if not image_dict[repo_key][image_id]['hidden']:
+				image_set.add(image_dict[repo_key][image_id]['name'])
+	return sorted(image_set, key=lambda s: s.lower())
+
+
+# similar to "get_unique_image_list", this function returns a set of tuples
+# representing all the images in glint such that their hidden status can be toggled
+def get_hidden_image_list(account_name):
 	image_dict=json.loads(get_images_for_proj(account_name))
 	image_set = set()
 	# make a dictionary of all the images in the format key:value = image_id:list_of_repos
@@ -334,8 +364,8 @@ def parse_pending_transactions(account_name, repo_alias, image_list, user):
 
 		# Now we need to check deletes
 		for image_key in repo_dict:
-			#If the key exists but it isn't in the image list make a pending delete
-			if repo_dict[image_key]['name'] not in image_list:
+			#If the key exists but it isn't in the image list make a pending delete unless it is hidden
+			if repo_dict[image_key]['name'] not in image_list and repo_dict[image_key]['hidden'] is False:
 				# if its pending already we don't need to touch it
 				if repo_dict[image_key].get('state') not in {'Pending Delete', 'Pending Transfer'}:
 					# MAKE DELETE
@@ -418,17 +448,50 @@ def process_pending_transactions(account_name, json_img_dict):
 	return json.dumps(img_dict)
 
 
+# Accepts a list of images (names), a project and a repo
+# Cross references the image repo in redis against the given image list
+# to toggle the hidden status of images
+def parse_hidden_images(account_name, repo_alias, image_list, user):
+	try:
+		r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
+		proj_dict = json.loads(r.get(account_name))
+		repo_dict = proj_dict[repo_alias]
+
+		#if the image isn't in the image_list, hidden=False
+		for image_key in repo_dict:
+			if repo_dict[image_key]['name'] not in image_list:
+				if repo_dict[image_key]['hidden'] is True:
+					#queue state change for hidden status (set to False)
+					queue_state_change(account_name, repo_alias, image_key, repo_dict[image_key]['state'], False)
+			else:
+				# hidde should be true
+				if repo_dict[image_key]['hidden'] is False:
+					#queue state change for hidden status (set to True)
+					queue_state_change(account_name, repo_alias, image_key, repo_dict[image_key]['state'], True)
+	except:
+		logger.error("Error occured when parsing hidden status of images.")
+	return True
+
 # Queues a state change in redis for the periodic task to perform
 # Key will take the form of project_pending_state_changes
 # and thus there will be a seperate queue for each project
-def queue_state_change(account_name, repo, img_id, state):
+def queue_state_change(account_name, repo, img_id, state, hidden):
 	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
 	state_key = account_name + '_pending_state_changes'
-	state_change = {
-		'state': state,
-		'image_id': img_id,
-		'repo':repo
-	}
+	if hidden is not None:
+		state_change = {
+			'state': state,
+			'image_id': img_id,
+			'repo':repo,
+			'hidden': hidden
+		}
+		increment_transactions()
+	else:
+		state_change = {
+			'state': state,
+			'image_id': img_id,
+			'repo':repo,
+		}
 	r.rpush(state_key, json.dumps(state_change))
 	return True
 
@@ -443,12 +506,20 @@ def process_state_changes(account_name, json_img_dict):
 		if raw_state_change == None:
 			break
 		state_change = json.loads(raw_state_change)
-		if state_change['state'] == "deleted":
-			# Remove the key
-			img_dict[state_change['repo']].pop(state_change['image_id'], None)
+		#check if it is a hidden state change or a image state change
+		if 'hidden' in state_change:
+			#hidden state change
+			img_dict[state_change['repo']][state_change['image_id']]['hidden'] = state_change['hidden']
+			#only hidden state changes count as transactions since it is the only way to kick the server out of dormant state to proccess the chagnes
+			decrement_transactions()
 		else:
-			# Update the state
-			img_dict[state_change['repo']][state_change['image_id']]['state'] = state_change['state']
+			#image state change
+			if state_change['state'] == "deleted":
+				# Remove the key
+				img_dict[state_change['repo']].pop(state_change['image_id'], None)
+			else:
+				# Update the state
+				img_dict[state_change['repo']][state_change['image_id']]['state'] = state_change['state']
 
 	return json.dumps(img_dict)
 
@@ -462,7 +533,7 @@ def find_image_by_name(account_name, image_name):
 	for repo in image_dict:
 		for image in image_dict[repo]:
 			if image_dict[repo][image]['name'] == image_name:
-				if image_dict[repo][image]['state'] == 'Present':
+				if image_dict[repo][image]['state'] == 'Present' and image_dict[repo][image]['hidden'] == False:
 					repo_obj = Project.objects.get(account_name=account_name, alias=repo)
 					return (repo_obj.auth_url, repo_obj.tenant, repo_obj.username, repo_obj.password, image, image_dict[repo][image]['checksum'])
 	return False
@@ -477,6 +548,11 @@ def add_cached_image(image_name, image_checksum, full_path):
 	img_tuple = (image_name, image_checksum, full_path, current_time)
 	r.rpush("glint_img_cache", img_tuple)
 	return False
+
+# This function accepts a tuple representing an item in the cache and removes it from the list
+def del_cached_image(img_tuple):
+	r.lrem("glint_img_cache", 0, str(img_tuple))
+	return True
 
 # This function checks the cache for a local copy of a given image file
 # if found it updates the timestamp and returns the filepath
@@ -524,6 +600,12 @@ def do_cache_cleanup():
 					# Catch attempts to delete directories
 					pass
 
+	#now that the initial cleanup is done we need to check for any items in the cache that are missing locally
+	for cached_item in cache_tuple_list:
+		cached_item = literal_eval(cached_item)
+		if not os.path.exists(cached_item[2]):
+			#file is missing, remove it from cache
+			logger.error("Cached file missing at %s, removing cache entry." % cached_item[2])
 
 	return None
 
