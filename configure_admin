@@ -1,6 +1,7 @@
 #!/bin/bash
 
 echo -en "Enter Distinguished Name (ex. /C=CA/O=Grid/OU=phys.uvic.ca/CN=Colson Driemel)\n > "
+read distinguishedname
 echo -en "Enter Common Name from your certificate\n (ex. /C=CA/O=Grid/OU=phys.uvic.ca/CN=Colson Driemel would be Colson Driemel)\n > "
 read commonname
 
@@ -8,4 +9,7 @@ echo -en "Updating database... \n"
 sqlite3 /etc/glintv2/db.sqlite3 "Update auth_user SET is_superuser='1' where username='$commonname'"
 sqlite3 /etc/glintv2/db.sqlite3 "Update auth_user SET is_staff='1' where username='$commonname'"
 
-echo -en "Database updated...\n"
+sqlite3 /etc/glintv2/db.sqlite3 "insert into glintwebui_account (account_name) values ('Default')"
+sqlite3 /etc/glintv2/db.sqlite3 "insert into glintwebui_glint_user (user_name, authentication_method, common_name, distinguished_name, active_project) values ('$commonname', 'x509', '$commonname', '$distinguishedname', 'default')"
+
+echo -en "Database updated... you should now have admin access to glint.\n"
