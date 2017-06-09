@@ -86,13 +86,10 @@ def project_details(request, account_name="No accounts available", message=None)
 		raise PermissionDenied
 	active_user = getUser(request)
 	user_obj = Glint_User.objects.get(common_name=active_user)
-	logger.error("account name is: %s" % account_name)
 	if account_name is None or account_name in "No accounts available" :
-		logger.error("entering conditional block")
 		# First time user, lets put them at the first project the have access to
 		try:
 			account_name = User_Account.objects.filter(user=user_obj).first().account_name.account_name
-			logger.error(User_Account.objects.filter(user=user_obj).first())
 			if not account_name:
 				account_name="No accounts available"
 		except:

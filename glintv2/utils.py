@@ -173,6 +173,9 @@ def get_conflicts_for_acc(account_name):
 		return None
 
 def set_conflicts_for_acc(account_name, conflict_dict):
+	if conflict is None:
+		logger.info("Didn't set conflicts for %s because dictionary was empty." % account_name)
+		return
 	try:
 		json_conflict_dict = json.dumps(conflict_dict)
 		conflict_key = account_name + "_conflicts"
@@ -322,9 +325,10 @@ def check_for_image_conflicts(json_img_dict):
 			conflicts_dict[repo] = conflicts
 
 
-
-	return conflicts_dict
-
+	if conflicts_dict:
+		return conflicts_dict
+	else:
+		return None
 
 # Accepts a list of images (names), a project and a repo
 # Cross references the image repo in redis against the given image list
