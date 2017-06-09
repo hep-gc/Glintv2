@@ -33,19 +33,15 @@ To simplify, follow these steps to install glint.
 The CABundle.crt goes into `/etc/glintv2/` while the other certificate files go to
 `/etc/pki/tls/certs/`
 4. Start the redis server `service redis start`.
-5. Go to the glintv2 folder `cd /opt/glintv2/` and run the django database migrations:
-
-`python manage.py makemigrations`
-
-`python manage.py migrate`
-6. Create the celery run directory (it seems to get removed after a restart)
-
-`mkdir /var/run/celery`
-
-`chown celery:celery /var/run/celery`
-7. Start the celery and httpd services:
-`service celery start`
-`service httpd start`
+5. Go to the glintv2 folder `cd /opt/glintv2/` and run the django database migrations:  
+`python manage.py makemigrations`  
+`python manage.py migrate`  
+6. Create the celery run directory (it seems to get removed after a restart)  
+`mkdir /var/run/celery`  
+`chown celery:celery /var/run/celery`  
+7. Start the celery and httpd services:  
+`service celery start`  
+`service httpd start`  
 8. Now the web service should be running. Try to connect to the ip of the server in
 your browser. This will cause the apache server to register your certificate with glint.
 9. Once your certificate has been entered into the database we need to elevate your
