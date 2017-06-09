@@ -18,7 +18,7 @@ to queue transfers or deletions of VMs.
 <img src="Glintv2.jpg" />
 
 
-##Deployment
+## Deployment
 
 The deployment of Glint v2 has been largely streamlined, however, there is still
 some manual configuration required. These steps include: Generating a secret key
@@ -34,10 +34,14 @@ The CABundle.crt goes into `/etc/glintv2/` while the other certificate files go 
 `/etc/pki/tls/certs/`
 4. Start the redis server `service redis start`.
 5. Go to the glintv2 folder `cd /opt/glintv2/` and run the django database migrations:
+
 `python manage.py makemigrations`
+
 `python manage.py migrate`
 6. Create the celery run directory (it seems to get removed after a restart)
+
 `mkdir /var/run/celery`
+
 `chown celery:celery /var/run/celery`
 7. Start the celery and httpd services:
 `service celery start`
