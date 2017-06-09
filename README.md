@@ -17,48 +17,35 @@ to queue transfers or deletions of VMs.
 
 <img src="Glintv2.jpg" />
 
-## Deployment
-Deployment of glint is mostly automated using an [ansible playbook](https://github.com/hep-gc/ansible-systems/tree/glintv2/heprc/glintv2).
-However there is some manual setup due to the confidentiality of the server
-certificates. The certificates should be placed at the paths matching the
-ssl.conf and glintv2.conf files (default: `/etc/pki/tls/certs/` for the server certs and
-`/etc/glintv2/` for the CA Bundle).
-Next the django server needs a secret key to use for secure communication.
-A key generation script is included with glint and can be found at
-`/opt/Glintv2/config/key_gen.py` after the ansible playbook has been run.
-Simply run `python key_gen.py` to generate a key and copy it into
-`/opt/Glintv2/glintv2/settings.py`.
-Finally we need to make sure the database has been configured and the easiest
-way to make sure the tables are up to date is to use the django management tool
-by running the following commands:
-* `python /opt/Glintv2/manage.py makemigrations`
-* `python /opt/Glintv2/manage.py migrate`
 
-At this point glint should be ready to run:
-* Make sure Redis has been started: service redis start
-* Make sure Celery has been started: service celery start
-* Finally start the webserver: service httpd start
+##Deployment
 
-Apache should run but you'll notice you are unable to access the glint WebUI.
-This is due to the following reasons:
-* You're browser does not have a valid Grid certificate 
-* You've yet to be added as a glint user.
+The deployment of Glint v2 has been largely streamlined, however, there is still
+some manual configuration required. These steps include: Generating a secret key
+for the django server, installing the required certificates, making database
+migrations, configuring an admin user for glint that can add other new users.
 
-To grant yourself initial access to the system you will need to modify a
-database entry (this will eventually be automated by a script).
-Run the following commands to gain access to the django admin page:
-* `sqlite3 db.sqlite3 "Update auth_user SET is_superuser='1' where username='**CERTIFICATE COMMON NAME**'"`
-* `sqlite3 db.sqlite3 "Update auth_user SET is_staff='1' where username='**CERTIFICATE COMMON NAME**'"`
+To simplify, follow these steps to install glint.
 
-Make sure the username matches the common name of your Grid certificate.
-Once this is done you will be an admin user capable of adding Glint Users.
-However, you still need to add youself as a Glint User before you can use
-the webUI for user and account management. This can be accomplished through
-the django admin page at:
-`https://**SERVER_IP**/admin`
-
-Click "Glint_users" under the Glintwebui heading and fill out the form and save.
-With this you will finally have full access to glint and will be able to manage
-users and accounts through the webui without the need of the django admin page.
-Simply navigate to the IP of the server and you should be able to begin using
-Glintv2.
+1. Download the [ansible playbook](https://github.com/hep-gc/ansible-systems/tree/glintv2/heprc/glintv2) and configure your target host.
+2. Run the ansible playbook `ansible-playbook glintv2.yaml`.
+3. Next log into the server as root and install your certificates.
+The CABundle.crt goes into `/etc/glintv2/` while the other certificate files go to
+`/etc/pki/tls/certs/`
+4. Start the redis server `service redis start`.
+5. Go to the glintv2 folder `cd /opt/glintv2/` and run the django database migrations:
+`python manage.py makemigrations`
+`python manage.py migrate`
+6. Create the celery run directory (it seems to get removed after a restart)
+`mkdir /var/run/celery`
+`chown celery:celery /var/run/celery`
+7. Start the celery and httpd services:
+`service celery start`
+`service httpd start`
+8. Now the web service should be running. Try to connect to the ip of the server in
+your browser. This will cause the apache server to register your certificate with glint.
+9. Once your certificate has been entered into the database we need to elevate your
+permissions such that you can access glint and add other users. After you have attempted
+to connect with your browser run the configure_admin script in `/opt/glintv2/`. You will
+be asked to provide your Distinguished namd and your Common name from your certificate.
+10. Try to connect in your browser again and you should have full permissions over glint!
