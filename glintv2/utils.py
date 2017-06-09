@@ -173,9 +173,6 @@ def get_conflicts_for_acc(account_name):
 		return None
 
 def set_conflicts_for_acc(account_name, conflict_dict):
-	if conflict is None:
-		logger.info("Didn't set conflicts for %s because dictionary was empty." % account_name)
-		return
 	try:
 		json_conflict_dict = json.dumps(conflict_dict)
 		conflict_key = account_name + "_conflicts"
