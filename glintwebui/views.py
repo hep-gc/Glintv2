@@ -78,7 +78,7 @@ def index(request):
 
 
 
-def project_details(request, account_name="null_project", message=None):
+def project_details(request, account_name="No accounts available", message=None):
 	# Since img name, img id is no longer a unique way to identify images across clouds
 	# We will instead only use image name, img id will be used as a unique ID inside a given repo
 	# this means we now have to create a new unique image set that is just the image names
@@ -86,9 +86,18 @@ def project_details(request, account_name="null_project", message=None):
 		raise PermissionDenied
 	active_user = getUser(request)
 	user_obj = Glint_User.objects.get(common_name=active_user)
-	if account_name is None:
+	logger.error("account name is: %s" % account_name)
+	if account_name is None or account_name in "No accounts available" :
+		logger.error("entering conditional block")
 		# First time user, lets put them at the first project the have access to
-		account_name = User_Account.objects.filter(user=user_obj).first()
+		try:
+			account_name = User_Account.objects.filter(user=user_obj).first().account_name.account_name
+			logger.error(User_Account.objects.filter(user=user_obj).first())
+			if not account_name:
+				account_name="No accounts available"
+		except:
+			# catches nonetype error
+			account_name="No accounts available"
 
 	user_obj.active_project = account_name
 	user_obj.save()
@@ -486,6 +495,8 @@ def delete_user_account(request):
 		account = request.POST.get('account')
 		logger.info("Attempting to delete user %s from account %s" % (user, account))
 		user_obj = Glint_User.objects.get(user_name=user)
+		user_obj.active_project = None
+		user_obj.save()
 		account_obj = Account.objects.get(account_name=account)
 		user_account_obj = User_Account.objects.get(user=user_obj, account_name=account_obj)
 		user_account_obj.delete()
@@ -541,6 +552,11 @@ def delete_account(request):
 		account_obj = Account.objects.get(account_name=account)
 		account_obj.delete()
 		message = "Account %s deleted." % account
+		#need to also remove any instanced where this account was the active one for users.
+		users = Glint_User.objects.get(active_project=account)
+		for user in users:
+			user.active_project = None
+			user.save()
 		logger.info("Successfull delete of account %s" % account)
 		return manage_accounts(request=request, message=message)
 	else:

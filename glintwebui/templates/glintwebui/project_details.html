@@ -100,7 +100,9 @@ th {
 			</div>
 		</div>
 	</td>
-	<td id='account_table' style= 'padding-left: 20px'><a href="/ui/manage_repos/{{account_name}}">Manage '{{account_name}}' repos</a></td>
+	{% if account_name not in "No accounts available" %}
+		<td id='account_table' style= 'padding-left: 20px'><a href="/ui/manage_repos/{{account_name}}">Manage '{{account_name}}' repos</a></td>
+	{% endif %}
 	<td id='account_table'>
 		{% if is_superuser %}
 		<div class="dropdown" style="float: right; padding-left: 20px">

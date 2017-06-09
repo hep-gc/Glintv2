@@ -157,6 +157,9 @@ def set_images_for_proj(account_name, json_img_dict):
 
 # returns dictionary containing any conflicts for a given account name
 def get_conflicts_for_acc(account_name):
+	if account_name is None:
+		logger.info("Couldnt find conflict list; no account provided.")
+		return None
 	try:
 		r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
 		conflict_key = account_name + "_conflicts"
