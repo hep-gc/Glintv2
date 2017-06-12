@@ -33,12 +33,11 @@ To simplify, follow these steps to install glint.
 The CABundle.crt goes into `/etc/glintv2/` while the other certificate files go to
 `/etc/pki/tls/certs/`
 4. Start the redis server `service redis start`.
-5. Go to the glintv2 folder `cd /opt/glintv2/` and run the django database migrations:  
+5. Go to the glintv2 folder `cd /opt/Glintv2/` and run the django database migrations:  
 `python manage.py makemigrations`  
 `python manage.py migrate`  
-6. Create the celery run directory (it seems to get removed after a restart)  
-`mkdir /var/run/celery`  
-`chown celery:celery /var/run/celery`  
+6. Generate a secret key for the glint django server using the `/opt/Glintv2/config/key_gen.py`  
+and play it in the `/opt/Glinvtv2/glintv2/settings.py` file.
 7. Start the celery and httpd services:  
 `service celery start`  
 `service httpd start`  
@@ -46,6 +45,6 @@ The CABundle.crt goes into `/etc/glintv2/` while the other certificate files go 
 your browser. This will cause the apache server to register your certificate with glint.
 9. Once your certificate has been entered into the database we need to elevate your
 permissions such that you can access glint and add other users. After you have attempted
-to connect with your browser run the configure_admin script in `/opt/glintv2/`. You will
+to connect with your browser run the configure_admin script in `/opt/Glintv2/`. You will
 be asked to provide your Distinguished namd and your Common name from your certificate.
 10. Try to connect in your browser again and you should have full permissions over glint!
