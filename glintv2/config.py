@@ -14,6 +14,7 @@ redis_host = "localhost"
 redis_port = 6379
 redis_db = 0
 image_collection_interval = 12
+cache_expire_time = 60 #default 7 days (in seconds)604800
 
 
 # find config file by first checking the /etc/glintv2 location
@@ -64,6 +65,9 @@ if config_file.has_option("general", "database_name"):
 
 if config_file.has_option("general", "image_collection_interval"):
     image_collection_interval = int(config_file.get("general", "image_collection_interval"))
+
+if config_file.has_option("general", "cache_expire_time"):
+    cache_expire_time = int(config_file.get("general", "cache_expire_time"))
 
 
 

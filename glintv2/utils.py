@@ -604,12 +604,21 @@ def do_cache_cleanup():
 					# Catch attempts to delete directories
 					pass
 
-	#now that the initial cleanup is done we need to check for any items in the cache that are missing locally
+	# now that the initial cleanup is done we need to check for any items in the cache that are missing locally
+	# while were at it let us check for any expiring items
+	expire_time = config.cache_expire_time
+	current_time = int(time.time())
 	for cached_item in cache_tuple_list:
 		cached_item = literal_eval(cached_item)
 		if not os.path.exists(cached_item[2]):
 			#file is missing, remove it from cache
 			logger.error("Cached file missing at %s, removing cache entry." % cached_item[2])
+			del_cached_image(cached_item)
+		elif((current_time-cached_item[3])>expire_time):
+			#item has expired and remove it
+			logger.info("Cached image %s has expired, removing from cache." % cached_item[0])
+			os.remove(cached_item[2])
+			del_cached_image(cached_item)
 
 	return None
 
