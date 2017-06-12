@@ -14,7 +14,7 @@ redis_host = "localhost"
 redis_port = 6379
 redis_db = 0
 image_collection_interval = 12
-cache_expire_time = 60 #default 7 days (in seconds)604800
+cache_expire_time = 604800 #default 7 days (in seconds)
 
 
 # find config file by first checking the /etc/glintv2 location
