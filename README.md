@@ -33,8 +33,8 @@ To simplify, follow these steps to install glint.
 The CABundle.crt goes into `/etc/glintv2/` while the other certificate files go to
 `/etc/pki/tls/certs/`
 4. Start the redis server `service redis start`.
-5. Go to the glintv2 folder `cd /opt/Glintv2/` and run the django database migrations:  
-`python manage.py makemigrations`  
+5. Go to the glintv2 folder `cd /opt/Glintv2/` and run the django database  
+migration to set up the database:  
 `python manage.py migrate`  
 6. Generate a secret key for the glint django server using the `/opt/Glintv2/config/key_gen.py`  
 and play it in the `/opt/Glinvtv2/glintv2/settings.py` file.
