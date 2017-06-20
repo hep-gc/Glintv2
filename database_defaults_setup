@@ -1,0 +1,4 @@
+#!/bin/bash
+echo -en "Inserting default account into database.. \n"
+
+sqlite3 /etc/glintv2/db.sqlite3 "insert into glintwebui_account (account_name) values ('Default')"

@@ -1,15 +1,27 @@
 #!/bin/bash
 
-echo -en "Enter Distinguished Name (ex. /C=CA/O=Grid/OU=phys.uvic.ca/CN=Colson Driemel)\n > "
-read distinguishedname
-echo -en "Enter Common Name from your certificate\n (ex. /C=CA/O=Grid/OU=phys.uvic.ca/CN=Colson Driemel would be Colson Driemel)\n > "
-read commonname
+commonname=$1
+distinguishedname=$2
+date=`date +%Y-%m-%d:%H:%M:%S`
 
-echo -en "Updating database... \n"
-sqlite3 /etc/glintv2/db.sqlite3 "Update auth_user SET is_superuser='1' where username='$commonname'"
-sqlite3 /etc/glintv2/db.sqlite3 "Update auth_user SET is_staff='1' where username='$commonname'"
+echo -en "Attempting to insert admin $commonname database... \n"
 
-sqlite3 /etc/glintv2/db.sqlite3 "insert into glintwebui_account (account_name) values ('Default')"
-sqlite3 /etc/glintv2/db.sqlite3 "insert into glintwebui_glint_user (user_name, authentication_method, common_name, distinguished_name, active_project) values ('$commonname', 'x509', '$commonname', '$distinguishedname', 'default')"
+query_output=$(sqlite3 /etc/glintv2/db.sqlite3 "select * from auth_user where username='$commonname'")
 
-echo -en "Database updated... you should now have admin access to glint.\n"
+if [ -z "$query_output" ]
+then
+    sqlite3 /etc/glintv2/db.sqlite3 "insert into auth_user (password, first_name, last_name, email, is_active, is_superuser, is_staff, date_joined, username) values ('', '', '', '', 1, 1, 1, '$date', '$commonname')"
+else
+    sqlite3 /etc/glintv2/db.sqlite3 "Update auth_user SET is_superuser='1' where username='$commonname'"
+    sqlite3 /etc/glintv2/db.sqlite3 "Update auth_user SET is_staff='1' where username='$commonname'"
+fi
+
+query_output=$(sqlite3 /etc/glintv2/db.sqlite3 "select * from glintwebui_glint_user where user_name='$commonname'")
+if [ -z "$query_output" ]
+then
+    sqlite3 /etc/glintv2/db.sqlite3 "insert into glintwebui_glint_user (user_name, authentication_method, common_name, distinguished_name, active_project) values ('$commonname', 'x509', '$commonname', '$distinguishedname', 'default')"
+else
+    sqlite3 /etc/glintv2/db.sqlite3 "update glintwebui_glint_user SET authentication_method='x509', common_name='$commonname', distinguished_name='$distinguishedname' where user_name='$commonname'"
+fi
+
+echo -en "Database updated... $commonname should now have admin access to glint.\n"
