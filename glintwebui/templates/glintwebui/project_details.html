@@ -84,10 +84,24 @@ th {
 /* Show the dropdown menu (use JS to add this class to the .dropdown-content container when the user clicks on the dropdown button) */
 .show {display:block;}
 
+html, body {
+    height: 100%;
+}
+.wrapper {
+    min-height: 100%;
+    height: auto !important;
+    height: 100%;
+    margin: 0 auto -142px; /* the bottom margin is the negative value of the footer's height */
+}
+.footer, .push {
+    height: 142px; /* .push must be the same height as .footer */
+}
+
 {% load template_utils %}
 
 </style>
 </head>
+<div class="wrapper">
 <table id='account_table'><tr>
 	<td id='account_table'><b>Account:</b></td>
 	<td id='account_table'>
@@ -249,15 +263,18 @@ th {
 	<input style="margin-left:250px" type="submit" value="Hide/Show Images" />
 </form></div>
 
-
-<footer id="footer" style="text-align:center; position: absolute; bottom: 0px; left: 40%">
-	<div>
-		&copy; University of Victoria  ||  <a href="https://github.com/hep-gc/Glintv2">Visit GitHub Project <i class="icon-hand-up"></i></a>
-	</div>
-	<div>
-		<small class='muted'>Glint-Server v{{version}}</small>
-	</div>
-</footer>
+<div class="push"></div>
+<div class="footer">
+	<footer id="footer" style="text-align:center; position: absolute; bottom: 0px; left: 40%">
+		<div>
+			&copy; University of Victoria  ||  <a href="https://github.com/hep-gc/Glintv2">Visit GitHub Project <i class="icon-hand-up"></i></a>
+		</div>
+		<div>
+			<small class='muted'>Glint-Server v{{version}}</small>
+		</div>
+	</footer>
+</div>
+</div>
 
 
 <script>
