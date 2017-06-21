@@ -129,7 +129,13 @@ def update_pending_transactions(old_img_dict, new_img_dict):
 			try:
 				new_dict[repo_key][img_key]['hidden'] = repo_dict[img_key]['hidden']
 			except:
-				new_dict[repo_key][img_key]['hidden'] = False
+				# need a try block here incase we get here when an image was deleted
+				# faster than we could provide the state change. It will be gone already
+				# so we can just ignore it and not worry about adding to the dictionary
+				try:
+					new_dict[repo_key][img_key]['hidden'] = False
+				except:
+					pass
 				
 	return json.dumps(new_dict)
 
