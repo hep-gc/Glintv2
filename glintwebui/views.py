@@ -560,7 +560,7 @@ def delete_account(request):
 			#No accounts tied to this account
 			logger.info("No users to clean-up..")
 		logger.info("Successfull delete of account %s" % account)
-		return True
+		return HttpResponse(True)
 	else:
 		#not a post
 		pass
