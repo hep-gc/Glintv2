@@ -550,10 +550,15 @@ def delete_account(request):
 		account_obj.delete()
 		message = "Account %s deleted." % account
 		#need to also remove any instanced where this account was the active one for users.
-		users = Glint_User.objects.get(active_project=account)
-		for user in users:
-			user.active_project = None
-			user.save()
+		try:
+			users = Glint_User.objects.get(active_project=account)
+			if(users is not None):
+				for user in users:
+					user.active_project = None
+					user.save()
+		except:
+			#No accounts tied to this account
+			logger.info("No users to clean-up..")
 		logger.info("Successfull delete of account %s" % account)
 		return True
 	else:
