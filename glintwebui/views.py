@@ -555,7 +555,7 @@ def delete_account(request):
 			user.active_project = None
 			user.save()
 		logger.info("Successfull delete of account %s" % account)
-		return manage_accounts(request=request, message=message)
+		return True
 	else:
 		#not a post
 		pass
