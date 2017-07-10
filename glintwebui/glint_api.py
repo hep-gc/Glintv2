@@ -35,12 +35,21 @@ class repo_connector(object):
 	# This was a nightmare to get working behind apache but it turns out 
 	# all that was needed was to upgrade the python cryptography library
 	def _get_keystone_session(self):
-		try:
-			auth = v2.Password(auth_url=self.auth_url, username=self.username, password=self.password, tenant_name=self.project)
-			sess = session.Session(auth=auth, verify=self.cacert)
-		except Exception as e:
-			print("Problem importing keystone modules, and getting session: %s" % e)
-		return sess
+		if self.version == 2:
+			try:
+				auth = v2.Password(auth_url=self.auth_url, username=self.username, password=self.password, tenant_name=self.project)
+				sess = session.Session(auth=auth, verify=self.cacert)
+			except Exception as e:
+				print("Problem importing keystone modules, and getting session: %s" % e)
+			return sess
+		elif self.version == 3:
+			#connect using keystone v3
+			try:
+				auth = v3.Password(auth_url=self.auth_url, user_id=self.username, password=self.password, project_id=self.project)
+				sess = session.Session(auth=auth, verify=self.cacert)
+			except Exception as e:
+				print("Problem importing keystone modules, and getting session: %s" % e)
+			return sess
 
 	def _get_images(self):
 		glance = glanceclient.Client('2', session=self.sess)
