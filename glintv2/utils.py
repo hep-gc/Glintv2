@@ -561,6 +561,7 @@ def add_cached_image(image_name, image_checksum, full_path):
 
 # This function accepts a tuple representing an item in the cache and removes it from the list
 def del_cached_image(img_tuple):
+	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
 	r.lrem("glint_img_cache", 0, str(img_tuple))
 	return True
 
