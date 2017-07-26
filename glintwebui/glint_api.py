@@ -20,6 +20,8 @@ periodic tasks in celery.py
 class repo_connector(object):
 	def __init__(self, auth_url, project, username, password):
 		self.auth_url = auth_url
+		authsplit = self.auth_url.split('/')
+		self.version = int(float(authsplit[-1][1:])) if len(authsplit[-1]) > 0 else int(float(authsplit[-2][1:]))
 		self.project = project
 		self.username = username
 		self.password = password
@@ -28,9 +30,7 @@ class repo_connector(object):
 		self.cacert = config.cert_auth_bundle_path
 		self.sess = self._get_keystone_session()
 		self.image_list = self._get_images()
-		authsplit = self.auth_url.split('/')
-		self.version = int(float(authsplit[-1][1:])) if len(authsplit[-1]) > 0 else int(float(authsplit[-2][1:]))
-
+		
 	# Borrowed from cloud schedular and modified to match this enviroment
 	# This was a nightmare to get working behind apache but it turns out 
 	# all that was needed was to upgrade the python cryptography library
