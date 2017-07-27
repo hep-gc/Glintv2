@@ -20,6 +20,8 @@ periodic tasks in celery.py
 class repo_connector(object):
 	def __init__(self, auth_url, project, username, password):
 		self.auth_url = auth_url
+		authsplit = self.auth_url.split('/')
+		self.version = int(float(authsplit[-1][1:])) if len(authsplit[-1]) > 0 else int(float(authsplit[-2][1:]))
 		self.project = project
 		self.username = username
 		self.password = password
@@ -28,8 +30,6 @@ class repo_connector(object):
 		self.cacert = config.cert_auth_bundle_path
 		self.sess = self._get_keystone_session()
 		self.image_list = self._get_images()
-		authsplit = self.auth_url.split('/')
-		self.version = int(float(authsplit[-1][1:])) if len(authsplit[-1]) > 0 else int(float(authsplit[-2][1:]))
 
 	# Borrowed from cloud schedular and modified to match this enviroment
 	# This was a nightmare to get working behind apache but it turns out 
@@ -133,18 +133,18 @@ def validate_repo(auth_url, username, password, tenant_name):
 		repo = repo_connector(auth_url=auth_url, project=tenant_name, username=username, password=password)
 
 	except exceptions.connection.ConnectFailure as e:
-		print("Repo not valid: %s: %s", (tenant_name, auth_url))
-		print(e)
+		logger.error("Repo not valid: %s: %s", (tenant_name, auth_url))
+		logger.error(e)
 		return (False, "Unable to validate: Bad Auth URL")
 	except exceptions.http.HTTPClientError as e:
-		print(e)
+	        logger.error(e)
 		return (False, "Unable to connect: Bad username, password, or tenant")
 	except exceptions.connection.SSLError as e:
-		print(e)
+		logger.error(e)
 		return (False, "SSL connection error")
 	except Exception as e:
-		print("Repo not valid: %s: %s", (tenant_name, auth_url))
-		print(e)
+		logger.error("Repo not valid: %s: %s", (tenant_name, auth_url))
+		logger.error(e)
 		return (False, "unable to validate: please check httpd error log for message")
 
 	return (True, "Ok")
