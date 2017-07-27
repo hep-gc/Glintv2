@@ -30,7 +30,7 @@ class repo_connector(object):
 		self.cacert = config.cert_auth_bundle_path
 		self.sess = self._get_keystone_session()
 		self.image_list = self._get_images()
-
+		
 	# Borrowed from cloud schedular and modified to match this enviroment
 	# This was a nightmare to get working behind apache but it turns out 
 	# all that was needed was to upgrade the python cryptography library
