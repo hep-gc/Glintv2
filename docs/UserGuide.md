@@ -55,11 +55,11 @@ To add a new user simply select the "Add User" button and you will be supplied w
 ## Account Management
 Admin users will have the ability to add new accounts and manage user access to existing accounts.
 
-![](https://github.com/hep-gc/Glintv2/blob/master/docs/Account_management1)
+![](https://github.com/hep-gc/Glintv2/blob/master/docs/Account_management1.png)
 
 1. To provide users access to an existing acount selec the "+" button and you will be provided with a dropdown of existing users to add to the account.
 2. To edit the name of an account or delete it- select the "Edit" button and you will be provided with a small form edit or delete the account.
 3. To add a new Account select the "Add Account" button and you will be provided with a form to enter the account information.
 
-![](https://github.com/hep-gc/Glintv2/blob/master/docs/Account_management2)
+![](https://github.com/hep-gc/Glintv2/blob/master/docs/Account_management2.png)
 
