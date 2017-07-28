@@ -2,7 +2,7 @@
 
 ## The matrix page:
 The matrix page hosts the core functionality of the glint service. From here a user is able to download, upload, delete and transfer images between repos. A user can also switch between accounts, add repositories and review image conflicts detected by glint.
-!(https://github.com/hep-gc/Glintv2/blob/master/docs/Matrix.png)
+![](https://github.com/hep-gc/Glintv2/blob/master/docs/Matrix.png)
 
 1. Active account, to change account simply select the account you wish to switch to from the drop down menu.   
 2. Link to manage the cloud repositories related to the active account. Allows you to Add/Delete/Edit repos.
@@ -23,35 +23,35 @@ Type 2 - Image1 and Image2 have the same name and are the same images.
 Type 3 - Image1 and image 2 have different names but are the same images.  
 
 In the future we hope to have glint perform automatic name conflict resolution but for now all it does is detect these conflicts and displays them to the user who can take action where appropriate.
-!(https://github.com/hep-gc/Glintv2/blob/master/docs/Image_conflicts.png)
+![](https://github.com/hep-gc/Glintv2/blob/master/docs/Image_conflicts.png)
 
 
 ## Hidden Images
-!(https://github.com/hep-gc/Glintv2/blob/master/docs/Hidden_images.png)
+![](https://github.com/hep-gc/Glintv2/blob/master/docs/Hidden_images.png)
 By default all non-private images are hidden as glint typically does not have the privliges to manipulate these images. However, glint is capable of making copies of these images on a new repo so it may be useful to expose these images to the image Matrix. Shown in the image above, if an image is checked then it is hidden from glint. However, an image will not be hidden unless all copies (from different repos) of the image are hidden. To hide/expose an image from the glint image matrix simply toggle the check box to the desired state and select the "Hide/Show Images" button at the bottom of the table.
 
 
 ## Repository Management
 The repo management page displays some information about the matrix and provides options to Edit (or delete) or add additional repos.
-!(https://github.com/hep-gc/Glintv2/blob/master/docs/Manage_repos1.png)
+![](https://github.com/hep-gc/Glintv2/blob/master/docs/Manage_repos1.png)
 
 
 ## User Management
 Admin users will have the ability to add and edit glint users.
-!(https://github.com/hep-gc/Glintv2/blob/master/docs/User_management.png)
+![](https://github.com/hep-gc/Glintv2/blob/master/docs/User_management.png)
 
 
 To add a new user simply select the "Add User" button and you will be supplied with a small form to input a new users information.
-!(https://github.com/hep-gc/Glintv2/blob/master/docs/Add_user.png)
+![](https://github.com/hep-gc/Glintv2/blob/master/docs/Add_user.png)
 
 
 
 ## Account Management
 Admin users will have the ability to add new accounts and manage user access to existing accounts.
-!(https://github.com/hep-gc/Glintv2/blob/master/docs/Account_management1)
+![](https://github.com/hep-gc/Glintv2/blob/master/docs/Account_management1)
 
 1. To provide users access to an existing acount selec the "+" button and you will be provided with a dropdown of existing users to add to the account.
 2. To edit the name of an account or delete it- select the "Edit" button and you will be provided with a small form edit or delete the account.
 3. To add a new Account select the "Add Account" button and you will be provided with a form to enter the account information.
-!(https://github.com/hep-gc/Glintv2/blob/master/docs/Account_management2)
+![](https://github.com/hep-gc/Glintv2/blob/master/docs/Account_management2)
 
