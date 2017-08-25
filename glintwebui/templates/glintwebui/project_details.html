@@ -5,15 +5,57 @@
 table, th, td {
     border: 1px solid black;
     border-collapse: collapse;
-    padding: 5px;
+    padding: 8px;
 }
 th {
     text-align: right;
 }
 
+ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #333;
+}
+
+li {
+    float: left;
+    display: block;
+    color: white;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+
+}
+
+li a {
+    display: block;
+    color: white;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+}
+
+li a:hover {
+    background-color: #111;
+}
+
 #account_table{
 	border: none;
 }
+
+.image_matrix tr:nth-child(even){background-color:#f2f2f2;}
+
+.image_matrix th {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    text-align: left;
+    background-color: #4CAF50;
+    color: white;
+}
+
+.image_matrix tr:hover {background-color: #ddd;}
 
 .public {
 	background-color: #FFFF63;
@@ -41,18 +83,13 @@ th {
 /* drop down style */
  /* Dropdown Button */
 .dropbtn {
-	background-color: #3e8e41;
-    padding: 5px;
-    font-size: 16px;
-    border: 1px solid black;
-    cursor: pointer;
+    display: block;
+    color: white;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
 }
 
-/* Dropdown button on hover & focus */
-.dropbtn:hover, .dropbtn:focus {
-	background-color: #FFFFFF;
-    
-}
 
 /* The container <div> - needed to position the dropdown content */
 .dropdown {
@@ -86,15 +123,16 @@ th {
 
 html, body {
     height: 100%;
+    background-color: #fffeea;
 }
 .wrapper {
     min-height: 100%;
     height: auto !important;
     height: 100%;
-    margin: 0 auto -142px; /* the bottom margin is the negative value of the footer's height */
+    margin: 0 auto -0px; /* the bottom margin is the negative value of the footer's height */
 }
 .footer, .push {
-    height: 142px; /* .push must be the same height as .footer */
+    height: 0px; /* .push must be the same height as .footer */
 }
 
 {% load template_utils %}
@@ -102,51 +140,48 @@ html, body {
 </style>
 </head>
 <div class="wrapper">
-<table id='account_table'><tr>
-	<td id='account_table'><b>Account:</b></td>
-	<td id='account_table'>
-		<div class="dropdown">
-			<button onclick="doDropdown()" class="dropbtn">{{account_name}}</button>
-				<div id="myDropdown" class="dropdown-content">
-				{% for account in account_list %}
-					<a href='/ui/project_details/{{account}}/'>{{account}}</a> 
-				{% endfor %}
-			</div>
-		</div>
-	</td>
-	{% if account_name not in "No accounts available" %}
-		<td id='account_table' style= 'padding-left: 20px'><a href="/ui/manage_repos/{{account_name}}">Manage '{{account_name}}' repos</a></td>
-	{% endif %}
-	<td id='account_table'>
-		{% if is_superuser %}
-		<div class="dropdown" style="float: right; padding-left: 20px">
-			<button onclick="doAdminDropdown()" class="dropbtn">Admin Tools</button>
-			<div id="myAdminDropdown" class="dropdown-content">
-				<a href='/ui/manage_users/'>User Management</a>
-				<a href='/ui/manage_accounts/'>Account Management</a>
-			</div>
-		</div>
-		{% endif %}
-	</td>
-
-</tr>
-</table>
+<ul>
+    <li><img style="height: 60px;" src="/static/glintwebui/img/glintv2whitetext.png"></li>
+    <li><p>Account:</p></li>
+    <li><div><a style="color: #4CAF50;font-weight: bold;" onclick="doDropdown()" class="dropbtn">{{account_name}}</a>
+                                <div id="myDropdown" class="dropdown-content">
+                                    {% for account in account_list %}
+                                        <a href='/ui/project_details/{{account}}/'>{{account}}</a>
+                                    {% endfor %}
+                                </div>
+        </div>
+    </li>
+    {% if account_name not in "No accounts available" %}
+        <li><a href="/ui/manage_repos/{{account_name}}">Manage '{{account_name}}' repos</a></li>
+    {% endif %}
+    {% if is_superuser %}
+       <li> <div>
+                <a onclick="doAdminDropdown()" class="dropbtn">Admin Tools</a>
+                <div id="myAdminDropdown" class="dropdown-content">
+                    <a href='/ui/manage_users/'>User Management</a>
+                    <a href='/ui/manage_accounts/'>Account Management</a>
+                </div>
+            </div>
+       </li>
+    {% endif %}
+</ul>
 <br/>
+
+<table> <tr><td class='public' id='public_filter'> Hidden Images </td><td class='private' id='private_filter'>Glint Images</td><td><b>Image Filter:</b></td>
+<td> <input type="text" id="image_search" autofocus="autofocus" placeholder="Search by Image Name"> </td>
+</tr></table> 
+{% if message is not None%}
+	<p style="color:green; font-weight:bold">{{message}}</p>
+{% endif%}
 {% if conflict_dict is not none %}
 	<div class="conflictButton"><p style="color:red; font-weight:bold">Image conflicts detected, some images may be missing below: <input type="button" onclick="showConflicts();" value="View Image Conflicts"/></p></div>
 	<div class="matrixButton" hidden="True"><input type="button" onclick="showImageMatrix();" value="View Image Matrix"/></div>
 {% endif %}
 
-<table class="image_matrix" hidden="True"> <tr><td class='public' id='public_filter'> Hidden Images </td><td class='private' id='private_filter'>Glint Images</td><th>Image Filter:</th>
-<td> <input type="text" id="image_search" autofocus="autofocus" placeholder="Search by Image Name"> </td>
-</tr></table> <br/>
-{% if message is not None%}
-	<p style="color:green; font-weight:bold">{{message}}</p>
-{% endif%}
 {% if conflict_dict is not none %}
 	<table class="conflict_table" hidden="true"> 
 	{% for conflict_repo in conflict_dict %}
-		<tr><th style="text-align:left">{{conflict_repo}}</th></tr>
+		<tr><td style="text-align:left">{{conflict_repo}}</td></tr>
 		<tr>
 			<th style="text-align:center">Conflict Type</th>
 			<th style="text-align:center">Image 1</th>
@@ -196,7 +231,7 @@ html, body {
 		{% endcomment %}
 		{% if image_set is not None %}
 			{% for image in image_set %}
-				<tr class="image_row"><th> {{image}}  <img title="Download Image" src="/static/glintwebui/img/green_download_icon.png" onclick="downloadImage('{{image}}');" style="width:20px;height:20px; float:right; padding-left:5px; cursor: pointer;"/></th>
+				<tr class="image_row"><td><b> {{image}} </b> <img title="Download Image" src="/static/glintwebui/img/green_download_icon.png" onclick="downloadImage('{{image}}');" style="width:20px;height:20px; float:right; padding-left:5px; cursor: pointer;"/></td>
 				{% for repo_key, repo_value in image_dict.items %}
 					{% with image_id=image_lookup|get_item:repo_key|get_item:image %}
 					{% if repo_value|get_item:image_id is not None %}
