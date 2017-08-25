@@ -1,6 +1,6 @@
 # User Guide
 
-## The matrix page:
+## The matrix page
 The matrix page hosts the core functionality of the glint service. From here a user is able to download, upload, delete and transfer images between repos. A user can also switch between accounts, add repositories and review image conflicts detected by glint.
 
 ![](https://github.com/hep-gc/Glintv2/blob/master/docs/Matrix.png)

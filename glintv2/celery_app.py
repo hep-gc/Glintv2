@@ -13,7 +13,6 @@ import time
 import redis
 import subprocess
 
- 
 
 
 # Indicate Celery to use the default Django settings module
@@ -24,11 +23,6 @@ django.setup()
 app = Celery('glintv2', broker=config.celery_url, backend=config.celery_backend)
 app.config_from_object('django.conf:settings')
 
-
-
-# This line will tell Celery to autodiscover all your tasks.py that are in your app folders
-# However it seems to have issues in an apache/django enviroment
-#app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 
 @app.task(bind=True)
 def debug_task(self):
@@ -45,15 +39,6 @@ def image_collection(self):
     term_signal = False
     num_tx = get_num_transactions()
 
-    '''
-    These folders need to be accessable by both the apche and celery users and need to be setup before runtime
-    #create temp cache folders
-    for x in range(0,10):
-        #first check if the temp folder exists
-        file_path = "/var/www/glintv2/scratch/" + str(x)
-        if not os.path.exists(file_path):
-            os.makedirs(file_path)
-    '''
 
     #perminant for loop to monitor image states and to queue up tasks
     while(True):
