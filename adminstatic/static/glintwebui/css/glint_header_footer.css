@@ -31,9 +31,13 @@ li a:hover {
 html, body {
     height: 100%;
     background-color: #fffeea;
+    margin: 0;
 }
 
 }
 .footer, .push {
     height: 0px; /* .push must be the same height as .footer */
+}
+.wrapper {
+    margin: 25;
 }
