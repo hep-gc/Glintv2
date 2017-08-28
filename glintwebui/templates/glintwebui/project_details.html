@@ -47,7 +47,7 @@
 	<p style="color:green; font-weight:bold">{{message}}</p>
 {% endif%}
 {% if conflict_dict is not none %}
-	<div class="conflictButton"><p style="color:red; font-weight:bold; height:52px">Image conflicts detected, some images may be missing below: <input style="font-size: 16px;margin: 4px 2px;" class="button redbutton" type="button" onclick="showConflicts();" value="View Image Conflicts"/></p></div>
+	<div class="conflictButton"><p style="color:red; font-weight:bold; height:52px">Image conflicts detected, some images may be missing below:<input style="font-size: 16px;margin: 4px 2px;" class="button redbutton" type="button" onclick="showConflicts();" value="View Image Conflicts"/></p></div>
 	<div class="matrixButton" hidden="True"><input class="button greenbutton" type="button" onclick="showImageMatrix();" value="View Image Matrix"/></div>
 {% endif %}
 
@@ -124,8 +124,8 @@
 			{% endfor %}
 		{% endif %}
 	</table>
-	<input class="button greenbutton" type="button" value="Upload Image" onclick="window.location.href='/ui/upload_image/{{account_name}}'">
-	<input class="button greenbutton" style="margin-left:250px" type="submit" value="Save Images" />
+	<input class="button greenbutton" style="height:44px" type="button" value="Upload Image" onclick="window.location.href='/ui/upload_image/{{account_name}}'">
+	<input class="button greenbutton" style="margin-left:250px; height:44px" type="submit" value="Save Images" />
 </form></div>
 
 
@@ -168,7 +168,7 @@
 			{% endfor %}
 		{% endif %}
 	</table>
-	<input class="button greenbutton" style="margin-left:250px" type="submit" value="Hide/Show Images" />
+	<input class="button greenbutton" style="margin-left:250px; height:44px" type="submit" value="Hide/Show Images" />
 </form></div>
 
 <div class="push"></div>
