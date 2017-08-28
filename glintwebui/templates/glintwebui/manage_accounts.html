@@ -1,8 +1,10 @@
 <head>
-	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-
+    <link rel="stylesheet" href="/static/glintwebui/css/glint_header_footer.css">
+    <link rel="stylesheet" href="/static/glintwebui/css/glint_matrix.css">
+    <link rel="stylesheet" href="/static/glintwebui/css/glint_button.css">
 	<style>
 		table, th, td {
 		    border: 1px solid black;
@@ -15,16 +17,31 @@
 	</style>
 </head>
 {% load template_utils %}
+<ul>
+    <li><img style="height: 60px;" src="/static/glintwebui/img/glintv2whitetext.png"></li>
+    {% if is_superuser %}
+       <li> <div>
+                <a onclick="doAdminDropdown()" class="dropbtn">Admin Tools</a>
+                <div id="myAdminDropdown" class="dropdown-content">
+                    <a href='/ui/manage_users/'>User Management</a>
+                    <a href='/ui/manage_accounts/'>Account Management</a>
+                </div>
+            </div>
+       </li>
+    {% endif %}
+</ul>
+<br/>
+
 <h1>Account Management</h1>
 {% if message is not None %}
 	<div><p style="color:green">{{message}}</p></div>
 {% endif %}
 <div>
-	<table class="account_table">
-		<tr><th>Account</th><th>User List</th></tr>
+	<table class="image_matrix">
+		<tr><th>Account</th><th>User List</th><th/></tr>
 		{% for account in account_list %}
 			<tr>
-				<td>{{account.account_name}}</td>
+				<td><b>{{account.account_name}}</b></td>
 				<td>
 					{% for acc in account_user_dict %}
 						{% if account == acc %}
@@ -87,7 +104,19 @@
 	</div>
 </div>
 <br/><br/><br/>
-<a href="/ui/"><input type="button" value="Back to Matrix"/></a>
+<a href="/ui/"><input class="button greenbutton" type="button" value="Back to Matrix"/></a>
+
+<div class="push"></div>
+<div class="footer">
+	<footer id="footer" style="text-align:center">
+		<div>
+			&copy; University of Victoria  ||  <a href="https://github.com/hep-gc/Glintv2">Visit GitHub Project <i class="icon-hand-up"></i></a>
+		</div>
+		<div>
+			<small class='muted'>Glint-Server v{{version}}</small>
+		</div>
+	</footer>
+</div>
 
 <script>
 	function confirmDelete(account) {
