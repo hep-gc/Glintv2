@@ -46,10 +46,3 @@ th {
     background-color: #808080;
 }
 
-/* This is to stop the page from morphing a bit each time it refreshes */
-body {
-  visibility: hidden;
-}
-body.finished {
-   visibility: visible;
-}
