@@ -9,7 +9,7 @@
 </head>
 
 <ul>
-    <li><img style="height: 60px;" src="/static/glintwebui/img/glintv2whitetext.png"></li>
+    <li style="padding 0px"><a style="padding: 0px" href="/ui/"><img href="/ui/" style="height: 60px;" src="/static/glintwebui/img/glintv2whitetext.png"></a></li>
     <li><h4>Account:</h4></li>
     <li><div><a style="color: #4CAF50;font-weight: bold;" onclick="doDropdown()" class="dropbtn">{{account}}</a>
                                 <div id="myDropdown" class="dropdown-content">
@@ -34,7 +34,7 @@
     {% endif %}
 </ul>
 <br/>
-
+<div class="wrapper">
 <div><h2> "{{account}}" projects </h2></div>
 {% if feedback_msg is not None %}
 	<div><p style="color:green">{{feedback_msg}}</p></div>
@@ -95,7 +95,7 @@
 <a href="/ui/add_repo/{{account}}"><input class="button greenbutton" type="button" value="Add repo to {{account}}"/></a>
 <br/><br/><br/>
 <a href="/ui/project_details/{{account}}"><input class="button greenbutton" type="button" value="Back to Matrix"/></a>
-
+</div>
 <div class="push"></div>
 <div class="footer">
 	<footer id="footer" style="text-align:center">

@@ -20,7 +20,7 @@
 </head>
 {% load template_utils %}
 <ul>
-    <li><img style="height: 60px;" src="/static/glintwebui/img/glintv2whitetext.png"></li>
+    <li style="padding 0px"><a style="padding: 0px" href="/ui/"><img href="/ui/" style="height: 60px;" src="/static/glintwebui/img/glintv2whitetext.png"></a></li>
     {% if is_superuser %}
        <li> <div>
                 <a onclick="doAdminDropdown()" class="dropbtn">Admin Tools</a>
@@ -33,7 +33,7 @@
     {% endif %}
 </ul>
 <br/>
-
+<div class="wrapper">
 <h1>Account Management</h1>
 {% if message is not None %}
 	<div><p style="color:green">{{message}}</p></div>
@@ -107,7 +107,7 @@
 </div>
 <br/><br/><br/>
 <a href="/ui/"><input class="button greenbutton" type="button" value="Back to Matrix"/></a>
-
+</div>
 <div class="push"></div>
 <div class="footer">
 	<footer id="footer" style="text-align:center">

@@ -12,9 +12,8 @@
 
 </style>
 </head>
-<div class="wrapper">
 <ul>
-    <li><img style="height: 60px;" src="/static/glintwebui/img/glintv2whitetext.png"></li>
+    <li style="padding 0px"><a style="padding: 0px" href="/ui/"><img href="/ui/" style="height: 60px;" src="/static/glintwebui/img/glintv2whitetext.png"></a></li>
     <li><h4>Account:</h4></li>
     <li><div><a style="color: #4CAF50;font-weight: bold;" onclick="doDropdown()" class="dropbtn">{{account_name}}</a>
                                 <div id="myDropdown" class="dropdown-content">
@@ -39,6 +38,7 @@
     {% endif %}
 </ul>
 <br/>
+<div class="wrapper">
 
 <table> <tr><td class='public' id='public_filter'> Hidden Images </td><td class='private' id='private_filter'>Glint Images</td><td><b>Image Filter:</b></td>
 <td> <input type="text" id="image_search" autofocus="autofocus" placeholder="Search by Image Name"> </td>
