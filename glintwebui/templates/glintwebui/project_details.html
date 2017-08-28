@@ -15,7 +15,7 @@
 <div class="wrapper">
 <ul>
     <li><img style="height: 60px;" src="/static/glintwebui/img/glintv2whitetext.png"></li>
-    <li><p>Account:</p></li>
+    <li><h4>Account:</h4></li>
     <li><div><a style="color: #4CAF50;font-weight: bold;" onclick="doDropdown()" class="dropbtn">{{account_name}}</a>
                                 <div id="myDropdown" class="dropdown-content">
                                     {% for account in account_list %}
@@ -290,8 +290,10 @@ window.onclick = function(event) {
   }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+$(document.body).addClass('not-ready');
 
+ document.addEventListener('DOMContentLoaded', function() { 
+    $(document.body).removeClass('not-ready')
     var filter = localStorage.getItem("filter");
     if (filter == "public"){
 

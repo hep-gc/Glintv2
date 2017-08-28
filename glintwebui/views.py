@@ -309,12 +309,29 @@ def manage_repos(request, account_name, feedback_msg=None, error_msg=None):
 	if not verifyUser(request):
 		raise PermissionDenied
 	active_user = getUser(request)
+        user_obj = Glint_User.objects.get(common_name=active_user)
 	repo_list = Project.objects.filter(account_name=account_name)
+
+        user_accounts = User_Account.objects.filter(user=user_obj)
+	account_list = []
+	for acct in user_accounts:
+		act_name = acct.account_name
+		account_list.append(act_name)
+	try:
+		account_list.remove(account_name)
+	except ValueError as e:
+		#list is empty
+		pass
+
 	context = {
 		'account': account_name,
+                'account_list': account_list,
 		'repo_list': repo_list,
 		'feedback_msg': feedback_msg,
 		'error_msg': error_msg,
+                'is_superuser': getSuperUserStatus(request),
+                'version': version
+
 	}
 	return render(request, 'glintwebui/manage_repos.html', context)
 
@@ -477,7 +494,10 @@ def manage_users(request, message=None):
 	context = {
 		'user_list': user_list,
 		'admin_list': admin_list,
-		'message': message
+		'message': message,
+                'is_superuser': getSuperUserStatus(request),
+                'version': version
+
 	}
 	return render(request, 'glintwebui/manage_users.html', context)
 
@@ -644,7 +664,10 @@ def manage_accounts(request, message=None):
 		'account_list': account_list,
 		'account_user_dict': account_user_dict,
 		'user_list': user_list,
-		'message': message
+		'message': message,
+                'is_superuser': getSuperUserStatus(request),
+                'version': version
+
 	}
 	return render(request, 'glintwebui/manage_accounts.html', context)
 

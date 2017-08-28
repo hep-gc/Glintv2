@@ -5,15 +5,16 @@
     <link rel="stylesheet" href="/static/glintwebui/css/glint_header_footer.css">
     <link rel="stylesheet" href="/static/glintwebui/css/glint_matrix.css">
     <link rel="stylesheet" href="/static/glintwebui/css/glint_button.css">
+    <link rel="stylesheet" href="/static/glintwebui/css/glint_dropdown_button.css">
 </head>
 
 <ul>
     <li><img style="height: 60px;" src="/static/glintwebui/img/glintv2whitetext.png"></li>
-    <li><p>Account:</p></li>
+    <li><h4>Account:</h4></li>
     <li><div><a style="color: #4CAF50;font-weight: bold;" onclick="doDropdown()" class="dropbtn">{{account}}</a>
                                 <div id="myDropdown" class="dropdown-content">
-                                    {% for account in account_list %}
-                                        <a href='/ui/project_details/{{account}}/'>{{account}}</a>
+                                    {% for acc in account_list %}
+                                        <a href='/ui/manage_repos/{{acc}}/'>{{acc}}</a>
                                     {% endfor %}
                                 </div>
         </div>
@@ -136,4 +137,12 @@
 
 	    } 
 	}
+
+        function doAdminDropdown() {
+            document.getElementById("myAdminDropdown").classList.toggle("show");
+        }
+
+        function doDropdown() {
+            document.getElementById("myDropdown").classList.toggle("show");
+        }
 </script>
