@@ -1,9 +1,38 @@
 <head>
-	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="/static/glintwebui/css/glint_header_footer.css">
+    <link rel="stylesheet" href="/static/glintwebui/css/glint_matrix.css">
+    <link rel="stylesheet" href="/static/glintwebui/css/glint_button.css">
 </head>
 
+<ul>
+    <li><img style="height: 60px;" src="/static/glintwebui/img/glintv2whitetext.png"></li>
+    <li><p>Account:</p></li>
+    <li><div><a style="color: #4CAF50;font-weight: bold;" onclick="doDropdown()" class="dropbtn">{{account}}</a>
+                                <div id="myDropdown" class="dropdown-content">
+                                    {% for account in account_list %}
+                                        <a href='/ui/project_details/{{account}}/'>{{account}}</a>
+                                    {% endfor %}
+                                </div>
+        </div>
+    </li>
+    {% if account_name not in "No accounts available" %}
+        <li><a href="/ui/manage_repos/{{account_name}}">Manage '{{account_name}}' repos</a></li>
+    {% endif %}
+    {% if is_superuser %}
+       <li> <div>
+                <a onclick="doAdminDropdown()" class="dropbtn">Admin Tools</a>
+                <div id="myAdminDropdown" class="dropdown-content">
+                    <a href='/ui/manage_users/'>User Management</a>
+                    <a href='/ui/manage_accounts/'>Account Management</a>
+                </div>
+            </div>
+       </li>
+    {% endif %}
+</ul>
+<br/>
 
 <div><h2> "{{account}}" projects </h2></div>
 {% if feedback_msg is not None %}
@@ -12,7 +41,7 @@
 {% if error_msg is not None %}
 	<div><p style="color:red">{{error_msg}}</p></div>
 {% endif %}
-<table class="main_table">
+<table class="image_matrix">
 	<tr class="main_table">
 		<th class="main_table">Alias</th>
 		<th class="main_table">Project</th>
@@ -22,9 +51,9 @@
 	</tr>
 	{% for repo in repo_list %}
 		<tr class="main_table">
-			<th class="main_table">
-				{{repo.alias}}
-			</th>
+			<td class="main_table">
+				<b>{{repo.alias}}</b>
+			</td>
 			<td class="main_table">
 				{{repo.tenant}}
 			</td>
@@ -62,10 +91,21 @@
 	{% endfor %}
 </table>
 <br/>
-<a href="/ui/add_repo/{{account}}"><input type="button" value="Add repo to {{account}}"/></a>
+<a href="/ui/add_repo/{{account}}"><input class="button greenbutton" type="button" value="Add repo to {{account}}"/></a>
 <br/><br/><br/>
-<a href="/ui/project_details/{{account}}"><input type="button" value="Back to Matrix"/></a>
+<a href="/ui/project_details/{{account}}"><input class="button greenbutton" type="button" value="Back to Matrix"/></a>
 
+<div class="push"></div>
+<div class="footer">
+	<footer id="footer" style="text-align:center">
+		<div>
+			&copy; University of Victoria  ||  <a href="https://github.com/hep-gc/Glintv2">Visit GitHub Project <i class="icon-hand-up"></i></a>
+		</div>
+		<div>
+			<small class='muted'>Glint-Server v{{version}}</small>
+		</div>
+	</footer>
+</div>
 
 <style>
 .main_table {
