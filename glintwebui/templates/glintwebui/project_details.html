@@ -129,7 +129,7 @@
 </form></div>
 
 
-<div id="hidden_matrix" hidden="True"><form action="/ui/save_hidden_images/{{account_name}}/" method="post">
+<div class="image_matrix" id="hidden_matrix" hidden="True"><form action="/ui/save_hidden_images/{{account_name}}/" method="post">
 	{% csrf_token %}
 	<table>
 		<tr>
@@ -146,7 +146,7 @@
 		{% endcomment %}
 		{% if hidden_image_set is not None %}
 			{% for image in hidden_image_set %}
-				<tr class="image_row"><th> {{image}}  <img title="Download Image" src="/static/glintwebui/img/green_download_icon.png" onclick="downloadImage('{{image}}');" style="width:20px;height:20px; float:right; padding-left:5px; cursor: pointer;"/></th>
+				<tr class="image_row"><td> <b>{{image}}</b>  <img title="Download Image" src="/static/glintwebui/img/green_download_icon.png" onclick="downloadImage('{{image}}');" style="width:20px;height:20px; float:right; padding-left:5px; cursor: pointer;"/></td>
 				{% for repo_key, repo_value in image_dict.items %}
 					{% with image_id=image_lookup|get_item:repo_key|get_item:image %}
 					{% if repo_value|get_item:image_id is not None %}
