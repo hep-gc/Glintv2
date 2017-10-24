@@ -406,11 +406,12 @@ def add_user(request):
 		distinguished_name = request.POST.get('distinguished_name')
 		logger.info("Adding user %s" % user)
 		try:
-			#check if username exists, if not add it
-			Glint_User.objects.filter(user_name=user)
-			#if we get here it means the user already exists
-			message = "Unable to add user, username already exists"
-			return manage_users(request, message)
+            #check if username exists, if not add it
+            user_found = Glint_User.objects.filter(user_name=user)
+            logger.error("Found user %s, already in system" % user_found[0])
+            #if we get here it means the user already exists
+            message = "Unable to add user, username already exists"
+            return manage_users(request, message)
 		except Exception as e:
 			#If we are here we are good since the username doesnt exist. add it and return
 			glint_user = Glint_User(user_name=user, common_name=common_name, distinguished_name=distinguished_name)
