@@ -23,6 +23,8 @@ class Project(models.Model):
     #credentials? How to encrypt?
     username = models.CharField(max_length=64, default="")
     password = models.CharField(max_length=64, default="")
+    project_domain_name = models.CharField(max_length=64, default="Default")
+    user_domain_name = models.CharField(max_length=64, default="Default")
 
 
     def __str__(self):

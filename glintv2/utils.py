@@ -436,7 +436,7 @@ def process_pending_transactions(account_name, json_img_dict):
 			img_dict[transaction['repo']][new_img_id] = new_img_dict
 
 			# queue transfer task
-			transfer_image.delay(image_name=transaction['image_name'], image_id=new_img_id, account_name=account_name, auth_url=repo_obj.auth_url, project_tenant=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password, requesting_user=transaction['user'], project_alias=repo_obj.alias)
+			transfer_image.delay(image_name=transaction['image_name'], image_id=new_img_id, account_name=account_name, auth_url=repo_obj.auth_url, project_tenant=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password, requesting_user=transaction['user'], project_alias=repo_obj.alias, user_domain_name=repo_obj.user_domain_name, project_domain_name=repo_obj.project_domain_name)
 
 		elif transaction['action'] == 'delete':
 			# First check if it exists in the redis dictionary, if it doesn't exist we can't delete it
@@ -444,7 +444,7 @@ def process_pending_transactions(account_name, json_img_dict):
 				# Set state and queue delete task
 				repo_obj = Project.objects.get(account_name=transaction['account_name'], alias=transaction['repo'])
 				img_dict[transaction['repo']][transaction['image_id']]['state'] = 'Pending Delete'
-				delete_image.delay(image_id=transaction['image_id'], image_name=transaction['image_name'], account_name=account_name, auth_url=repo_obj.auth_url, project_tenant=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password, requesting_user=transaction['user'], project_alias=repo_obj.alias)
+				delete_image.delay(image_id=transaction['image_id'], image_name=transaction['image_name'], account_name=account_name, auth_url=repo_obj.auth_url, project_tenant=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password, requesting_user=transaction['user'], project_alias=repo_obj.alias, user_domain_name=repo_obj.user_domain_name, project_domain_name=repo_obj.project_domain_name)
 	
 		elif transaction['action'] == 'upload':
 			req_user = transaction['user']
@@ -453,7 +453,7 @@ def process_pending_transactions(account_name, json_img_dict):
 			disk_format = transaction['disk_format']
 			container_format = transaction['container_format']
 			repo_obj = Project.objects.get(account_name=transaction['account_name'], alias=transaction['repo'])
-			upload_image.delay(image_name=img_name, image_path=image_path, account_name=account_name, auth_url=repo_obj.auth_url, project_tenant=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password, requesting_user=req_user, project_alias=repo_obj.alias, disk_format=disk_format, container_format=container_format)
+			upload_image.delay(image_name=img_name, image_path=image_path, account_name=account_name, auth_url=repo_obj.auth_url, project_tenant=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password, requesting_user=req_user, project_alias=repo_obj.alias, disk_format=disk_format, container_format=container_format, user_domain_name=repo_obj.user_domain_name, project_domain_name=repo_obj.project_domain_name)
 
 	return json.dumps(img_dict)
 
@@ -545,7 +545,7 @@ def find_image_by_name(account_name, image_name):
 			if image_dict[repo][image]['name'] == image_name:
 				if image_dict[repo][image]['state'] == 'Present' and image_dict[repo][image]['hidden'] == False:
 					repo_obj = Project.objects.get(account_name=account_name, alias=repo)
-					return (repo_obj.auth_url, repo_obj.tenant, repo_obj.username, repo_obj.password, image, image_dict[repo][image]['checksum'])
+					return (repo_obj.auth_url, repo_obj.tenant, repo_obj.username, repo_obj.password, image, image_dict[repo][image]['checksum'], repo_obj.user_domain_name, repo_obj.project_domain_name)
 	return False
 
 # This function accepts info to uniquely identify an image as well as

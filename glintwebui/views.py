@@ -162,7 +162,7 @@ def add_repo(request, account_name):
 		if form.is_valid():
 			logger.info("Attempting to add new repo for User:" + user)
 			# all data is exists, check if the repo is valid
-			validate_resp = validate_repo(auth_url=form.cleaned_data['auth_url'], tenant_name=form.cleaned_data['tenant'], username=form.cleaned_data['username'], password=form.cleaned_data['password'])
+			validate_resp = validate_repo(auth_url=form.cleaned_data['auth_url'], tenant_name=form.cleaned_data['tenant'], username=form.cleaned_data['username'], password=form.cleaned_data['password'], user_domain_name=form.cleaned_data['user_domain_name'], project_domain_name=form.cleaned_data['project_domain_name'])
 			if (validate_resp[0]):
 				#check if repo/auth_url combo already exists
 				try:
@@ -189,7 +189,7 @@ def add_repo(request, account_name):
 					# this exception could be tightened around the django "DoesNotExist" exception
 					pass
 
-				new_repo = Project(account_name=account_name, auth_url=form.cleaned_data['auth_url'], tenant=form.cleaned_data['tenant'], username=form.cleaned_data['username'], password=form.cleaned_data['password'], alias=form.cleaned_data['alias'])
+				new_repo = Project(account_name=account_name, auth_url=form.cleaned_data['auth_url'], tenant=form.cleaned_data['tenant'], username=form.cleaned_data['username'], password=form.cleaned_data['password'], alias=form.cleaned_data['alias'], user_domain_name=form.cleaned_data['user_domain_name'], project_domain_name=form.cleaned_data['project_domain_name'])
 				new_repo.save()
 				repo_modified()
 

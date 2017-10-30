@@ -18,13 +18,15 @@ periodic tasks in celery.py
 '''
 
 class repo_connector(object):
-	def __init__(self, auth_url, project, username, password):
+	def __init__(self, auth_url, project, username, password, user_domain_name="Default", project_domain_name="Default"):
 		self.auth_url = auth_url
 		authsplit = self.auth_url.split('/')
 		self.version = int(float(authsplit[-1][1:])) if len(authsplit[-1]) > 0 else int(float(authsplit[-2][1:]))
 		self.project = project
 		self.username = username
 		self.password = password
+		self.project_domain_name = project_domain_name
+		self.user_domain_name = user_domain_name
 		self.token = None
 		self.keystone = None
 		self.cacert = config.cert_auth_bundle_path
@@ -45,7 +47,7 @@ class repo_connector(object):
 		elif self.version == 3:
 			#connect using keystone v3
 			try:
-				auth = v3.Password(auth_url=self.auth_url, user_id=self.username, password=self.password, project_id=self.project)
+				auth = v3.Password(auth_url=self.auth_url, username=self.username, password=self.password, project_name=self.project, user_domain_name=self.user_domain_name, project_domain_name=self.project_domain_name)
 				sess = session.Session(auth=auth, verify=self.cacert)
 			except Exception as e:
 				print("Problem importing keystone modules, and getting session: %s" % e)
@@ -128,9 +130,9 @@ class repo_connector(object):
 		return image['checksum']
 
 
-def validate_repo(auth_url, username, password, tenant_name):
+def validate_repo(auth_url, username, password, tenant_name, user_domain_name="Default", project_domain_name="Default"):
 	try:
-		repo = repo_connector(auth_url=auth_url, project=tenant_name, username=username, password=password)
+		repo = repo_connector(auth_url=auth_url, project=tenant_name, username=username, password=password, user_domain_name=user_domain_name, project_domain_name=project_domain_name)
 
 	except exceptions.connection.ConnectFailure as e:
 		logger.error("Repo not valid: %s: %s", (tenant_name, auth_url))
