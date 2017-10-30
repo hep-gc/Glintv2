@@ -29,11 +29,11 @@
     <tr><td>Keystone Version</td> <td><input type="radio" id="v2" name="versionRadio" value="v2" checked/>v2<input type="radio" id="v3" name="versionRadio" value="v3"/>v3</td></tr>
 
     <tr class="version3" hidden=True><td><label for="project_domain_name">Project Domain Name</label></td>
-    <td><input type="project_domain_name" name="project_domain_name" id="" value="Default" /></td></tr>
+    <td><input type="text" name="project_domain_name" id="" value="Default" /></td></tr>
 
     <tr class="version3" hidden=True><td><label for="user_domain_name">User Domain Name</label></td>
-    <td><input type="user_domain_name" name="user_domain_name" id="" value="Default" /></td></tr>
-    
+    <td><input type="text" name="user_domain_name" id="" value="Default" /></td></tr>
+
     <tr><td><input type="submit" value="Add Repo" /></td></tr>
     <tr><td><a href="/ui/project_details/{{account_name}}/"><input type="button" value="Cancel"/></a></td></tr>
 </table>
