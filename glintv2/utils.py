@@ -423,7 +423,7 @@ def process_pending_transactions(account_name, json_img_dict):
 			# This may cause an error if the same repo is added twice, perhaps we can screen for this when repos are added
 			repo_obj = Project.objects.get(account_name=transaction['account_name'], alias=transaction['repo'])
 
-			rcon = repo_connector(auth_url=repo_obj.auth_url, project=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password)
+			rcon = repo_connector(auth_url=repo_obj.auth_url, project=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password, user_domain_name=repo_obj.user_domain_name, project_domain_name=repo_obj.project_domain_name)
 			new_img_id = rcon.create_placeholder_image(transaction['image_name'], transaction['disk_format'], transaction['container_format'])
 			# Make a new img dict
 			new_img_dict = {
