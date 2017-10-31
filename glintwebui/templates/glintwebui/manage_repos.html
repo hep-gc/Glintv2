@@ -89,7 +89,8 @@
                             <tr class="version3" hidden=True><td><label for="user_domain_name">User Domain Name</label></td>
                             <td><input type="text" name="user_domain_name" id="" value="Default" /></td></tr>
 
-							<tr><td><input type="submit" value="Update Repo" /></td>
+							<tr><td></td>
+                            <input type="submit" value="Update Repo" style="background-color: green; color: black; float: left"/>
 							<input type="hidden" name="proj_id" value="{{repo.proj_id}}" />
 							<td><input type="button" onclick="confirmDelete('{{repo.tenant}}', '{{repo.proj_id}}')" value="Delete" style="background-color: red; color: black; float: right"/></td></tr>
 						</table>
