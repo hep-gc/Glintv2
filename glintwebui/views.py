@@ -309,10 +309,10 @@ def manage_repos(request, account_name, feedback_msg=None, error_msg=None):
     if not verifyUser(request):
         raise PermissionDenied
     active_user = getUser(request)
-        user_obj = Glint_User.objects.get(common_name=active_user)
+    user_obj = Glint_User.objects.get(common_name=active_user)
     repo_list = Project.objects.filter(account_name=account_name)
 
-        user_accounts = User_Account.objects.filter(user=user_obj)
+    user_accounts = User_Account.objects.filter(user=user_obj)
     account_list = []
     for acct in user_accounts:
         act_name = acct.account_name
@@ -496,9 +496,8 @@ def manage_users(request, message=None):
         'user_list': user_list,
         'admin_list': admin_list,
         'message': message,
-                'is_superuser': getSuperUserStatus(request),
-                'version': version
-
+        'is_superuser': getSuperUserStatus(request),
+        'version': version
     }
     return render(request, 'glintwebui/manage_users.html', context)
 
