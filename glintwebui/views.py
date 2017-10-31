@@ -348,11 +348,13 @@ def update_repo(request, account_name):
         auth_url = request.POST.get('auth_url')
         tenant = request.POST.get('tenant')
         proj_id = request.POST.get('proj_id')
+        project_domain_name = request.POST.get('project_domain_name')
+        user_domain_name = request.POST.get('user_domain_name')
 
         # probably a more effecient way to do the if below, perhaps to a try/catch without using .get
         if usr is not None and pwd is not None and auth_url is not None and tenant is not None and proj_id is not None:
             #data is there, check if it is valid
-            validate_resp = validate_repo(auth_url=auth_url, tenant_name=tenant, username=usr, password=pwd)
+            validate_resp = validate_repo(auth_url=auth_url, tenant_name=tenant, username=usr, password=pwd, user_domain_name=user_domain_name, project_domain_name=project_domain_name)
             if (validate_resp[0]):
                 # new data is good, grab the old repo and update to the new info
                 repo_obj = Project.objects.get(proj_id=proj_id)
@@ -360,6 +362,8 @@ def update_repo(request, account_name):
                 repo_obj.auth_url = auth_url
                 repo_obj.tenant_name = tenant
                 repo_obj.password = pwd
+                repo_obj.project_domain_name = project_domain_name
+                repo_obj.user_domain_name = user_domain_name
                 repo_obj.save()
             else:
                 #invalid changes, reload manage_repos page with error msg
