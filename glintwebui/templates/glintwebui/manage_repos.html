@@ -81,13 +81,23 @@
 						    <td><input type="text" name="username" id="" value="{{repo.username}}" /></td></tr>
 						    <tr><td><label for="password">Password</label></td>
 						    <td><input type="password" name="password" id="" value="{{repo.password}}" /></td></tr>
-                            <tr><td>Keystone Version</td> <td><input type="radio" id="v2" name="versionRadio" value="v2" checked/>v2<input type="radio" id="v3" name="versionRadio" value="v3"/>v3</td></tr>
+                            <tr>
+                            {% if "/v2.0" in repo.auth_url%}
+                                <td>Keystone Version</td> <td><input type="radio" id="v2" name="versionRadio" value="v2" checked/>v2<input type="radio" id="v3" name="versionRadio" value="v3"/>v3</td></tr>
+                                <tr class="version3" hidden=True><td><label for="project_domain_name">Project Domain Name</label></td>
+                                <td><input type="text" name="project_domain_name" id="" value="{{repo.project_domain_name}}" /></td></tr>
 
-                            <tr class="version3" hidden=True><td><label for="project_domain_name">Project Domain Name</label></td>
-                            <td><input type="text" name="project_domain_name" id="" value="{{repo.project_domain_name}}" /></td></tr>
+                                <tr class="version3" hidden=True><td><label for="user_domain_name">User Domain Name</label></td>
+                                <td><input type="text" name="user_domain_name" id="" value="{{repo.user_domain_name}}" /></td></tr>
+                            {% else %}
+                                <td>Keystone Version</td> <td><input type="radio" id="v2" name="versionRadio" value="v2"/>v2<input type="radio" id="v3" name="versionRadio" value="v3" checked/>v3</td></tr>
+                                <tr class="version3"><td><label for="project_domain_name">Project Domain Name</label></td>
+                                <td><input type="text" name="project_domain_name" id="" value="{{repo.project_domain_name}}" /></td></tr>
 
-                            <tr class="version3" hidden=True><td><label for="user_domain_name">User Domain Name</label></td>
-                            <td><input type="text" name="user_domain_name" id="" value="{{repo.user_domain_name}}" /></td></tr>
+                                <tr class="version3"><td><label for="user_domain_name">User Domain Name</label></td>
+                                <td><input type="text" name="user_domain_name" id="" value="{{repo.user_domain_name}}" /></td></tr>
+                            {% endif %}
+                            
 
 							<tr><td></td>
 							<input type="hidden" name="proj_id" value="{{repo.proj_id}}" />
