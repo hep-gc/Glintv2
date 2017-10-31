@@ -155,14 +155,17 @@
         }
 </script>
 <script>
-    $("#v2, #v3").change(function(){
-        var isChecked = $('#v3').prop('checked');
-        if(isChecked){
-            $(".version3").show()
+$(document).ready(function()
+{
+    $('input[type=radio]').change(function(){
+        var version = $(this).val();
+        if(version == "v3"){
+            //might need to go up to 3 parent levels inputradio->td->tr->table
+            $(this).parent().parent().parent().find(".version3").show()
         }
         else{
-            $(".version3").hide()
-        } 
+            $(this).parent().parent().parent().find(".version3").hide()
+        }
     });
-
+});
 </script>
