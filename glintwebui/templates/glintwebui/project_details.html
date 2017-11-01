@@ -16,11 +16,11 @@
     <li style="padding 0px"><a style="padding: 0px" href="/ui/"><img href="/ui/" style="height: 60px;" src="/static/glintwebui/img/glintv2whitetext.png"></a></li>
     <li><h4>Account:</h4></li>
     <li><div><a style="color: #4CAF50;font-weight: bold;" onclick="doDropdown()" class="dropbtn">{{account_name}}</a>
-                                <div id="myDropdown" class="dropdown-content">
-                                    {% for account in account_list %}
-                                        <a href='/ui/project_details/{{account}}/'>{{account}}</a>
-                                    {% endfor %}
-                                </div>
+        <div id="myDropdown" class="dropdown-content">
+            {% for account in account_list %}
+                <a href='/ui/project_details/{{account}}/'>{{account}}</a>
+            {% endfor %}
+        </div>
         </div>
     </li>
     {% if account_name not in "No accounts available" %}
@@ -39,13 +39,17 @@
 </ul>
 <br/>
 <div class="wrapper">
-<table class="image_matrix" style="border:none"> <tr><td class='public' id='public_filter'> Hidden Images </td><td class='private' id='private_filter'>Glint Images</td><td style="background-color: #fffeea; border:none"><b>Image Filter:</b></td>
-<td style="background-color: #fffeea; border:none"> <input type="text" id="image_search" autofocus="autofocus" placeholder="Search by Image Name"> </td>
-<td id="glint_matrix_btn" style="background-color: #fffeea; border: none"><input class="button greenbutton" style="height:44px;" type="button" value="Upload Image" onclick="window.location.href='/ui/upload_image/{{account_name}}'">
-<input class="button greenbutton" style="height:44px;" type="submit" onclick="submitImageMatrix()" value="Submit Changes" />
-</td>
-<td id="hidden_matrix_btn" style="background-color: #fffeea; border: none"><input class="button greenbutton" height:44px" type="submit" onclick="submitHiddenImageMatrix()" value="Hide/Show Images" /></td>
-</tr></table>
+<table class="image_matrix" style="border:none">
+<tr>
+    <td class='public' id='public_filter'> Hidden Images </td><td class='private' id='private_filter'>Glint Images</td>
+    <td style="background-color: #fffeea; border:none"><b>Image Filter:</b></td>
+    <td style="background-color: #fffeea; border:none"> <input type="text" id="image_search" autofocus="autofocus" placeholder="Search by Image Name"> </td>
+    <td id="glint_matrix_btn" style="background-color: #fffeea; border: none"><input class="button greenbutton" style="height:44px;" type="button" value="Upload Image" onclick="window.location.href='/ui/upload_image/{{account_name}}'">
+    <input class="button greenbutton" style="height:44px;" type="submit" onclick="submitImageMatrix()" value="Submit Changes" />
+    </td>
+    <td id="hidden_matrix_btn" style="background-color: #fffeea; border: none"><input class="button greenbutton"style="height:44px" type="submit" onclick="submitHiddenImageMatrix()" value="Hide/Show Images" /></td>
+</tr>
+</table>
 {% if message is not None%}
 	<p style="color:green; font-weight:bold">{{message}}</p>
 {% endif%}
