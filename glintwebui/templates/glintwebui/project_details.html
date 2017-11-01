@@ -39,19 +39,20 @@
 </ul>
 <br/>
 <div class="wrapper">
-
-<table class="image_matrix"> <tr><td class='public' id='public_filter'> Hidden Images </td><td class='private' id='private_filter'>Glint Images</td><td style="background-color: #fffeea;"><b>Image Filter:</b></td>
+<table class="image_matrix" style="border:none"> <tr><td class='public' id='public_filter'> Hidden Images </td><td class='private' id='private_filter'>Glint Images</td><td style="background-color: #fffeea;"><b>Image Filter:</b></td>
 <td style="background-color: #fffeea;"> <input type="text" id="image_search" autofocus="autofocus" placeholder="Search by Image Name"> </td>
-</tr></table> 
+<td id="glint_matrix_btn" style="background-color: #fffeea; border: none"><input class="button greenbutton" style="height:44px;" type="button" value="Upload Image" onclick="window.location.href='/ui/upload_image/{{account_name}}'">
+<input class="button greenbutton" style="height:44px;" type="submit" value="Submit Changes" />
+</td>
+<td id="hidden_matrix_btn" style="background-color: #fffeea; border: none"><input class="button greenbutton" height:44px" type="submit" value="Hide/Show Images" /></td>
+</tr></table>
 {% if message is not None%}
 	<p style="color:green; font-weight:bold">{{message}}</p>
 {% endif%}
 
 <div class="image_matrix" id="glint_matrix"><form name="glint_images_form" action="/ui/save_images/{{account_name}}/" method="post">
 	{% csrf_token %}
-    <input class="button greenbutton" style="height:44px" type="button" value="Upload Image" onclick="window.location.href='/ui/upload_image/{{account_name}}'">
-    <input class="button greenbutton" style="margin-left:250px; height:44px" type="submit" value="Save Images" />
-	<table>
+      <table>
 		<tr>
 			<th>GLINT IMAGES</th>
 		{% for repo in image_dict %}
@@ -91,7 +92,6 @@
 
 <div class="image_matrix" id="hidden_matrix" hidden="True"><form action="/ui/save_hidden_images/{{account_name}}/" method="post">
 	{% csrf_token %}
-    <input class="button greenbutton" style="margin-left:250px; height:44px" type="submit" value="Hide/Show Images" />
 	<table>
 		<tr>
 			<th>HIDDEN IMAGES</th>
@@ -198,7 +198,9 @@ $( "#public_filter" ).click(function() {
 	var filter = "public";
 	localStorage.setItem("filter", filter);
     $("#glint_matrix").hide()
+    $("#glint_matrix_btn").hide()
     $("#hidden_matrix").show()
+    $("#hidden_matrix_btn").show()
 
 });
 
@@ -214,7 +216,9 @@ $( "#private_filter" ).click(function() {
 	localStorage.setItem("filter", filter);
 
     $("#hidden_matrix").hide()
+    $("#hidden_matrix_btn").hide()
     $("#glint_matrix").show()
+    $("#glint_matrix_btn").show()
 
 });
 
@@ -234,6 +238,7 @@ $( "#no_filter" ).click(function() {
 function showConflicts(){
 	$(".image_matrix").hide()
 	$("#hidden_matrix").hide()
+	$("#hidden_matrix_btn").hide()
 	$(".conflictButton").hide()
 	$(".conflict_table").show()
 	$(".matrixButton").show()
@@ -248,11 +253,15 @@ function showImageMatrix(){
 	var filter = localStorage.getItem("filter");
     if (filter == "public"){
     	$("#glint_matrix").hide()
+    	$("#glint_matrix_btn").hide()
         $("#hidden_matrix").show()
+        $("#hidden_matrix_btn").show()
     }
     else{
     	$("#hidden_matrix").hide()
+    	$("#hidden_matrix_btn").hide()
     	$("#glint_matrix").show()
+    	$("#glint_matrix_btn").show()
     }
 
 	localStorage.setItem("displayed_table", "image_matrix");
@@ -304,7 +313,9 @@ window.onclick = function(event) {
 		$("#public_filter").css("border","3px solid black");
 
 	    $("#glint_matrix").hide()
+	    $("#glint_matrix_btn").hide()
         $("#hidden_matrix").show()
+        $("#hidden_matrix_btn").show()
     }
     else if (filter == "private"){
 
@@ -316,7 +327,9 @@ window.onclick = function(event) {
 		$("#public_filter").css("border","1px solid black");
 
 		$("#hidden_matrix").hide()
+		$("#hidden_matrix_btn").hide()
     	$("#glint_matrix").show()
+    	$("#glint_matrix_btn").show()
     }
     else{
 		$("#no_filter").css("font-weight","Bold");
