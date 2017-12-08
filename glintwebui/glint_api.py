@@ -18,8 +18,9 @@ periodic tasks in celery.py
 '''
 
 class repo_connector(object):
-	def __init__(self, auth_url, project, username, password, user_domain_name="Default", project_domain_name="Default"):
+	def __init__(self, auth_url, project, username, password, user_domain_name="Default", project_domain_name="Default", alias = None):
 		self.auth_url = auth_url
+                self.alias = alias
 		authsplit = self.auth_url.split('/')
 		self.version = int(float(authsplit[-1][1:])) if len(authsplit[-1]) > 0 else int(float(authsplit[-2][1:]))
 		self.project = project
@@ -32,6 +33,7 @@ class repo_connector(object):
 		self.cacert = config.cert_auth_bundle_path
 		self.sess = self._get_keystone_session()
 		self.image_list = self._get_images()
+
 		
 	# Borrowed from cloud schedular and modified to match this enviroment
 	# This was a nightmare to get working behind apache but it turns out 
@@ -69,7 +71,7 @@ class repo_connector(object):
 			if image['checksum'] is not None:
 				img_checksum = image['checksum']
 
-			image_list += ((self.project, img_name, img_id, img_disk_format, img_containter_format, img_visibility, img_checksum),)
+			image_list += ((self.project, img_name, img_id, img_disk_format, img_containter_format, img_visibility, img_checksum, self.alias),)
 
 		return image_list
 

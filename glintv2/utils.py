@@ -64,7 +64,7 @@ def jsonify_image_list(image_list, repo_list):
 	for repo in repo_list:
 		img_dict = {}
 		for image in image_list:
-			if image[0] == repo.tenant:
+			if image[0] == repo.tenant and image[7] == repo.alias:
 				img = {}
 				img['name'] = image[1]
 				img['state'] = 'Present'

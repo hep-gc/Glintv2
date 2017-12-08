@@ -61,7 +61,7 @@ def image_collection(self):
             image_list = ()
             for repo in repo_list:
                 try:
-                    rcon = repo_connector(auth_url=repo.auth_url, project=repo.tenant, username=repo.username, password=repo.password, user_domain_name=repo.user_domain_name, project_domain_name=repo.project_domain_name)
+                    rcon = repo_connector(auth_url=repo.auth_url, project=repo.tenant, username=repo.username, password=repo.password, user_domain_name=repo.user_domain_name, project_domain_name=repo.project_domain_name, alias=repo.alias)
                     image_list= image_list + rcon.image_list
 
                 except Exception as e:
@@ -142,7 +142,7 @@ def transfer_image(self, image_name, image_id, account_name, auth_url, project_t
         #upload cached image
         image_path = image_path.rsplit('/', 1)[0]+ "/"
         logger.info("Uploading Image to %s" % project_tenant)
-        dest_rcon = repo_connector(auth_url=auth_url, project=project_tenant, username=username, password=password, project_domain_name=project_domain_name, user_domain_name=user_domain_name)
+        dest_rcon = repo_connector(auth_url=auth_url, project=project_tenant, username=username, password=password, project_domain_name=project_domain_name, user_domain_name=user_domain_name, alias=repo.alias)
         dest_rcon.upload_image(image_id=image_id, image_name=image_name, scratch_dir=image_path)
      
         queue_state_change(account_name=account_name, repo=project_alias, img_id=image_id, state='Present', hidden=None)
