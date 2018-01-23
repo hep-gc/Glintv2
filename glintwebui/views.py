@@ -26,8 +26,13 @@ logger =  logging.getLogger('glintv2')
 
 
 def getUser(request):
-    return request.META.get('REMOTE_USER')
-
+    user = request.META.get('REMOTE_USER')
+    auth_user_list = Glint_User.objects.all()
+    for auth_user in auth_user_list:
+        if user == auth_user.user_name:
+            user = auth_user.common_name
+            break
+    return user
 
 
 def verifyUser(request):

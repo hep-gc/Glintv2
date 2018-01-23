@@ -36,6 +36,7 @@ of alternative authenication methods (ssh, user/pw, etc)
 '''
 class Glint_User(models.Model):
     user_name = models.CharField(max_length=32)
+    password = models.CharField(max_length=128) #keeping this long for hashes
     # May need another table for these instead of just a generic string field
     authentication_method = models.CharField(max_length=32, default="x509")
     common_name = models.CharField(max_length=64, default="")
