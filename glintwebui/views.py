@@ -454,7 +454,7 @@ def update_user(request):
         if pass1 is not None and pass2 is not None:
             if pass1 != pass2:
                 logger.error("new passwords do not match, unable to update user")
-		message = "New passwords did not match, update cancelled")
+		message = "New passwords did not match, update cancelled"
                 return manage_users(request, message)
             elif len(pass1)<4:
                 logger.error("new password too short, cancelling update")
