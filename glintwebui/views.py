@@ -20,7 +20,7 @@ import json
 import logging
 import redis
 import urllib2
-
+import bcrypt
 
 logger =  logging.getLogger('glintv2')
 
@@ -440,6 +440,8 @@ def update_user(request):
     if request.method == 'POST':
         original_user = request.POST.get('old_usr')
         user = request.POST.get('username')
+        pass1 = request.POST.get('pass1')
+        pass2 = request.POST.get('pass2')
         common_name = request.POST.get('common_name')
         distinguished_name = request.POST.get('distinguished_name')
         admin_status = request.POST.get('admin')
@@ -448,12 +450,25 @@ def update_user(request):
         else:
             admin_status = True
 
+        # Check passwords for length and ensure they are both the same, if left empty the password wont be updated
+        if pass1 is not None and pass2 is not None:
+            if pass1 != pass2:
+                logger.error("new passwords do not match, unable to update user")
+		message = "New passwords did not match, update cancelled")
+                return manage_users(request, message)
+            elif len(pass1)<4:
+                logger.error("new password too short, cancelling update")
+                message = "New password too short, password must be at least 4 characters, please try again"
+                return manage_users(request, message)
+
         logger.info("Updating info for user %s" % original_user)
         try:
             glint_user_obj = Glint_User.objects.get(user_name=original_user)
             glint_user_obj.user_name = user
             glint_user_obj.common_name = common_name
             glint_user_obj.distinguished_name = distinguished_name
+            if pass1 is not None:
+                glint_user_obj.password = bcrypt.hashpw(pass1.encode(), bcrypt.gensalt(prefix=b"2a"))
             glint_user_obj.save()
             message = "User " + user + " updated successfully."
         except Exception as e:
