@@ -503,7 +503,7 @@ def update_user(request):
             glint_user_obj.user_name = user
             glint_user_obj.common_name = common_name
             glint_user_obj.distinguished_name = distinguished_name
-            if pass1 is not None:
+            if len(pass1)>3:
                 glint_user_obj.password = bcrypt.hashpw(pass1.encode(), bcrypt.gensalt(prefix=b"2a"))
             glint_user_obj.save()
             message = "User " + user + " updated successfully."
@@ -514,6 +514,9 @@ def update_user(request):
         try:
             #its possible that one or both objects are still missing from the auth database
             user_obj = User.objects.get(username=common_name)
+            user_obj.is_superuser = admin_status
+            user_obj.save()
+            user_obj = User.objects.get(username=user)
             user_obj.is_superuser = admin_status
             user_obj.save()
         except Exception as e:
