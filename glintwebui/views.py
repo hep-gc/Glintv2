@@ -486,7 +486,7 @@ def update_user(request):
             admin_status = True
 
         # Check passwords for length and ensure they are both the same, if left empty the password wont be updated
-        if pass1 is not None and pass2 is not None:
+        if pass1 and pass2:
             if pass1 != pass2:
                 logger.error("new passwords do not match, unable to update user")
                 message = "New passwords did not match, update cancelled"
