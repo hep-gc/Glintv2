@@ -70,7 +70,6 @@ def getSuperUserStatus(request):
 
 
 
-
 def index(request):
 
     if not verifyUser(request):
@@ -633,6 +632,19 @@ def manage_users(request, message=None):
         'version': version
     }
     return render(request, 'glintwebui/manage_users.html', context)
+
+
+def user_settings(request, message=None):
+    if not verifyUser(request):
+        raise PermissionDenied
+    user_obj = Glint_User.objects.filter(user_name=getUser(request))
+
+    context = {
+        'message': message,
+        'user_obj': user_obj,
+        'version': version
+    }
+    return render(request, 'glintwebui/user_settings.html', context)
 
 
 def delete_user_account(request):
