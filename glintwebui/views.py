@@ -54,7 +54,7 @@ def getSuperUserStatus(request):
         for auth_user in auth_user_list:
             if user == auth_user.user_name:
                 user = auth_user.common_name
-    auth_user_obj = User.objects.get(username=auth_user)
+    auth_user_obj = User.objects.get(username=user)
     if auth_user_obj.is_superuser:
         return True
     else:
