@@ -468,6 +468,56 @@ def add_user(request):
         #not a post, should never come to this page
         pass
 
+
+def self_update_user(request):
+    if not verifyUser(request):
+        raise PermissionDenied
+
+    if request.method == 'POST':
+        original_user = request.POST.get('old_usr')
+        if not original_user == getUser(request):
+            raise PermissionDenied
+        pass1 = request.POST.get('pass1')
+        pass2 = request.POST.get('pass2')
+        common_name = request.POST.get('common_name')
+        distinguished_name = request.POST.get('distinguished_name')
+        admin_status = request.POST.get('admin')
+        if admin_status is None:
+            admin_status = False
+        else:
+            admin_status = True
+
+        # Check passwords for length and ensure they are both the same, if left empty the password wont be updated
+        if pass1 and pass2:
+            if pass1 != pass2:
+                logger.error("new passwords do not match, unable to update user")
+                message = "New passwords did not match, update cancelled"
+                return edit_user(request, message)
+            elif len(pass1)<4:
+                logger.error("new password too short, cancelling update")
+                message = "New password too short, password must be at least 4 characters, please try again"
+                return edit_user(request, message)
+
+        logger.info("Updating info for user %s" % original_user)
+        try:
+            glint_user_obj = Glint_User.objects.get(user_name=original_user)
+            glint_user_obj.common_name = common_name
+            glint_user_obj.distinguished_name = distinguished_name
+            if len(pass1)>3:
+                glint_user_obj.password = bcrypt.hashpw(pass1.encode(), bcrypt.gensalt(prefix=b"2a"))
+            glint_user_obj.save()
+            message = "User " + user + " updated successfully."
+        except Exception as e:
+            logger.error("Unable to retrieve user %s, there may be a database inconsistency." % original_user)
+            logger.error(e)
+            return edit_user(request)
+
+        return edit_user(request, message) 
+    else:
+        #not a post should never come to this page
+        pass
+
+
 def update_user(request):
     if not verifyUser(request):
         raise PermissionDenied
