@@ -520,14 +520,14 @@ def update_user(request):
             #if we get here the user has never connected with a certificate before so we need to manually insert them into the auth db
             #first check if they have done a password authentication
             try:
-                user_obj = User.objects.get(username=user_name)
+                user_obj = User.objects.get(username=user)
             except User.DoesNotExist:
                 user_obj = None
             # If un/pw authentication is also missing lets make both from scratch
             if user_obj is None:
                 new_user = User(username=common_name, is_superuser=admin_status, is_staff=admin_status,is_active=True, date_joined=datetime.datetime.now())
                 new_user.save()
-                new_user = User(username=user_name, is_superuser=admin_status, is_staff=admin_status,is_active=True, date_joined=datetime.datetime.now())
+                new_user = User(username=user, is_superuser=admin_status, is_staff=admin_status,is_active=True, date_joined=datetime.datetime.now())
                 new_user.save()
 
             #else we have the un/pw auth and we can copy it
