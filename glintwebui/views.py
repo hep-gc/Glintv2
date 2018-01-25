@@ -47,7 +47,18 @@ def verifyUser(request):
 def getSuperUserStatus(request):
     auth_user = getUser(request)
     auth_user_obj = User.objects.get(username=auth_user)
-    return auth_user_obj.is_superuser
+    if not auth_user_obj.is_superuser:
+        #check for common name superuser status
+        user = request.META.get('REMOTE_USER')
+        auth_user_list = Glint_User.objects.all()
+        for auth_user in auth_user_list:
+            if user == auth_user.user_name:
+                user = auth_user.common_name
+    auth_user_obj = User.objects.get(username=auth_user)
+    if auth_user_obj.is_superuser:
+        return True
+    else:
+        return False
 
 
 
