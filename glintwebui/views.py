@@ -21,6 +21,7 @@ import logging
 import redis
 import urllib2
 import bcrypt
+import datetime
 
 logger =  logging.getLogger('glintv2')
 
@@ -511,17 +512,31 @@ def update_user(request):
             logger.error(e)
             return manage_users(request)
         try:
+            #its possible that one or both objects are still missing from the auth database
             user_obj = User.objects.get(username=common_name)
             user_obj.is_superuser = admin_status
             user_obj.save()
-            # need to also do this for the username/password authentication entry
-            user_obj = User.objects.get(username=user_name)
-            user_obj.is_superuser = admin_status
-            user_obj.save()
         except Exception as e:
-            logger.error("Could not update admin status for: %s. Their certificate is likely not yet registered. \n Attempting to connect will automatically register their certificate with glint." % user)
-            logger.error("Continuing with update..")
-            message = "Failed to update admin status"
+            #if we get here the user has never connected with a certificate before so we need to manually insert them into the auth db
+            #first check if they have done a password authentication
+            try:
+                user_obj = User.objects.get(username=user_name)
+            except User.DoesNotExist:
+                user_obj = None
+            # If un/pw authentication is also missing lets make both from scratch
+            if user_obj is None:
+                new_user = User(username=common_name, is_superuser=admin_status, is_staff=admin_status,is_active=True, date_joined=datetime.datetime.now())
+                new_user.save()
+                new_user = User(username=user_name, is_superuser=admin_status, is_staff=admin_status,is_active=True, date_joined=datetime.datetime.now())
+                new_user.save()
+
+            #else we have the un/pw auth and we can copy it
+            else:
+                user_obj.is_superuser = admin_status
+                user_obj.save()
+                new_user = User(username=common_name, is_superuser=admin_status, is_staff=user_obj.is_staff,is_active=user_obj.is_active, date_joined=user_obj.date_joined)
+                new_user.save()
+
         return manage_users(request, message) 
     else:
         #not a post should never come to this page
