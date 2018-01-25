@@ -54,7 +54,13 @@ def getSuperUserStatus(request):
         for auth_user in auth_user_list:
             if user == auth_user.user_name:
                 user = auth_user.common_name
-    auth_user_obj = User.objects.get(username=user)
+        try:
+            auth_user_obj = User.objects.get(username=user)
+        except Exception as e:
+            # if this fails it means the user has never authenticated with a certificate
+            # and that they do not have super user status
+            return False
+
     if auth_user_obj.is_superuser:
         return True
     else:
