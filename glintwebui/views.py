@@ -46,7 +46,7 @@ def verifyUser(request):
 
 def getSuperUserStatus(request):
     auth_user = getUser(request)
-    auth_user_obj = User.objects.get(user_name=auth_user)
+    auth_user_obj = User.objects.get(username=auth_user)
     return auth_user_obj.is_superuser
 
 
