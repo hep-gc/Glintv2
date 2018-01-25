@@ -29,25 +29,25 @@ def getUser(request):
     user = request.META.get('REMOTE_USER')
     auth_user_list = Glint_User.objects.all()
     for auth_user in auth_user_list:
-        if user == auth_user.user_name:
-            user = auth_user.common_name
+        if user == auth_user.common_name:
+            user = auth_user.user_name
             break
     return user
 
 
 def verifyUser(request):
-    cert_user = getUser(request)
+    auth_user = getUser(request)
     auth_user_list = Glint_User.objects.all()
     for user in auth_user_list:
-        if cert_user == user.common_name:
+        if auth_user == user.user_name:
             return True
 
     return False
 
 def getSuperUserStatus(request):
-    cert_user = getUser(request)
-    auth_user = User.objects.get(username=cert_user)
-    return auth_user.is_superuser
+    auth_user = getUser(request)
+    auth_user_obj = User.objects.get(user_name=auth_user)
+    return auth_user_obj.is_superuser
 
 
 
@@ -61,7 +61,7 @@ def index(request):
     # It may be better to put it in the urls.py file then pass in the repo/image info
     # If it cannot be accessed it means its deed and needs to be spawned again.
     active_user = getUser(request)
-    user_obj = Glint_User.objects.get(common_name=active_user)
+    user_obj = Glint_User.objects.get(user_name=active_user)
     user_account = User_Account.objects.filter(user=user_obj)
     if user_account is None:
         #User has access to no accounts yet, tell them to contact admin
@@ -90,7 +90,7 @@ def project_details(request, account_name="No accounts available", message=None)
     if not verifyUser(request):
         raise PermissionDenied
     active_user = getUser(request)
-    user_obj = Glint_User.objects.get(common_name=active_user)
+    user_obj = Glint_User.objects.get(user_name=active_user)
     if account_name is None or account_name in "No accounts available" :
         # First time user, lets put them at the first project the have access to
         try:
@@ -314,7 +314,7 @@ def manage_repos(request, account_name, feedback_msg=None, error_msg=None):
     if not verifyUser(request):
         raise PermissionDenied
     active_user = getUser(request)
-    user_obj = Glint_User.objects.get(common_name=active_user)
+    user_obj = Glint_User.objects.get(user_name=active_user)
     repo_list = Project.objects.filter(account_name=account_name)
 
     user_accounts = User_Account.objects.filter(user=user_obj)
@@ -345,7 +345,6 @@ def update_repo(request, account_name):
     if not verifyUser(request):
         raise PermissionDenied
     logger.info("Attempting to update repo")
-    active_user = getUser(request)
     if request.method == 'POST':
         #handle update may want to do some data cleansing here? I think django utils deals with most of it tho
         usr = request.POST.get('username')
@@ -384,7 +383,6 @@ def delete_repo(request, account_name):
     if not verifyUser(request):
         logger.info("Verifying User")
         raise PermissionDenied
-    active_user = getUser(request)
     if request.method == 'POST':
         #handle delete
         repo = request.POST.get('repo')
@@ -411,10 +409,30 @@ def add_user(request):
         raise PermissionDenied
     if request.method == 'POST':
         user = request.POST.get('username')
+        pass1 = request.POST.get('pass1')
+        pass2 = request.POST.get('pass2')
         common_name = request.POST.get('common_name')
         distinguished_name = request.POST.get('distinguished_name')
         logger.info("Adding user %s" % user)
         try:
+            # Check that the passwords are valid
+            if pass1 is not None and pass2 is not None:
+                if pass1 != pass2:
+                    logger.error("Passwords do not match")
+                    message = "Passwords did not match, add user cancelled"
+                    return manage_users(request, message)
+                elif len(pass1)<4:
+                    logger.error("Password too short")
+                    message = "Password too short, password must be at least 4 characters"
+                    return manage_users(request, message)
+            else:
+                #else at least one of the passwords was empty
+                logger.error("One or more passwords empty")
+                message = "One or more passwords empty, please make sure they match"
+                return manage_users(request, message)
+            #passwords should be good at this point
+
+
             #check if username exists, if not add it
             user_found = Glint_User.objects.filter(user_name=user)
             logger.error("Found user %s, already in system" % user_found[0])
@@ -423,7 +441,7 @@ def add_user(request):
             return manage_users(request, message)
         except Exception as e:
             #If we are here we are good since the username doesnt exist. add it and return
-            glint_user = Glint_User(user_name=user, common_name=common_name, distinguished_name=distinguished_name)
+            glint_user = Glint_User(user_name=user, common_name=common_name, distinguished_name=distinguished_name, password=bcrypt.hashpw(pass1.encode(), bcrypt.gensalt(prefix=b"2a")))
             glint_user.save()
             message = "User %s added successfully" % user
             return manage_users(request, message)
@@ -454,7 +472,7 @@ def update_user(request):
         if pass1 is not None and pass2 is not None:
             if pass1 != pass2:
                 logger.error("new passwords do not match, unable to update user")
-		message = "New passwords did not match, update cancelled"
+                message = "New passwords did not match, update cancelled"
                 return manage_users(request, message)
             elif len(pass1)<4:
                 logger.error("new password too short, cancelling update")
@@ -689,8 +707,8 @@ def manage_accounts(request, message=None):
         'account_user_dict': account_user_dict,
         'user_list': user_list,
         'message': message,
-                'is_superuser': getSuperUserStatus(request),
-                'version': version
+        'is_superuser': getSuperUserStatus(request),
+        'version': version
 
     }
     return render(request, 'glintwebui/manage_accounts.html', context)
