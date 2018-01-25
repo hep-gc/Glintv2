@@ -637,7 +637,7 @@ def manage_users(request, message=None):
 def user_settings(request, message=None):
     if not verifyUser(request):
         raise PermissionDenied
-    user_obj = Glint_User.objects.filter(user_name=getUser(request))
+    user_obj = Glint_User.objects.get(user_name=getUser(request))
 
     context = {
         'message': message,
