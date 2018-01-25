@@ -641,6 +641,7 @@ def user_settings(request, message=None):
 
     context = {
         'message': message,
+        'is_superuser': getSuperUserStatus(request),
         'user_obj': user_obj,
         'version': version
     }
