@@ -46,7 +46,7 @@ def verifyUser(request):
 
 def getSuperUserStatus(request):
     auth_user = getUser(request)
-    auth_user_obj = User.objects.get(user_name=auth_user)
+    auth_user_obj = User.objects.get(username=auth_user)
     return auth_user_obj.is_superuser
 
 
@@ -495,6 +495,10 @@ def update_user(request):
             return manage_users(request)
         try:
             user_obj = User.objects.get(username=common_name)
+            user_obj.is_superuser = admin_status
+            user_obj.save()
+            # need to also do this for the username/password authentication entry
+            user_obj = User.objects.get(username=user_name)
             user_obj.is_superuser = admin_status
             user_obj.save()
         except Exception as e:
