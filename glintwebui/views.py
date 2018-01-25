@@ -48,8 +48,13 @@ def verifyUser(request):
 def getSuperUserStatus(request):
     auth_user = getUser(request)
     auth_user_obj = User.objects.get(username=auth_user)
-    if not auth_user_obj.is_superuser:
-        #check for common name superuser status
+    if auth_user_obj.is_superuser:
+        return True
+
+    else:
+        # Since apache registers username and common name entries differently we also have to
+        # check if the user's table entry for a common name, this probably isn't needed since
+        # both table rows are updated on any change but better safe than sorry
         user = request.META.get('REMOTE_USER')
         auth_user_list = Glint_User.objects.all()
         for auth_user in auth_user_list:
@@ -57,15 +62,12 @@ def getSuperUserStatus(request):
                 user = auth_user.common_name
         try:
             auth_user_obj = User.objects.get(username=user)
+            return auth_user_obj.is_superuser
         except Exception as e:
             # if this fails it means the user has never authenticated with a certificate
             # and that they do not have super user status
             return False
 
-    if auth_user_obj.is_superuser:
-        return True
-    else:
-        return False
 
 
 
