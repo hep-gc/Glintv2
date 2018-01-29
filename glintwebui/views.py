@@ -502,7 +502,7 @@ def self_update_user(request):
             if len(pass1)>3:
                 glint_user_obj.password = bcrypt.hashpw(pass1.encode(), bcrypt.gensalt(prefix=b"2a"))
             glint_user_obj.save()
-            message = "User " + user + " updated successfully."
+            message = "User " + original_user + " updated successfully."
         except Exception as e:
             logger.error("Unable to retrieve user %s, there may be a database inconsistency." % original_user)
             logger.error(e)
