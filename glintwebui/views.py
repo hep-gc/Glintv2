@@ -508,7 +508,7 @@ def self_update_user(request):
             logger.error(e)
             return user_settings(request)
 
-        return user_settings(request, message) 
+        return project_details(request, message) 
     else:
         #not a post should never come to this page
         pass
