@@ -14,6 +14,7 @@ urlpatterns = [
     url(r'^manage_users/$', views.manage_users, name='manage_users'),
     url(r'^user_settings/$', views.user_settings, name='user_settings'),
     url(r'^update_user/$', views.update_user, name='update_user'),
+    url(r'^self_update_user/$', views.self_update_user, name='self_update_user'),
     url(r'^add_user/$', views.add_user, name='add_user'),
     url(r'^delete_user/$', views.delete_user, name='delete_user'),
     url(r'^manage_accounts/$', views.manage_accounts, name='manage_accounts'), 
