@@ -482,22 +482,17 @@ def self_update_user(request):
         pass2 = request.POST.get('pass2')
         common_name = request.POST.get('common_name')
         distinguished_name = request.POST.get('distinguished_name')
-        admin_status = request.POST.get('admin')
-        if admin_status is None:
-            admin_status = False
-        else:
-            admin_status = True
 
         # Check passwords for length and ensure they are both the same, if left empty the password wont be updated
         if pass1 and pass2:
             if pass1 != pass2:
                 logger.error("new passwords do not match, unable to update user")
                 message = "New passwords did not match, update cancelled"
-                return edit_user(request, message)
+                return user_settings(request, message)
             elif len(pass1)<4:
                 logger.error("new password too short, cancelling update")
                 message = "New password too short, password must be at least 4 characters, please try again"
-                return edit_user(request, message)
+                return user_settings(request, message)
 
         logger.info("Updating info for user %s" % original_user)
         try:
@@ -511,9 +506,9 @@ def self_update_user(request):
         except Exception as e:
             logger.error("Unable to retrieve user %s, there may be a database inconsistency." % original_user)
             logger.error(e)
-            return edit_user(request)
+            return user_settings(request)
 
-        return edit_user(request, message) 
+        return user_settings(request, message) 
     else:
         #not a post should never come to this page
         pass
