@@ -261,13 +261,13 @@ def save_images(request, group_name):
             #these check lists will have all of the images that are checked and need to be cross referenced
             #against the images stored in redis to detect changes in state
             check_list = request.POST.getlist(repo.alias)
-            parse_pending_transactions(account_name=group_name, repo_alias=repo.alias, image_list=check_list, user=user)
+            parse_pending_transactions(group_name=group_name, repo_alias=repo.alias, image_list=check_list, user=user)
 
         #give collection thread a couple seconds to process the request
         #ideally this will be removed in the future
         time.sleep(2)
         message = "Please allow glint a few seconds to proccess your request."
-        return project_details(request, group_name=group_name, message=message)
+        return project_details(request, set_conflicts_for_group=group_name, message=message)
     #Not a post request, display matrix
     else:
         return project_details(request, group_name=group_name)
@@ -286,7 +286,7 @@ def save_hidden_images(request, group_name):
         # check if we need to change any of the hidden states
         for repo in repo_list:
             check_list = request.POST.getlist(repo.cloud_name)
-            parse_hidden_images(account_name=group_name, repo_alias=repo.cloud_name, image_list=check_list, user=user)
+            parse_hidden_images(group_name=group_name, repo_alias=repo.cloud_name, image_list=check_list, user=user)
 
     message = "Please allow glint a few seconds to proccess your request."
     return project_details(request=request, group_name=group_name, message=message)
@@ -819,7 +819,7 @@ def download_image(request, group_name, image_name):
 
     logger.info("Preparing to download image file.")
     # returns (repo_obj.auth_url, repo_obj.tenant, repo_obj.username, repo_obj.password, image_id, img_checksum)
-    image_info = find_image_by_name(account_name=group_name, image_name=image_name)
+    image_info = find_image_by_name(group_name=group_name, image_name=image_name)
 
     # Find image location
     image_id=image_info[4]
