@@ -7,7 +7,7 @@ from django.core.exceptions import PermissionDenied
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.models import User
-from .models import Project, User_Account, Glint_User, Account
+from .models import Group_Resources, User_Group, Glint_User, Group
 from .forms import addRepoForm
 from .glint_api import repo_connector, validate_repo, change_image_name
 from glintv2.utils import get_unique_image_list, get_images_for_proj, parse_pending_transactions, build_id_lookup_dict, repo_modified, get_conflicts_for_acc, find_image_by_name, add_cached_image, check_cached_images, increment_transactions, check_for_existing_images, get_hidden_image_list, parse_hidden_images
@@ -81,19 +81,19 @@ def index(request):
     # If it cannot be accessed it means its deed and needs to be spawned again.
     active_user = getUser(request)
     user_obj = Glint_User.objects.get(user_name=active_user)
-    user_account = User_Account.objects.filter(user=user_obj)
-    if user_account is None:
-        #User has access to no accounts yet, tell them to contact admin
+    user_group = User_Group.objects.filter(user=user_obj)
+    if user_group is None:
+        #User has access to no groups yet, tell them to contact admin
         #Render index page that has the above info
         pass
     else:
-        #Else go to the last account that was active for that user
-        active_project = user_obj.active_project
-        return project_details(request, active_project)
+        #Else go to the last group that was active for that user
+        active_group = user_obj.active_group
+        return project_details(request, active_group)
         
 
     context = {
-        'projects': User_Account.objects.all(),
+        'groups': User_Group.objects.all(),
         'user': getUser(request),
         'all_users': User.objects.all(),
     }
@@ -102,7 +102,7 @@ def index(request):
 
 
 
-def project_details(request, account_name="No accounts available", message=None):
+def project_details(request, group_name="No groups available", message=None):
     # Since img name, img id is no longer a unique way to identify images across clouds
     # We will instead only use image name, img id will be used as a unique ID inside a given repo
     # this means we now have to create a new unique image set that is just the image names
@@ -110,25 +110,24 @@ def project_details(request, account_name="No accounts available", message=None)
         raise PermissionDenied
     active_user = getUser(request)
     user_obj = Glint_User.objects.get(user_name=active_user)
-    if account_name is None or account_name in "No accounts available" :
+    if group_name is None or group_name in "No groups available" :
         # First time user, lets put them at the first project the have access to
         try:
-            account_name = User_Account.objects.filter(user=user_obj).first().account_name.account_name
-            if not account_name:
-                account_name="No accounts available"
+            group_name = User_Group.objects.filter(user=user_obj).first().group_name.group_name
+            if not group_name:
+                group_name="No groups available"
         except:
             # catches nonetype error
-            account_name="No accounts available"
+            group_name="No groups available"
 
-    user_obj.active_project = account_name
+    user_obj.active_group = group_name
     user_obj.save()
 
 
-    repo_list = Project.objects.all()
     try:
-        image_set = get_unique_image_list(account_name)
-        hidden_image_set = get_hidden_image_list(account_name)
-        image_dict = json.loads(get_images_for_proj(account_name))
+        image_set = get_unique_image_list(group_name)
+        hidden_image_set = get_hidden_image_list(group_name)
+        image_dict = json.loads(get_images_for_proj(group_name))
         # since we are using name as the unique identifer we need to pass in a dictionary
         # that lets us get the image id (uuid) from the repo and image name
         # We will have to implement logic here that spots two images with the same name
@@ -146,21 +145,21 @@ def project_details(request, account_name="No accounts available", message=None)
 
     # The image_list is a unique list of images stored in tuples (img_id, img_name)
     # Still need to add detection for images that have different names but the same ID
-    user_accounts = User_Account.objects.filter(user=user_obj)
-    account_list = []
-    for acct in user_accounts:
-        act_name = acct.account_name
-        account_list.append(act_name)
+    user_groups = User_Group.objects.filter(user=user_obj)
+    group_list = []
+    for grp in user_groups:
+        grp_name = grp.group_name
+        group_list.append(grp_name)
     try:
-        account_list.remove(account_name)
+        group_list.remove(group_name)
     except ValueError as e:
         #list is empty
         pass
 
-    conflict_dict = get_conflicts_for_acc(account_name)
+    conflict_dict = get_conflicts_for_acc(group_name)
     context = {
-        'account_name': account_name,
-        'account_list': account_list,
+        'group_name': group_name,
+        'group_list': group_list,
         'image_dict': image_dict,
         'image_set': image_set,
         'hidden_image_set': hidden_image_set,
@@ -175,7 +174,7 @@ def project_details(request, account_name="No accounts available", message=None)
 
 
 #displays the form for adding a repo to a project and handles the post request
-def add_repo(request, account_name):
+def add_repo(request, group_name):
     if not verifyUser(request):
         raise PermissionDenied
     if request.method == 'POST':
@@ -190,10 +189,10 @@ def add_repo(request, account_name):
             if (validate_resp[0]):
                 #check if repo/auth_url combo already exists
                 try:
-                    if Project.objects.get(account_name=account_name, tenant=form.cleaned_data['tenant'], auth_url=form.cleaned_data['auth_url']) is not None:
+                    if Group_Resources.objects.get(group_name=group_name, tenant=form.cleaned_data['tenant'], auth_url=form.cleaned_data['auth_url']) is not None:
                         #This combo already exists
                         context = {
-                            'account_name': account_name,
+                            'group_name': group_name,
                             'error_msg': "Repo already exists"
                         }
                         return render(request, 'glintwebui/add_repo.html', context, {'form': form})
@@ -202,10 +201,10 @@ def add_repo(request, account_name):
                     pass
                 #check if alias is already in use
                 try:
-                    if Project.objects.get(account_name=account_name, alias=form.cleaned_data['alias']) is not None:
+                    if Group_Resources.objects.get(group_name=group_name, cloud_name=form.cleaned_data['alias']) is not None:
                         #This alias already exists
                         context = {
-                            'account_name': account_name,
+                            'group_name': group_name,
                             'error_msg': "Alias already in use"
                         }
                         return render(request, 'glintwebui/add_repo.html', context, {'form': form})
@@ -213,18 +212,18 @@ def add_repo(request, account_name):
                     # this exception could be tightened around the django "DoesNotExist" exception
                     pass
 
-                new_repo = Project(account_name=account_name, auth_url=form.cleaned_data['auth_url'], tenant=form.cleaned_data['tenant'], username=form.cleaned_data['username'], password=form.cleaned_data['password'], alias=form.cleaned_data['alias'], user_domain_name=form.cleaned_data['user_domain_name'], project_domain_name=form.cleaned_data['project_domain_name'])
+                new_repo = Project(group_name=group_name, auth_url=form.cleaned_data['auth_url'], tenant=form.cleaned_data['tenant'], username=form.cleaned_data['username'], password=form.cleaned_data['password'], cloud_name=form.cleaned_data['alias'], user_domain_name=form.cleaned_data['user_domain_name'], project_domain_name=form.cleaned_data['project_domain_name'])
                 new_repo.save()
                 repo_modified()
 
 
                 #return to manage repos page after saving the new repo
-                return manage_repos(request, account_name, feedback_msg="Project: " + form.cleaned_data['tenant'] + " added")
+                return manage_repos(request, group_name, feedback_msg="Project: " + form.cleaned_data['tenant'] + " added")
             else:
                 #something in the repo information is bad
                 form = addRepoForm()
                 context = {
-                    'account_name': account_name,
+                    'group_namegroup_name': group_name,
                     'error_msg': validate_resp[1]
                 }
                 logger.error("Failed to add repo.")
@@ -234,7 +233,7 @@ def add_repo(request, account_name):
         else:
             form = addRepoForm()
             context = {
-                'account_name': account_name,
+                'group_namegroup_name': group_name,
                 'error_msg': "Invalid form enteries."
             }
             return render(request, 'glintwebui/add_repo.html', context, {'form': form})
@@ -243,63 +242,63 @@ def add_repo(request, account_name):
     else:
         form = addRepoForm()
         context = {
-            'account_name': account_name,
+            'group_name': group_name,
         }
         return render(request, 'glintwebui/add_repo.html', context, {'form': form})
 
-def save_images(request, account_name):
+def save_images(request, group_name):
     if not verifyUser(request):
         raise PermissionDenied
     if request.method == 'POST':
         user = getUser(request)
         #get repos
-        repo_list = Project.objects.filter(account_name=account_name)
+        repo_list = Group_Resources.objects.filter(group_name=group_name)
 
-        # need to iterate thru a for loop of the repos in this project and get the list for each and
+        # need to iterate thru a for loop of the repos in this group and get the list for each and
         # check if we need to update any states
         # Every image will have to be checked since if they are not present it means they need to be deleted
         for repo in repo_list:
             #these check lists will have all of the images that are checked and need to be cross referenced
             #against the images stored in redis to detect changes in state
             check_list = request.POST.getlist(repo.alias)
-            parse_pending_transactions(account_name=account_name, repo_alias=repo.alias, image_list=check_list, user=user)
+            parse_pending_transactions(account_name=group_name, repo_alias=repo.alias, image_list=check_list, user=user)
 
         #give collection thread a couple seconds to process the request
         #ideally this will be removed in the future
         time.sleep(2)
         message = "Please allow glint a few seconds to proccess your request."
-        return project_details(request, account_name=account_name, message=message)
+        return project_details(request, group_name=group_name, message=message)
     #Not a post request, display matrix
     else:
-        return project_details(request, account_name=account_name)
+        return project_details(request, group_name=group_name)
 
 
 # this function accepts a post request and updates the hidden status of any images within.
-def save_hidden_images(request, account_name):
+def save_hidden_images(request, group_name):
     if not verifyUser(request):
         raise PermissionDenied
     if request.method == 'POST':
         user = getUser(request)
         #get repos
-        repo_list = Project.objects.filter(account_name=account_name)
+        repo_list = Group_Resources.objects.filter(group_name=group_name)
 
-        # need to iterate thru a for loop of the repos in this project and get the list for each and
+        # need to iterate thru a for loop of the repos in this group and get the list for each and
         # check if we need to change any of the hidden states
         for repo in repo_list:
-            check_list = request.POST.getlist(repo.alias)
-            parse_hidden_images(account_name=account_name, repo_alias=repo.alias, image_list=check_list, user=user)
+            check_list = request.POST.getlist(repo.cloud_name)
+            parse_hidden_images(account_name=group_name, repo_alias=repo.cloud_name, image_list=check_list, user=user)
 
     message = "Please allow glint a few seconds to proccess your request."
-    return project_details(request=request, account_name=account_name, message=message)
+    return project_details(request=request, group_name=group_name, message=message)
 
 
-def resolve_conflict(request, account_name, repo_alias):
+def resolve_conflict(request, group_name, cloud_name):
     if not verifyUser(request):
         raise PermissionDenied
     if request.method == 'POST':
         user = getUser(request)
-        repo_obj = Project.objects.get(account_name=account_name, alias=repo_alias)
-        image_dict = json.loads(get_images_for_proj(account_name))
+        repo_obj = Group_Resources.objects.get(group_name=group_name, cloud_name=cloud_name)
+        image_dict = json.loads(get_images_for_proj(group_name))
         changed_names = 0
         #key is img_id, calue is image name
         for key, value in request.POST.items():
@@ -312,7 +311,7 @@ def resolve_conflict(request, account_name, repo_alias):
             # Re render resolve conflict page
             # for now this will do nothing and we trust that the user will change the name.
             context = {
-                'projects': User_Account.objects.all(),
+                'groups': User_Group.objects.all(),
                 'user': user,
                 'all_users': User.objects.all(),
             }
@@ -322,34 +321,34 @@ def resolve_conflict(request, account_name, repo_alias):
     #give the collection thread a couple seconds to update matrix or we will end right back at this page
     #This entire function will change as we change the way glint deals with duplicate images.
     time.sleep(6)
-    return project_details(request, account_name, "")
+    return project_details(request, group_name, "")
 
 
 # This page will render manage_repos.html which will allow users to add, edit, or delete repos
 # It would be a good idea to redesign the add repo page to be used to update existing repos
 # in addition to adding new ones. However it may be easier to just make a copy of it and modify
 # it slightly for use updating existing repos.
-def manage_repos(request, account_name, feedback_msg=None, error_msg=None):
+def manage_repos(request, group_name, feedback_msg=None, error_msg=None):
     if not verifyUser(request):
         raise PermissionDenied
     active_user = getUser(request)
     user_obj = Glint_User.objects.get(user_name=active_user)
-    repo_list = Project.objects.filter(account_name=account_name)
+    repo_list = Group_Resources.objects.filter(group_name=group_name)
 
-    user_accounts = User_Account.objects.filter(user=user_obj)
-    account_list = []
-    for acct in user_accounts:
-        act_name = acct.account_name
-        account_list.append(act_name)
+    user_groups = User_Group.objects.filter(user=user_obj)
+    group_list = []
+    for grp in user_groups:
+        grp_name = grp.group_name
+        group_list.append(grp_name)
     try:
-        account_list.remove(account_name)
+        group_list.remove(group_list)
     except ValueError as e:
         #list is empty
         pass
 
     context = {
-        'account': account_name,
-        'account_list': account_list,
+        'group': group_name,
+        'group_list': group_list,
         'repo_list': repo_list,
         'feedback_msg': feedback_msg,
         'error_msg': error_msg,
@@ -360,7 +359,7 @@ def manage_repos(request, account_name, feedback_msg=None, error_msg=None):
     return render(request, 'glintwebui/manage_repos.html', context)
 
 
-def update_repo(request, account_name):
+def update_repo(request, group_name):
     if not verifyUser(request):
         raise PermissionDenied
     logger.info("Attempting to update repo")
@@ -370,7 +369,7 @@ def update_repo(request, account_name):
         pwd = request.POST.get('password')
         auth_url = request.POST.get('auth_url')
         tenant = request.POST.get('tenant')
-        proj_id = request.POST.get('proj_id')
+        cloud_name = request.POST.get('cloud_name')
         project_domain_name = request.POST.get('project_domain_name')
         user_domain_name = request.POST.get('user_domain_name')
 
@@ -380,7 +379,7 @@ def update_repo(request, account_name):
             validate_resp = validate_repo(auth_url=auth_url, tenant_name=tenant, username=usr, password=pwd, user_domain_name=user_domain_name, project_domain_name=project_domain_name)
             if (validate_resp[0]):
                 # new data is good, grab the old repo and update to the new info
-                repo_obj = Project.objects.get(proj_id=proj_id)
+                repo_obj = Group_Resources.objects.get(cloud_name=cloud_name)
                 repo_obj.username = usr
                 repo_obj.auth_url = auth_url
                 repo_obj.tenant_name = tenant
@@ -390,25 +389,25 @@ def update_repo(request, account_name):
                 repo_obj.save()
             else:
                 #invalid changes, reload manage_repos page with error msg
-                return manage_repos(request=request, account_name=account_name, error_msg=validate_resp[1])
+                return manage_repos(request=request, group_name=group_name, error_msg=validate_resp[1])
         repo_modified()
-        return manage_repos(request=request, account_name=account_name, feedback_msg="Update Successful")
+        return manage_repos(request=request, group_name=group_name, feedback_msg="Update Successful")
 
     else:
         #not a post, shouldnt be coming here, redirect to matrix page
-        return project_details(request, account_name)
+        return project_details(request, group_name)
 
-def delete_repo(request, account_name):
+def delete_repo(request, group_name):
     if not verifyUser(request):
         logger.info("Verifying User")
         raise PermissionDenied
     if request.method == 'POST':
         #handle delete
         repo = request.POST.get('repo')
-        repo_id = request.POST.get('repo_id')
-        if repo is not None and repo_id is not None:
+        cloud_name = request.POST.get('cloud_name')
+        if repo is not None and cloud_name is not None:
             logger.info("Attempting to delete repo: %s" % repo)
-            Project.objects.filter(tenant=repo, proj_id=repo_id).delete()
+            Group_Resources.objects.filter(tenant=repo, cloud_name=cloud_name).delete()
             repo_modified()
             return HttpResponse(True)
         else:
@@ -418,7 +417,7 @@ def delete_repo(request, account_name):
         return HttpResponse(False)
     else:
         #not a post, shouldnt be coming here, redirect to matrix page
-        return project_details(request, account_name)
+        return project_details(request, group_name)
 
 
 def add_user(request):
@@ -650,15 +649,15 @@ def delete_user_account(request):
         raise PermissionDenied
     if request.method == 'POST':
         user = request.POST.get('user')
-        account = request.POST.get('account')
-        logger.info("Attempting to delete user %s from account %s" % (user, account))
+        group = request.POST.get('group')
+        logger.info("Attempting to delete user %s from group %s" % (user, group))
         user_obj = Glint_User.objects.get(user_name=user)
-        user_obj.active_project = None
+        user_obj.active_group = None
         user_obj.save()
-        account_obj = Account.objects.get(account_name=account)
-        user_account_obj = User_Account.objects.get(user=user_obj, account_name=account_obj)
-        user_account_obj.delete()
-        message = "User %s deleted from %s" % (user, account)
+        grp_obj = Group.objects.get(group_name=group)
+        user_group_obj = User_Group.objects.get(user=user_obj, group_name=grp_obj)
+        user_group_obj.delete()
+        message = "User %s deleted from %s" % (user, group)
         return manage_users(request, message)
     else:
         #not a post
@@ -671,29 +670,29 @@ def add_user_account(request):
         raise PermissionDenied
     if request.method == 'POST':
         user = request.POST.get('user')
-        account = request.POST.get('account')
+        group = request.POST.get('group')
         user_obj = None
-        account_obj = None
-        logger.info("Attempting to add user %s to account %s" % (user, account))
+        grp_obj = None
+        logger.info("Attempting to add user %s to group %s" % (user, group))
         try:
             user_obj = Glint_User.objects.get(user_name=user)
-            account_obj = Account.objects.get(account_name=account)
+            grp_obj = Group.objects.get(group_name=group)
         except Exception as e:
-            logger.error("Either user or account does not exist, could not add user_account.")
+            logger.error("Either user or group does not exist, could not add user_group.")
             logger.error(e)
         try:
             #check to make sure it's not already there
             logger.info("Checking if user already has access.")
-            User_Account.objects.get(user=user_obj, account_name=account_obj)
-            #if we continue here the user account already exists and we can return without adding it
-            message = "%s already has access to %s" % (user, account)
+            User_Group.objects.get(user=user_obj, group_name=grp_obj)
+            #if we continue here the user group already exists and we can return without adding it
+            message = "%s already has access to %s" % (user, group)
             return manage_accounts(request, message)
         except Exception as e:
-            #If we get here the user account wasn't present and we can safely add it
-            logger.info("No previous entry, adding new user_account")
-            new_usr_act = User_Account(user=user_obj, account_name=account_obj)
-            new_usr_act.save()
-            message = "User %s added to %s" % (user, account)
+            #If we get here the user group wasn't present and we can safely add it
+            logger.info("No previous entry, adding new user_group")
+            new_usr_grp = User_Group(user=user_obj, group_name=grp_obj)
+            new_usr_grp.save()
+            message = "User %s added to %s" % (user, group)
             return manage_accounts(request=request, message=message)
     else:
         #not a post
@@ -705,75 +704,76 @@ def delete_account(request):
     if not getSuperUserStatus(request):
         raise PermissionDenied
     if request.method == 'POST':
-        account = request.POST.get('account')
-        logger.info("Attempting to delete account %s" % account)
-        account_obj = Account.objects.get(account_name=account)
-        account_obj.delete()
-        message = "Account %s deleted." % account
-        #need to also remove any instanced where this account was the active one for users.
+        group = request.POST.get('group')
+        logger.info("Attempting to delete group %s" % group)
+        grp_obj = Group.objects.get(group_name=group)
+        grp_obj.delete()
+        message = "Group %s deleted." % group
+        #need to also remove any instanced where this group was the active one for users.
         try:
-            users = Glint_User.objects.get(active_project=account)
+            users = Glint_User.objects.get(active_group=group)
             if(users is not None):
                 for user in users:
-                    user.active_project = None
+                    user.active_group = None
                     user.save()
         except:
-            #No accounts tied to this account
+            #No users tied to this group
             logger.info("No users to clean-up..")
-        logger.info("Successfull delete of account %s" % account)
+        logger.info("Successfull delete of group %s" % group)
         return HttpResponse(True)
     else:
         #not a post
         pass
+
 def update_account(request):
     if not verifyUser(request):
         raise PermissionDenied
     if not getSuperUserStatus(request):
         raise PermissionDenied
     if request.method == 'POST':
-        old_account = request.POST.get('old_account')
-        new_account = request.POST.get('account')
-        logger.info("Attempting to update account name %s to %s" % (old_account, new_account))
-        #check for accounts with the new name
+        old_group = request.POST.get('old_group')
+        new_group = request.POST.get('group')
+        logger.info("Attempting to update group name %s to %s" % (old_group, new_group))
+        #check for groups with the new name
         try:
-            new_account_obj = Account.objects.get(account_name=new_account)\
+            new_group_obj = Group.objects.get(group_name=new_group)
             #name already taken, don't edit the name and return
-            logger.info("Could not update account name to %s, name already in use" % new_account)
-            message = "Could not update account name to %s, name already in use" % new_account
+            logger.info("Could not update group name to %s, name already in use" % new_group)
+            message = "Could not update group name to %s, name already in use" % new_group
             return manage_accounts(request=request, message=message)
         except Exception as e:
-            #No account has the new name, proceed freely
-            account_obj = Account.objects.get(account_name=old_account)
-            account_obj.account_name = new_account
-            account_obj.save()
-            message = "Successfully updated account name to %s" % new_account
-            logger.info("Successfully updated account name to %s" % new_account)
+            #No group has the new name, proceed freely
+            group_obj = Group.objects.get(group_name=old_group)
+            group_obj.group_name = new_group
+            group_obj.save()
+            message = "Successfully updated group name to %s" % new_group
+            logger.info("Successfully updated group name to %s" % new_group)
             return manage_accounts(request=request, message=message)
     else:
         #not a post
         pass
 
-#only glint admins can add new accounts
+#only glint admins can add new groups
 def add_account(request):
     if not verifyUser(request):
         raise PermissionDenied
     if not getSuperUserStatus(request):
         raise PermissionDenied
     if request.method == 'POST':
-        account = request.POST.get('account')
-        logger.info("Attempting to add account %s" % account)
+        group = request.POST.get('group')
+        logger.info("Attempting to add group %s" % group)
         try:
-            account_obj = Account.objects.get(account_name=account)
-            #account exists, return without adding
-            message = "Account with that name already exists"
-            logger.info("Could not add account %s, name already in use." % account)
+            group_obj = Group.objects.get(group_name=group)
+            #group exists, return without adding
+            message = "Group with that name already exists"
+            logger.info("Could not add group %s, name already in use." % group)
             return manage_accounts(request=request, message=message)
         except Exception as e:
-            #account doesnt exist, we can go ahead and add it.
-            new_act = Account(account_name=account)
-            new_act.save()
-            logging.info("Account '%s' created successfully" % account)
-            message = "Account '%s' created successfully" % account
+            #group doesnt exist, we can go ahead and add it.
+            new_grp = Group(group_name=group)
+            new_grp.save()
+            logging.info("Group '%s' created successfully" % group)
+            message = "Group '%s' created successfully" % group
             return manage_accounts(request=request, message=message)
         pass
     else:
@@ -786,24 +786,24 @@ def manage_accounts(request, message=None):
     if not getSuperUserStatus(request):
         raise PermissionDenied
 
-    #Retrieve accounts, build account:user dictionary
-    account_user_dict = {}
-    account_list = Account.objects.all()
-    user_accounts = User_Account.objects.all()
+    #Retrieve groups, build group:user dictionary
+    group_user_dict = {}
+    group_list = Group.objects.all()
+    user_groups = User_Group.objects.all()
     user_list = Glint_User.objects.all()
-    for usr_act in user_accounts:
-        #check if this account is in dict yet
-        if usr_act.account_name in account_user_dict:
+    for usr_grp in user_groups:
+        #check if this group is in dict yet
+        if usr_grp.group_name in group_user_dict:
             #if so append this user to that key
-            account_user_dict[usr_act.account_name].append(usr_act.user.user_name)
+            group_user_dict[usr_grp.group_name].append(usr_grp.user.user_name)
         else:
             #else create new key with user
-            account_user_dict[usr_act.account_name] = list()
-            account_user_dict[usr_act.account_name].append(usr_act.user.user_name)
+            group_user_dict[usr_grp.group_name] = list()
+            group_user_dict[usr_grp.group_name].append(usr_grp.user.user_name)
 
     context = {
-        'account_list': account_list,
-        'account_user_dict': account_user_dict,
+        'group_list': group_list,
+        'group_user_dict': group_user_dict,
         'user_list': user_list,
         'message': message,
         'is_superuser': getSuperUserStatus(request),
@@ -813,13 +813,13 @@ def manage_accounts(request, message=None):
     return render(request, 'glintwebui/manage_accounts.html', context)
 
 
-def download_image(request, account_name, image_name):
+def download_image(request, group_name, image_name):
     if not verifyUser(request):
         raise PermissionDenied
 
     logger.info("Preparing to download image file.")
     # returns (repo_obj.auth_url, repo_obj.tenant, repo_obj.username, repo_obj.password, image_id, img_checksum)
-    image_info = find_image_by_name(account_name=account_name, image_name=image_name)
+    image_info = find_image_by_name(account_name=group_name, image_name=image_name)
 
     # Find image location
     image_id=image_info[4]
@@ -855,7 +855,7 @@ def download_image(request, account_name, image_name):
     response['Content-Length'] = os.path.getsize(file_full_path)
     return response
 
-def upload_image(request, account_name):
+def upload_image(request, group_name):
     if not verifyUser(request):
         raise PermissionDenied
 
@@ -872,19 +872,19 @@ def upload_image(request, account_name):
         file_path = "/var/www/glintv2/scratch/" + image_file.name
 
         #before we save it locally let us check if it is already in the repos
-        cloud_alias_list = request.POST.getlist('clouds')
-        bad_clouds = check_for_existing_images(account_name, cloud_alias_list, image_file.name)
+        cloud_name_list = request.POST.getlist('clouds')
+        bad_clouds = check_for_existing_images(group_name, cloud_name_list, image_file.name)
         if len(bad_clouds)>0:
             for cloud in bad_clouds:
-                cloud_alias_list.remove(cloud)
+                cloud_name_list.remove(cloud)
             message = "Upload failed for one or more projects because the image name was already in use."
 
-        if len(cloud_alias_list)==0:
+        if len(cloud_name_list)==0:
             #if we have eliminated all the target clouds, return with error message
             message = "Upload failed to all target projects because the image name was already in use."
-            image_dict = json.loads(get_images_for_proj(account_name))
+            image_dict = json.loads(get_images_for_proj(group_name))
             context = {
-                'account_name': account_name,
+                'group_name': group_name,
                 'image_dict': image_dict,
                 'max_repos': len(image_dict),
                 'message': message
@@ -914,9 +914,9 @@ def upload_image(request, account_name):
 
         if not valid_path:
             #turn away request since there is already multiple files with this name being uploaded
-            image_dict = json.loads(get_images_for_proj(account_name))
+            image_dict = json.loads(get_images_for_proj(group_name))
             context = {
-                'account_name': account_name,
+                'group_name': group_name,
                 'image_dict': image_dict,
                 'max_repos': len(image_dict),
                 'message': "Too many images by that name being uploaded, please try again in a few minutes."
@@ -931,25 +931,25 @@ def upload_image(request, account_name):
         # now queue the uploads to the destination clouds
         r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
         user = getUser(request)
-        for cloud in cloud_alias_list:
+        for cloud in cloud_name_list:
             logger.info("Queing image upload to %s" % cloud)
             transaction = {
                 'user': user,
                 'action':  'upload',
-                'account_name': account_name,
+                'group_name': group_name,
                 'repo': cloud,
                 'image_name': image_file.name,
                 'local_path': file_path,
                 'disk_format': disk_format,
                 'container_format': "bare"
             }
-            trans_key = account_name + "_pending_transactions"
+            trans_key = group_name + "_pending_transactions"
             r.rpush(trans_key, json.dumps(transaction))
             increment_transactions()
             
 
         #return to project details page with message
-        return redirect('project_details', account_name=account_name)
+        return redirect('project_details', group_name=group_name)
 
     elif request.method == 'POST' and request.POST.get('myfileurl'):
 
@@ -980,9 +980,9 @@ def upload_image(request, account_name):
 
         if not valid_path:
             #turn away request since there is already multiple files with this name being uploaded
-            image_dict = json.loads(get_images_for_proj(account_name))
+            image_dict = json.loads(get_images_for_proj(group_name))
             context = {
-                'account_name': account_name,
+                'group_name': group_name,
                 'image_dict': image_dict,
                 'max_repos': len(image_dict),
                 'message': "Too many images by that name being uploaded or bad URL, please check the url and try again in a few minutes."
@@ -1000,33 +1000,33 @@ def upload_image(request, account_name):
         
         disk_format = request.POST.get('disk_format')
         # now upload it to the destination clouds
-        cloud_alias_list = request.POST.getlist('clouds')
+        cloud_name_list = request.POST.getlist('clouds')
         r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
         user = getUser(request)
-        for cloud in cloud_alias_list:
+        for cloud in cloud_name_list:
             transaction = {
                 'user': user,
                 'action':  'upload',
-                'account_name': account_name,
+                'group_name': group_name,
                 'repo': cloud,
                 'image_name': image_name,
                 'local_path': file_path,
                 'disk_format': disk_format,
                 'container_format': "bare"
             }
-            trans_key = account_name + "_pending_transactions"
+            trans_key = group_name + "_pending_transactions"
             r.rpush(trans_key, json.dumps(transaction))
             increment_transactions()
             
 
         #return to project details page with message
-        return redirect('project_details', account_name=account_name)
+        return redirect('project_details', group_name=group_name)
     else:
         #render page to upload image
 
-        image_dict = json.loads(get_images_for_proj(account_name))
+        image_dict = json.loads(get_images_for_proj(group_name))
         context = {
-            'account_name': account_name,
+            'group_name': group_name,
             'image_dict': image_dict,
             'max_repos': len(image_dict),
             'message': None
