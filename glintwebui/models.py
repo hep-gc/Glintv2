@@ -64,7 +64,7 @@ class Glint_User(models.Model):
     authentication_method = models.CharField(max_length=32, default="x509")
     common_name = models.CharField(max_length=64, default="")
     distinguished_name = models.CharField(max_length=128)   
-    active_project = models.CharField(max_length=64, default="", null=True, blank=True)
+    active_group = models.CharField(max_length=64, default="", null=True, blank=True)
 
     def __str__(self):
         return "%s" % (self.user_name)
@@ -83,7 +83,7 @@ Attributes:
     - User  (...glint user?)
     - Date last used
 '''
-class User_Account(models.Model):
+class User_Group(models.Model):
     group_name = models.ForeignKey(Group, on_delete=models.CASCADE)
     user = models.ForeignKey(Glint_User, on_delete=models.CASCADE)
     last_used = models.DateTimeField(null=True, blank=True)

@@ -142,7 +142,7 @@ def update_pending_transactions(old_img_dict, new_img_dict):
 # returns a jsonified python dictionary containing the image list for a given project
 # If the image list doesn't exist in redis it returns False
 # Redis info should be moved to a config file
-def get_images_for_proj(group_name):
+def get_images_for_group(group_name):
 	try:
 		r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
 		return r.get(group_name)
@@ -152,7 +152,7 @@ def get_images_for_proj(group_name):
 
 # accepts a project as key string and a jsonified dictionary of the images and stores them in redis
 # Redis info should be moved to a config file 
-def set_images_for_proj(group_name, json_img_dict):
+def set_images_for_group(group_name, json_img_dict):
 	try:
 		r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
 		r.set(group_name, json_img_dict)
@@ -162,7 +162,7 @@ def set_images_for_proj(group_name, json_img_dict):
 
 
 # returns dictionary containing any conflicts for a given account name
-def get_conflicts_for_acc(group_name):
+def get_conflicts_for_group(group_name):
 	if group_name is None:
 		logger.info("Couldnt find conflict list; no group provided.")
 		return None
@@ -178,7 +178,7 @@ def get_conflicts_for_acc(group_name):
 		logger.info("Couldnt find conflict list for group %s", group_name)
 		return None
 
-def set_conflicts_for_acc(group_name, conflict_dict):
+def set_conflicts_for_group(group_name, conflict_dict):
 	try:
 		json_conflict_dict = json.dumps(conflict_dict)
 		conflict_key = group_name + "_conflicts"
@@ -193,7 +193,7 @@ def set_conflicts_for_acc(group_name, conflict_dict):
 # May be a problem if two sites have the same image (id) but with different names
 # as the tuple will no longer be unique
 def get_unique_image_list(group_name):
-	image_dict=json.loads(get_images_for_proj(group_name))
+	image_dict=json.loads(get_images_for_group(group_name))
 	image_set = set()
 	# make a dictionary of all the images in the format key:value = image_id:list_of_repos
 	# start by making a list of the keys, using a set will keep them unique
@@ -207,7 +207,7 @@ def get_unique_image_list(group_name):
 # similar to "get_unique_image_list", this function returns a set of tuples
 # representing all the images in glint such that their hidden status can be toggled
 def get_hidden_image_list(group_name):
-	image_dict=json.loads(get_images_for_proj(group_name))
+	image_dict=json.loads(get_images_for_group(group_name))
 	image_set = set()
 	# make a dictionary of all the images in the format key:value = image_id:list_of_repos
 	# start by making a list of the keys, using a set will keep them unique
@@ -539,7 +539,7 @@ def process_state_changes(group_name, json_img_dict):
 def find_image_by_name(group_name, image_name):
 	from glintwebui.models import Group_Resources
 
-	image_dict=json.loads(get_images_for_proj(group_name))
+	image_dict=json.loads(get_images_for_group(group_name))
 	for cloud in image_dict:
 		for image in image_dict[cloud]:
 			if image_dict[cloud][image]['name'] == image_name:
@@ -633,7 +633,7 @@ def do_cache_cleanup():
 # Using the image dictionary it checks the provided clouds for the given image name
 # It returns a list of cloud names where the image was found, if none were found it returns empty list
 def check_for_existing_images(group_name, cloud_name_list, image_name):
-	json_dict = get_images_for_proj(group_name)
+	json_dict = get_images_for_group(group_name)
 	image_dict = json.loads(json_dict)
 
 	image_found_cloud_name = list()
@@ -650,7 +650,7 @@ def check_for_existing_images(group_name, cloud_name_list, image_name):
 # Rule 1: Can't delete a shared image
 # Rule 2: Can't delete the last copy of an image.
 def check_delete_restrictions(image_id, group_name, cloud_name):
-	json_dict = get_images_for_proj(group_name)
+	json_dict = get_images_for_group(group_name)
 	image_dict = json.loads(json_dict)
 
 	# Rule 1: check if image is shared

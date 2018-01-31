@@ -10,7 +10,7 @@ from django.contrib.auth.models import User
 from .models import Group_Resources, User_Group, Glint_User, Group
 from .forms import addRepoForm
 from .glint_api import repo_connector, validate_repo, change_image_name
-from glintv2.utils import get_unique_image_list, get_images_for_proj, parse_pending_transactions, build_id_lookup_dict, repo_modified, get_conflicts_for_acc, find_image_by_name, add_cached_image, check_cached_images, increment_transactions, check_for_existing_images, get_hidden_image_list, parse_hidden_images
+from glintv2.utils import get_unique_image_list, get_images_for_group, parse_pending_transactions, build_id_lookup_dict, repo_modified, get_conflicts_for_group, find_image_by_name, add_cached_image, check_cached_images, increment_transactions, check_for_existing_images, get_hidden_image_list, parse_hidden_images
 from glintv2.__version__ import version
 
 import glintv2.config as config
@@ -127,7 +127,7 @@ def project_details(request, group_name="No groups available", message=None):
     try:
         image_set = get_unique_image_list(group_name)
         hidden_image_set = get_hidden_image_list(group_name)
-        image_dict = json.loads(get_images_for_proj(group_name))
+        image_dict = json.loads(get_images_for_group(group_name))
         # since we are using name as the unique identifer we need to pass in a dictionary
         # that lets us get the image id (uuid) from the repo and image name
         # We will have to implement logic here that spots two images with the same name
@@ -156,7 +156,7 @@ def project_details(request, group_name="No groups available", message=None):
         #list is empty
         pass
 
-    conflict_dict = get_conflicts_for_acc(group_name)
+    conflict_dict = get_conflicts_for_group(group_name)
     context = {
         'group_name': group_name,
         'group_list': group_list,
@@ -212,7 +212,7 @@ def add_repo(request, group_name):
                     # this exception could be tightened around the django "DoesNotExist" exception
                     pass
 
-                new_repo = Project(group_name=group_name, auth_url=form.cleaned_data['auth_url'], tenant=form.cleaned_data['tenant'], username=form.cleaned_data['username'], password=form.cleaned_data['password'], cloud_name=form.cleaned_data['alias'], user_domain_name=form.cleaned_data['user_domain_name'], project_domain_name=form.cleaned_data['project_domain_name'])
+                new_repo = Group_Resources(group_name=group_name, auth_url=form.cleaned_data['auth_url'], tenant=form.cleaned_data['tenant'], username=form.cleaned_data['username'], password=form.cleaned_data['password'], cloud_name=form.cleaned_data['alias'], user_domain_name=form.cleaned_data['user_domain_name'], project_domain_name=form.cleaned_data['project_domain_name'])
                 new_repo.save()
                 repo_modified()
 
@@ -298,7 +298,7 @@ def resolve_conflict(request, group_name, cloud_name):
     if request.method == 'POST':
         user = getUser(request)
         repo_obj = Group_Resources.objects.get(group_name=group_name, cloud_name=cloud_name)
-        image_dict = json.loads(get_images_for_proj(group_name))
+        image_dict = json.loads(get_images_for_group(group_name))
         changed_names = 0
         #key is img_id, calue is image name
         for key, value in request.POST.items():
@@ -374,7 +374,7 @@ def update_repo(request, group_name):
         user_domain_name = request.POST.get('user_domain_name')
 
         # probably a more effecient way to do the if below, perhaps to a try/catch without using .get
-        if usr is not None and pwd is not None and auth_url is not None and tenant is not None and proj_id is not None:
+        if usr is not None and pwd is not None and auth_url is not None and tenant is not None and cloud_name is not None:
             #data is there, check if it is valid
             validate_resp = validate_repo(auth_url=auth_url, tenant_name=tenant, username=usr, password=pwd, user_domain_name=user_domain_name, project_domain_name=project_domain_name)
             if (validate_resp[0]):
@@ -882,7 +882,7 @@ def upload_image(request, group_name):
         if len(cloud_name_list)==0:
             #if we have eliminated all the target clouds, return with error message
             message = "Upload failed to all target projects because the image name was already in use."
-            image_dict = json.loads(get_images_for_proj(group_name))
+            image_dict = json.loads(get_images_for_group(group_name))
             context = {
                 'group_name': group_name,
                 'image_dict': image_dict,
@@ -914,7 +914,7 @@ def upload_image(request, group_name):
 
         if not valid_path:
             #turn away request since there is already multiple files with this name being uploaded
-            image_dict = json.loads(get_images_for_proj(group_name))
+            image_dict = json.loads(get_images_for_group(group_name))
             context = {
                 'group_name': group_name,
                 'image_dict': image_dict,
@@ -980,7 +980,7 @@ def upload_image(request, group_name):
 
         if not valid_path:
             #turn away request since there is already multiple files with this name being uploaded
-            image_dict = json.loads(get_images_for_proj(group_name))
+            image_dict = json.loads(get_images_for_group(group_name))
             context = {
                 'group_name': group_name,
                 'image_dict': image_dict,
@@ -1024,7 +1024,7 @@ def upload_image(request, group_name):
     else:
         #render page to upload image
 
-        image_dict = json.loads(get_images_for_proj(group_name))
+        image_dict = json.loads(get_images_for_group(group_name))
         context = {
             'group_name': group_name,
             'image_dict': image_dict,

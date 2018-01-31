@@ -2,7 +2,7 @@ from __future__ import absolute_import, unicode_literals
 from celery import Celery
 from celery.utils.log import get_task_logger
 from django.conf import settings
-from .utils import  jsonify_image_list, update_pending_transactions, get_images_for_proj, set_images_for_proj, process_pending_transactions, process_state_changes, queue_state_change, find_image_by_name, check_delete_restrictions, decrement_transactions, get_num_transactions, repo_proccesed, check_for_repo_changes, set_collection_task, check_for_image_conflicts, set_conflicts_for_acc, check_cached_images, add_cached_image, do_cache_cleanup
+from .utils import  jsonify_image_list, update_pending_transactions, get_images_for_group, set_images_for_group, process_pending_transactions, process_state_changes, queue_state_change, find_image_by_name, check_delete_restrictions, decrement_transactions, get_num_transactions, repo_proccesed, check_for_repo_changes, set_collection_task, check_for_image_conflicts, set_conflicts_for_group, check_cached_images, add_cached_image, do_cache_cleanup
 from glintwebui.glint_api import repo_connector
 import glintv2.config as config
  
@@ -71,7 +71,7 @@ def image_collection(self):
             # take the new json and compare it to the previous one
             # and merge the differences, generally the new one will be used but if there are any images awaiting
             # transfer or deletion they must be added to the list
-            updated_img_list = update_pending_transactions(get_images_for_proj(account.account_name), jsonify_image_list(image_list=image_list, repo_list=repo_list))
+            updated_img_list = update_pending_transactions(get_images_for_group(account.account_name), jsonify_image_list(image_list=image_list, repo_list=repo_list))
             
         
             # now we have the most current version of the image matrix for this account
@@ -80,12 +80,12 @@ def image_collection(self):
             updated_img_list = process_pending_transactions(account_name=account.account_name, json_img_dict=updated_img_list)
             logger.info("Proccessing state changes for account: %s" % account.account_name)
             updated_img_list = process_state_changes(account_name=account.account_name, json_img_dict=updated_img_list)
-            set_images_for_proj(account_name=account.account_name, json_img_dict=updated_img_list)
+            set_images_for_group(account_name=account.account_name, json_img_dict=updated_img_list)
 
             # Need to build conflict dictionary to be displayed on matrix page.
             # check for image conflicts function returns a dictionary of conflicts, keyed by the repos
             conflict_dict = check_for_image_conflicts(json_img_dict=updated_img_list)
-            set_conflicts_for_acc(account_name=account.account_name, conflict_dict=conflict_dict)
+            set_conflicts_for_group(account_name=account.account_name, conflict_dict=conflict_dict)
 
         logger.info("Image collection complete, entering downtime")#, sleeping for 1 second")
         loop_counter = 0
