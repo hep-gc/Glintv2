@@ -64,7 +64,7 @@ def jsonify_image_list(image_list, repo_list):
 	for repo in repo_list:
 		img_dict = {}
 		for image in image_list:
-			if image[0] == repo.tenant and image[7] == repo.alias:
+			if image[0] == repo.tenant and image[7] == repo.cloud_name:
 				img = {}
 				img['name'] = image[1]
 				img['state'] = 'Present'
@@ -78,7 +78,7 @@ def jsonify_image_list(image_list, repo_list):
 				else:
 					img['hidden'] = False
 
-		repo_dict[repo.alias] = img_dict
+		repo_dict[repo.cloud_name] = img_dict
 	return json.dumps(repo_dict)
 
 
@@ -436,7 +436,7 @@ def process_pending_transactions(group_name, json_img_dict):
 			img_dict[transaction['cloud_name']][new_img_id] = new_img_dict
 
 			# queue transfer task
-			transfer_image.delay(image_name=transaction['image_name'], image_id=new_img_id, group_name=group_name, auth_url=repo_obj.auth_url, project_tenant=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password, requesting_user=transaction['user'], project_alias=repo_obj.cloud_name, user_domain_name=repo_obj.user_domain_name, project_domain_name=repo_obj.project_domain_name)
+			transfer_image.delay(image_name=transaction['image_name'], image_id=new_img_id, group_name=group_name, auth_url=repo_obj.auth_url, project_tenant=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password, requesting_user=transaction['user'], cloud_name=repo_obj.cloud_name, user_domain_name=repo_obj.user_domain_name, project_domain_name=repo_obj.project_domain_name)
 
 		elif transaction['action'] == 'delete':
 			# First check if it exists in the redis dictionary, if it doesn't exist we can't delete it
@@ -444,7 +444,7 @@ def process_pending_transactions(group_name, json_img_dict):
 				# Set state and queue delete task
 				repo_obj = Group_Resources.objects.get(group_name=transaction['group_name'], cloud_name=transaction['cloud_name'])
 				img_dict[transaction['cloud_name']][transaction['image_id']]['state'] = 'Pending Delete'
-				delete_image.delay(image_id=transaction['image_id'], image_name=transaction['image_name'], group_name=group_name, auth_url=repo_obj.auth_url, project_tenant=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password, requesting_user=transaction['user'], project_alias=repo_obj.cloud_name, user_domain_name=repo_obj.user_domain_name, project_domain_name=repo_obj.project_domain_name)
+				delete_image.delay(image_id=transaction['image_id'], image_name=transaction['image_name'], group_name=group_name, auth_url=repo_obj.auth_url, project_tenant=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password, requesting_user=transaction['user'], cloud_name=repo_obj.cloud_name, user_domain_name=repo_obj.user_domain_name, project_domain_name=repo_obj.project_domain_name)
 	
 		elif transaction['action'] == 'upload':
 			req_user = transaction['user']
@@ -453,7 +453,7 @@ def process_pending_transactions(group_name, json_img_dict):
 			disk_format = transaction['disk_format']
 			container_format = transaction['container_format']
 			repo_obj = Group_Resources.objects.get(group_name=transaction['group_name'], cloud_name=transaction['cloud_name'])
-			upload_image.delay(image_name=img_name, image_path=image_path, group_name=group_name, auth_url=repo_obj.auth_url, project_tenant=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password, requesting_user=req_user, project_alias=repo_obj.cloud_name, disk_format=disk_format, container_format=container_format, user_domain_name=repo_obj.user_domain_name, project_domain_name=repo_obj.project_domain_name)
+			upload_image.delay(image_name=img_name, image_path=image_path, group_name=group_name, auth_url=repo_obj.auth_url, project_tenant=repo_obj.tenant, username=repo_obj.username, password=repo_obj.password, requesting_user=req_user, cloud_name=repo_obj.cloud_name, disk_format=disk_format, container_format=container_format, user_domain_name=repo_obj.user_domain_name, project_domain_name=repo_obj.project_domain_name)
 
 	return json.dumps(img_dict)
 

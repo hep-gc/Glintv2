@@ -199,20 +199,20 @@ def add_repo(request, group_name):
                 except Exception as e:
                     # this exception could be tightened around the django "DoesNotExist" exception
                     pass
-                #check if alias is already in use
+                #check if cloud_name is already in use
                 try:
-                    if Group_Resources.objects.get(group_name=group_name, cloud_name=form.cleaned_data['alias']) is not None:
-                        #This alias already exists
+                    if Group_Resources.objects.get(group_name=group_name, cloud_name=form.cleaned_data['cloud_name']) is not None:
+                        #This cloud_name already exists
                         context = {
                             'group_name': group_name,
-                            'error_msg': "Alias already in use"
+                            'error_msg': "Cloud name already in use"
                         }
                         return render(request, 'glintwebui/add_repo.html', context, {'form': form})
                 except Exception as e:
                     # this exception could be tightened around the django "DoesNotExist" exception
                     pass
 
-                new_repo = Group_Resources(group_name=group_name, auth_url=form.cleaned_data['auth_url'], tenant=form.cleaned_data['tenant'], username=form.cleaned_data['username'], password=form.cleaned_data['password'], cloud_name=form.cleaned_data['alias'], user_domain_name=form.cleaned_data['user_domain_name'], project_domain_name=form.cleaned_data['project_domain_name'])
+                new_repo = Group_Resources(group_name=group_name, auth_url=form.cleaned_data['auth_url'], tenant=form.cleaned_data['tenant'], username=form.cleaned_data['username'], password=form.cleaned_data['password'], cloud_name=form.cleaned_data['cloud_name'], user_domain_name=form.cleaned_data['user_domain_name'], project_domain_name=form.cleaned_data['project_domain_name'])
                 new_repo.save()
                 repo_modified()
 
@@ -260,8 +260,8 @@ def save_images(request, group_name):
         for repo in repo_list:
             #these check lists will have all of the images that are checked and need to be cross referenced
             #against the images stored in redis to detect changes in state
-            check_list = request.POST.getlist(repo.alias)
-            parse_pending_transactions(group_name=group_name, repo_alias=repo.alias, image_list=check_list, user=user)
+            check_list = request.POST.getlist(repo.cloud_name)
+            parse_pending_transactions(group_name=group_name, cloud_name=repo.cloud_name, image_list=check_list, user=user)
 
         #give collection thread a couple seconds to process the request
         #ideally this will be removed in the future
@@ -286,7 +286,7 @@ def save_hidden_images(request, group_name):
         # check if we need to change any of the hidden states
         for repo in repo_list:
             check_list = request.POST.getlist(repo.cloud_name)
-            parse_hidden_images(group_name=group_name, repo_alias=repo.cloud_name, image_list=check_list, user=user)
+            parse_hidden_images(group_name=group_name, cloud_name=repo.cloud_name, image_list=check_list, user=user)
 
     message = "Please allow glint a few seconds to proccess your request."
     return project_details(request=request, group_name=group_name, message=message)
