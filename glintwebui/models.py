@@ -74,7 +74,7 @@ class Glint_User(models.Model):
 class Group(models.Model):
     group_name = models.CharField(max_length=32)
     def __str__(self):
-        return "%s" % (self.account_name)
+        return "%s" % (self.group_name)
 
 '''
 The User_Account table will contain the correlation between users and the accounts they have access to.
@@ -90,6 +90,6 @@ class User_Group(models.Model):
 
 
     def __str__(self):
-        return "%s: %s" % (self.account_name, self.user)
+        return "%s: %s" % (self.group_name, self.user)
 
 
