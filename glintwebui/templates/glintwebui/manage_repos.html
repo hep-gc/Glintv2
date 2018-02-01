@@ -45,7 +45,7 @@
 {% endif %}
 <table class="image_matrix">
 	<tr class="main_table">
-		<th class="main_table">Alias</th>
+		<th class="main_table">Cloud Name</th>
 		<th class="main_table">Project</th>
 		<th class="main_table">Auth URL</th>
 		<th class="main_table">Username</th>
@@ -54,7 +54,7 @@
 	{% for repo in repo_list %}
 		<tr class="main_table">
 			<td class="main_table">
-				<b>{{repo.alias}}</b>
+				<b>{{repo.cloud_name}}</b>
 			</td>
 			<td class="main_table">
 				{{repo.tenant}}
