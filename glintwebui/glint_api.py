@@ -20,7 +20,7 @@ periodic tasks in celery.py
 class repo_connector(object):
 	def __init__(self, auth_url, project, username, password, user_domain_name="Default", project_domain_name="Default", alias = None):
 		self.auth_url = auth_url
-        self.alias = alias
+		self.alias = alias
 		authsplit = self.auth_url.split('/')
 		self.version = int(float(authsplit[-1][1:])) if len(authsplit[-1]) > 0 else int(float(authsplit[-2][1:]))
 		self.project = project
