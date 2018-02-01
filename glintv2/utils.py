@@ -403,7 +403,7 @@ def parse_pending_transactions(group_name, cloud_name, image_list, user):
 # image and retrieve the img id (uuid) to use as the repo image key
 # Then finally we can call the asynch celery tasks
 def process_pending_transactions(group_name, json_img_dict):
-	from glintwebui.models import Project
+	from glintwebui.models import Group_resources
 	from .celery_app import transfer_image, delete_image, upload_image
 
 	r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
