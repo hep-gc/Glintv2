@@ -642,7 +642,7 @@ def user_settings(request, message=None):
     return render(request, 'glintwebui/user_settings.html', context)
 
 
-def delete_user_account(request):
+def delete_user_group(request):
     if not verifyUser(request):
         raise PermissionDenied
     if not getSuperUserStatus(request):
@@ -663,7 +663,7 @@ def delete_user_account(request):
         #not a post
         pass
 
-def add_user_account(request):
+def add_user_group(request):
     if not verifyUser(request):
         raise PermissionDenied
     if not getSuperUserStatus(request):
@@ -686,19 +686,19 @@ def add_user_account(request):
             User_Group.objects.get(user=user_obj, group_name=grp_obj)
             #if we continue here the user group already exists and we can return without adding it
             message = "%s already has access to %s" % (user, group)
-            return manage_accounts(request, message)
+            return manage_groups(request, message)
         except Exception as e:
             #If we get here the user group wasn't present and we can safely add it
             logger.info("No previous entry, adding new user_group")
             new_usr_grp = User_Group(user=user_obj, group_name=grp_obj)
             new_usr_grp.save()
             message = "User %s added to %s" % (user, group)
-            return manage_accounts(request=request, message=message)
+            return manage_groups(request=request, message=message)
     else:
         #not a post
         pass
 
-def delete_account(request):
+def delete_group(request):
     if not verifyUser(request):
         raise PermissionDenied
     if not getSuperUserStatus(request):
@@ -725,7 +725,7 @@ def delete_account(request):
         #not a post
         pass
 
-def update_account(request):
+def update_group(request):
     if not verifyUser(request):
         raise PermissionDenied
     if not getSuperUserStatus(request):
@@ -740,7 +740,7 @@ def update_account(request):
             #name already taken, don't edit the name and return
             logger.info("Could not update group name to %s, name already in use" % new_group)
             message = "Could not update group name to %s, name already in use" % new_group
-            return manage_accounts(request=request, message=message)
+            return manage_groups(request=request, message=message)
         except Exception as e:
             #No group has the new name, proceed freely
             group_obj = Group.objects.get(group_name=old_group)
@@ -748,13 +748,13 @@ def update_account(request):
             group_obj.save()
             message = "Successfully updated group name to %s" % new_group
             logger.info("Successfully updated group name to %s" % new_group)
-            return manage_accounts(request=request, message=message)
+            return manage_groups(request=request, message=message)
     else:
         #not a post
         pass
 
 #only glint admins can add new groups
-def add_account(request):
+def add_group(request):
     if not verifyUser(request):
         raise PermissionDenied
     if not getSuperUserStatus(request):
@@ -767,20 +767,20 @@ def add_account(request):
             #group exists, return without adding
             message = "Group with that name already exists"
             logger.info("Could not add group %s, name already in use." % group)
-            return manage_accounts(request=request, message=message)
+            return manage_groups(request=request, message=message)
         except Exception as e:
             #group doesnt exist, we can go ahead and add it.
             new_grp = Group(group_name=group)
             new_grp.save()
             logging.info("Group '%s' created successfully" % group)
             message = "Group '%s' created successfully" % group
-            return manage_accounts(request=request, message=message)
+            return manage_groups(request=request, message=message)
         pass
     else:
         #not a post should never come to this page, redirect to matrix?
         pass
 
-def manage_accounts(request, message=None):
+def manage_groups(request, message=None):
     if not verifyUser(request):
         raise PermissionDenied
     if not getSuperUserStatus(request):
@@ -810,7 +810,7 @@ def manage_accounts(request, message=None):
         'version': version
 
     }
-    return render(request, 'glintwebui/manage_accounts.html', context)
+    return render(request, 'glintwebui/manage_groups.html', context)
 
 
 def download_image(request, group_name, image_name):
