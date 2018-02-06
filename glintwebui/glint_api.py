@@ -2,7 +2,7 @@ from keystoneclient.auth.identity import v2, v3
 from keystoneauth1 import session
 from keystoneauth1 import exceptions
 import glanceclient
-import .config as config
+import config
 import json
 import logging
 import os
