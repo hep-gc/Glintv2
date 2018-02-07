@@ -1,9 +1,9 @@
 from django.contrib import admin
 
 
-from .models import Project, Glint_User, Account, User_Account
+from .models import Group_Resources, Glint_User, Group, User_Group
 
-admin.site.register(Project)
+admin.site.register(Group_Resources)
 admin.site.register(Glint_User)
-admin.site.register(Account)
-admin.site.register(User_Account)
+admin.site.register(Group)
+admin.site.register(User_Group)

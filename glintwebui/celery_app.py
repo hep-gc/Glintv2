@@ -2,7 +2,7 @@ from __future__ import absolute_import, unicode_literals
 from celery import Celery
 from celery.utils.log import get_task_logger
 from django.conf import settings
-from .utils import  jsonify_image_list, update_pending_transactions, get_images_for_proj, set_images_for_proj, process_pending_transactions, process_state_changes, queue_state_change, find_image_by_name, check_delete_restrictions, decrement_transactions, get_num_transactions, repo_proccesed, check_for_repo_changes, set_collection_task, check_for_image_conflicts, set_conflicts_for_acc, check_cached_images, add_cached_image, do_cache_cleanup
+from .utils import  jsonify_image_list, update_pending_transactions, get_images_for_group, set_images_for_group, process_pending_transactions, process_state_changes, queue_state_change, find_image_by_name, check_delete_restrictions, decrement_transactions, get_num_transactions, repo_proccesed, check_for_repo_changes, set_collection_task, check_for_image_conflicts, set_conflicts_for_group, check_cached_images, add_cached_image, do_cache_cleanup
 from glintwebui.glint_api import repo_connector
 import glintv2.config as config
  
@@ -32,7 +32,7 @@ def debug_task(self):
 @app.task(bind=True)
 def image_collection(self):
 
-    from glintwebui.models import Project, User_Account, Account
+    from glintwebui.models import Group_Resources, User_Group, Group
     from glintwebui.glint_api import repo_connector
 
     wait_period = 0
@@ -50,18 +50,18 @@ def image_collection(self):
             set_collection_task(False)
             return
         logger.info("Start Image collection")
-        account_list = Account.objects.all()
+        group_list = Group.objects.all()
 
         #if there are no active transactions clean up the cache folders
         if(num_tx == 0):
             do_cache_cleanup()
 
-        for account in account_list:
-            repo_list = Project.objects.filter(account_name=account.account_name)
+        for group in group_list:
+            repo_list = Group_Resources.objects.filter(group_name=group.group_name)
             image_list = ()
             for repo in repo_list:
                 try:
-                    rcon = repo_connector(auth_url=repo.auth_url, project=repo.tenant, username=repo.username, password=repo.password, user_domain_name=repo.user_domain_name, project_domain_name=repo.project_domain_name, alias=repo.alias)
+                    rcon = repo_connector(auth_url=repo.auth_url, project=repo.tenant, username=repo.username, password=repo.password, user_domain_name=repo.user_domain_name, project_domain_name=repo.project_domain_name, alias=repo.cloud_name)
                     image_list= image_list + rcon.image_list
 
                 except Exception as e:
@@ -71,21 +71,21 @@ def image_collection(self):
             # take the new json and compare it to the previous one
             # and merge the differences, generally the new one will be used but if there are any images awaiting
             # transfer or deletion they must be added to the list
-            updated_img_list = update_pending_transactions(get_images_for_proj(account.account_name), jsonify_image_list(image_list=image_list, repo_list=repo_list))
+            updated_img_list = update_pending_transactions(get_images_for_group(group.group_name), jsonify_image_list(image_list=image_list, repo_list=repo_list))
             
         
-            # now we have the most current version of the image matrix for this account
+            # now we have the most current version of the image matrix for this group
             # The last thing that needs to be done here is to proccess the PROJECTX_pending_transactions
-            logger.info("Processing pending Transactions for account: %s" % account.account_name)
-            updated_img_list = process_pending_transactions(account_name=account.account_name, json_img_dict=updated_img_list)
-            logger.info("Proccessing state changes for account: %s" % account.account_name)
-            updated_img_list = process_state_changes(account_name=account.account_name, json_img_dict=updated_img_list)
-            set_images_for_proj(account_name=account.account_name, json_img_dict=updated_img_list)
+            logger.info("Processing pending Transactions for group: %s" % group.group_name)
+            updated_img_list = process_pending_transactions(group_name=group.group_name, json_img_dict=updated_img_list)
+            logger.info("Proccessing state changes for group: %s" % group.group_name)
+            updated_img_list = process_state_changes(group_name=group.group_name, json_img_dict=updated_img_list)
+            set_images_for_group(group_name=group.group_name, json_img_dict=updated_img_list)
 
             # Need to build conflict dictionary to be displayed on matrix page.
             # check for image conflicts function returns a dictionary of conflicts, keyed by the repos
             conflict_dict = check_for_image_conflicts(json_img_dict=updated_img_list)
-            set_conflicts_for_acc(account_name=account.account_name, conflict_dict=conflict_dict)
+            set_conflicts_for_group(group_name=group.group_name, conflict_dict=conflict_dict)
 
         logger.info("Image collection complete, entering downtime")#, sleeping for 1 second")
         loop_counter = 0
@@ -122,12 +122,12 @@ def image_collection(self):
 # Must find and download the appropriate image (by name) and then upload it
 # to the given image ID
 @app.task(bind=True)
-def transfer_image(self, image_name, image_id, account_name, auth_url, project_tenant, username, password, requesting_user, project_alias, project_domain_name="Default", user_domain_name="Default"):
+def transfer_image(self, image_name, image_id, group_name, auth_url, project_tenant, username, password, requesting_user, cloud_name, project_domain_name="Default", user_domain_name="Default"):
     logger.info("User %s attempting to transfer %s - %s to repo '%s'" % (requesting_user, image_name, image_id, project_tenant))
 
     # Find image by name in another repo where the state=present
     # returns tuple: (auth_url, tenant, username, password, img_id, checksum)
-    src_img_info = find_image_by_name(account_name=account_name, image_name=image_name)
+    src_img_info = find_image_by_name(group_name=group_name, image_name=image_name)
 
     if src_img_info is False:
         logger.error("Could not find suitable source image for transfer, cancelling transfer")
@@ -142,10 +142,10 @@ def transfer_image(self, image_name, image_id, account_name, auth_url, project_t
         #upload cached image
         image_path = image_path.rsplit('/', 1)[0]+ "/"
         logger.info("Uploading Image to %s" % project_tenant)
-        dest_rcon = repo_connector(auth_url=auth_url, project=project_tenant, username=username, password=password, project_domain_name=project_domain_name, user_domain_name=user_domain_name, alias=repo.alias)
+        dest_rcon = repo_connector(auth_url=auth_url, project=project_tenant, username=username, password=password, project_domain_name=project_domain_name, user_domain_name=user_domain_name, alias=repo.cloud_name)
         dest_rcon.upload_image(image_id=image_id, image_name=image_name, scratch_dir=image_path)
      
-        queue_state_change(account_name=account_name, repo=project_alias, img_id=image_id, state='Present', hidden=None)
+        queue_state_change(group_name=group_name, cloud_name=cloud_name, img_id=image_id, state='Present', hidden=None)
         logger.info("Image transfer finished")
         decrement_transactions()
         return True
@@ -191,7 +191,7 @@ def transfer_image(self, image_name, image_id, account_name, auth_url, project_t
         dest_rcon = repo_connector(auth_url=auth_url, project=project_tenant, username=username, password=password, project_domain_name=project_domain_name, user_domain_name=user_domain_name)
         dest_rcon.upload_image(image_id=image_id, image_name=image_name, scratch_dir=image_path)
      
-        queue_state_change(account_name=account_name, repo=project_alias, img_id=image_id, state='Present', hidden=None)
+        queue_state_change(group_name=group_name, cloud_name=cloud_name, img_id=image_id, state='Present', hidden=None)
         image_path = image_path + image_name
         add_cached_image(image_name, src_img_info[5], image_path)
         decrement_transactions()
@@ -201,7 +201,7 @@ def transfer_image(self, image_name, image_id, account_name, auth_url, project_t
 # Uploads the given image to the target cloud (repo object)
 # 
 @app.task(bind=True)
-def upload_image(self, image_name, image_path, account_name, auth_url, project_tenant, username, password, requesting_user, project_alias, disk_format, container_format, project_domain_name="Default", user_domain_name="Default"):
+def upload_image(self, image_name, image_path, group_name, auth_url, project_tenant, username, password, requesting_user, cloud_name, disk_format, container_format, project_domain_name="Default", user_domain_name="Default"):
     # Upload said image to the new repo
     logger.info("Attempting to upload Image to %s for user: %s" % (project_tenant, requesting_user))
     dest_rcon = repo_connector(auth_url=auth_url, project=project_tenant, username=username, password=password, project_domain_name=project_domain_name, user_domain_name=user_domain_name)
@@ -219,13 +219,13 @@ def upload_image(self, image_name, image_path, account_name, auth_url, project_t
 
 # Accepts image id, project name, and repo object to delete image ID from.
 @app.task(bind=True)
-def delete_image(self, image_id, image_name, account_name, auth_url, project_tenant, username, password, requesting_user, project_alias, project_domain_name="Default", user_domain_name="Default"):
-    logger.info("User %s attempting to delete %s - %s from repo '%s'" % (requesting_user, image_name, image_id, project_tenant))
-    if check_delete_restrictions(image_id=image_id, account_name=account_name, project_alias=project_alias):
+def delete_image(self, image_id, image_name, group_name, auth_url, project_tenant, username, password, requesting_user, cloud_name, project_domain_name="Default", user_domain_name="Default"):
+    logger.info("User %s attempting to delete %s - %s from cloud '%s'" % (requesting_user, image_name, image_id, project_tenant))
+    if check_delete_restrictions(image_id=image_id, group_name=group_name, cloud_name=cloud_name):
         rcon = repo_connector(auth_url=auth_url, project=project_tenant, username=username, password=password,  project_domain_name=project_domain_name, user_domain_name=user_domain_name)
         result = rcon.delete_image(image_id)
         if result:
-            queue_state_change(account_name=account_name, repo=project_alias, img_id=image_id, state='deleted', hidden=None)
+            queue_state_change(group_name=group_name, cloud_name=cloud_name, img_id=image_id, state='deleted', hidden=None)
             logger.info("Image Delete finished")
             decrement_transactions()
             return True
@@ -234,7 +234,7 @@ def delete_image(self, image_id, image_name, account_name, auth_url, project_ten
         return False
     else:
         logger.error("Delete request violates delete rules, image either shared or the last copy.")
-        queue_state_change(account_name=account_name, repo=project_alias, img_id=image_id, state='present', hidden=None)
+        queue_state_change(group_name=group_name, cloud_name=cloud_name, img_id=image_id, state='present', hidden=None)
         decrement_transactions()
         return False
 
