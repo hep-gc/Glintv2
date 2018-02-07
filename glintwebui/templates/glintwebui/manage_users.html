@@ -26,11 +26,12 @@
                 <a onclick="doAdminDropdown()" class="dropbtn">Admin Tools</a>
                 <div id="myAdminDropdown" class="dropdown-content">
                     <a href='/ui/manage_users/'>User Management</a>
-                    <a href='/ui/manage_accounts/'>Account Management</a>
+                    <a href='/ui/manage_groups/'>Group Management</a>
                 </div>
             </div>
        </li>
     {% endif %}
+    <li><a href="/ui/user_settings/">User Settings</a></li>
 </ul>
 <br/>
 <div class="wrapper">
@@ -53,6 +54,10 @@
 						<table>
 						    <tr><td><label for="username">Username</label></td>
 						    <td><input type="text" name="username" id="" value="{{user.user_name}}" /></td></tr>
+                            <tr><td title="Leave blank to leave password unchanged"><label for="pass1">New Password</label></td>
+                            <td><input type="password" name="pass1" id="" value="" /></td></tr>
+                            <tr><td title="Leave blank to leave password unchanged"><label for="pass2">Repeat Password</label></td>
+                            <td><input type="password" name="pass2" id="" value="" /></td></tr>
 						    <tr><td><label for="common_name">Common Name</label></td>
 						    <td><input type="text" name="common_name" id="" value="{{user.common_name}}" /></td></tr>
 						    <tr><td><label for="distinguished_name">Distinguished Name</label></td>
@@ -84,6 +89,10 @@
 			<table>
 			    <tr><td><label for="username">Username</label></td>
 			    <td><input type="text" name="username" id="" value="" /></td></tr>
+                <tr><td><label for="pass1">New Password</label></td>
+                <td><input type="password" name="pass1" id="" value="" /></td></tr>
+                <tr><td><label for="pass2">Repeat Password</label></td>
+                <td><input type="password" name="pass2" id="" value="" /></td></tr>
 			    <tr><td><label for="common_name">Common Name</label></td>
 			    <td><input type="text" name="common_name" id="" value="" /></td></tr>
 			    <tr><td><label for="distinguished_name">Distinguished Name</label></td>

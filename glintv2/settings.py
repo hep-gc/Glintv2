@@ -120,8 +120,12 @@ LOGGING = {
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join("/etc/glintv2/", 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'glintv2',
+        'USER': 'glintv2',
+        'PASSWORD': 'glintv2pass',
+        'HOST': 'localhost',
+        'PORT': '',
     }
 }
 
