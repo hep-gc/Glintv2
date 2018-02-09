@@ -430,7 +430,6 @@ def add_user(request):
         pass1 = request.POST.get('pass1')
         pass2 = request.POST.get('pass2')
         common_name = request.POST.get('common_name')
-        distinguished_name = request.POST.get('distinguished_name')
         logger.info("Adding user %s" % user)
         try:
             # Check that the passwords are valid
@@ -459,7 +458,7 @@ def add_user(request):
             return manage_users(request, message)
         except Exception as e:
             #If we are here we are good since the username doesnt exist. add it and return
-            glint_user = Glint_User(username=user, common_name=common_name, distinguished_name=distinguished_name, password=bcrypt.hashpw(pass1.encode(), bcrypt.gensalt(prefix=b"2a")))
+            glint_user = Glint_User(username=user, common_name=common_name, password=bcrypt.hashpw(pass1.encode(), bcrypt.gensalt(prefix=b"2a")))
             glint_user.save()
             message = "User %s added successfully" % user
             return manage_users(request, message)
@@ -480,7 +479,6 @@ def self_update_user(request):
         pass1 = request.POST.get('pass1')
         pass2 = request.POST.get('pass2')
         common_name = request.POST.get('common_name')
-        distinguished_name = request.POST.get('distinguished_name')
 
         # Check passwords for length and ensure they are both the same, if left empty the password wont be updated
         if pass1 and pass2:
@@ -497,7 +495,6 @@ def self_update_user(request):
         try:
             glint_user_obj = Glint_User.objects.get(username=original_user)
             glint_user_obj.common_name = common_name
-            glint_user_obj.distinguished_name = distinguished_name
             if len(pass1)>3:
                 glint_user_obj.password = bcrypt.hashpw(pass1.encode(), bcrypt.gensalt(prefix=b"2a"))
             glint_user_obj.save()
@@ -524,7 +521,6 @@ def update_user(request):
         pass1 = request.POST.get('pass1')
         pass2 = request.POST.get('pass2')
         common_name = request.POST.get('common_name')
-        distinguished_name = request.POST.get('distinguished_name')
         admin_status = request.POST.get('admin')
         if admin_status is None:
             admin_status = False
@@ -547,7 +543,6 @@ def update_user(request):
             glint_user_obj = Glint_User.objects.get(username=original_user)
             glint_user_obj.username = user
             glint_user_obj.common_name = common_name
-            glint_user_obj.distinguished_name = distinguished_name
             if len(pass1)>3:
                 glint_user_obj.password = bcrypt.hashpw(pass1.encode(), bcrypt.gensalt(prefix=b"2a"))
             glint_user_obj.save()

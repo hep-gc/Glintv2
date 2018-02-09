@@ -63,7 +63,6 @@ class Glint_User(models.Model):
     # authentication method currently isn't used for anything and may be able to be pruned
     #authentication_method = models.CharField(max_length=32, default="x509")
     common_name = models.CharField(max_length=64, default="")
-    distinguished_name = models.CharField(max_length=128)   
     active_group = models.CharField(max_length=64, default="", null=True, blank=True)
 
 
