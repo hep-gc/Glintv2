@@ -3,6 +3,8 @@ from __future__ import unicode_literals
 from django.db import models
 from django.contrib.auth.models import User
 
+import datetime
+
 
 
 '''
@@ -64,7 +66,7 @@ class Glint_User(models.Model):
     #authentication_method = models.CharField(max_length=32, default="x509")
     cert_cn = models.CharField(max_length=64, default="")
     active_group = models.CharField(max_length=64, default="", null=True, blank=True)
-
+    join_date = models.DateField(default=datetime.date.today, null=True)
 
     class Meta:
         db_table = 'csv2_user'
