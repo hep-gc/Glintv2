@@ -448,7 +448,8 @@ def self_update_user(request):
 
     if request.method == 'POST':
         original_user = request.POST.get('old_usr')
-        if not original_user == getUser(request).username:
+        usr_obj = getUser(request)
+        if not original_user == usr_obj.username:
             raise PermissionDenied
         pass1 = request.POST.get('pass1')
         pass2 = request.POST.get('pass2')
