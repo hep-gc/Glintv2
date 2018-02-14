@@ -60,7 +60,7 @@
 						    <tr><td><label for="cert_cn">Common Name</label></td>
 						    <td><input type="text" name="cert_cn" id="" value="{{user.cert_cn}}" /></td></tr>
 						    <tr><td><label for="admin">Administrator</label></td>
-						    {% if user.cert_cn in admin_list %}
+						    {% if user.username in admin_list %}
 						    	<td><input name="admin" type="checkbox" value="{{user.cert_cn}}" checked></td>
 						    {% else %}
 						    	<td><input name="admin" type="checkbox" value="{{user.cert_cn}}"></td>
