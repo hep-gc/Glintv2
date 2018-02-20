@@ -1,6 +1,4 @@
 from django.contrib import admin
-
-
 from .models import Group_Resources, Glint_User, Group, User_Group
 
 admin.site.register(Group_Resources)

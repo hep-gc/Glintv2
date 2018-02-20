@@ -1,4 +1,4 @@
-from os.path import join, expanduser, exists, abspath
+from os.path import exists, abspath
 import sys
 import ConfigParser
 
@@ -23,7 +23,7 @@ cache_expire_time = 604800 #default 7 days (in seconds)
 if exists("/etc/glintv2/glintv2.conf"):
     path = "/etc/glintv2/glintv2.conf"
 elif  exists(abspath(sys.path[0]+"/../config/glintv2.conf")):
-	path = abspath(sys.path[0]+"/../config/glintv2.conf")
+    path = abspath(sys.path[0]+"/../config/glintv2.conf")
 else:
     print >> sys.stderr, "Configuration file problem: There doesn't " \
                          "seem to be a configuration file. " \
@@ -88,3 +88,4 @@ if config_file.has_option("redis", "redis_port"):
 
 if config_file.has_option("redis", "redis_db"):
     redis_db = config_file.get("redis", "redis_db")
+    

@@ -1,30 +1,29 @@
-from django.http import HttpResponse
-from django.http import StreamingHttpResponse
-#from django.template import loader
-
-from django.core.exceptions import PermissionDenied
-
-
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.models import User
-from .models import Group_Resources, User_Group, Glint_User, Group
-from .forms import addRepoForm
-from .glint_api import repo_connector, validate_repo, change_image_name
-from .utils import get_unique_image_list, get_images_for_group, parse_pending_transactions, build_id_lookup_dict, repo_modified, get_conflicts_for_group, find_image_by_name, add_cached_image, check_cached_images, increment_transactions, check_for_existing_images, get_hidden_image_list, parse_hidden_images
-from .__version__ import version
-
-import config
 import time
 import os
 import json
 import logging
-import redis
 import urllib2
+import redis
 import bcrypt
-import datetime
 
-logger =  logging.getLogger('glintv2')
+from django.http import HttpResponse
+from django.http import StreamingHttpResponse
+from django.core.exceptions import PermissionDenied
+from django.shortcuts import render, redirect
+from django.contrib.auth.models import User
+import glintwebui.config as config
 
+from .models import Group_Resources, User_Group, Glint_User, Group
+from .forms import addRepoForm
+from .glint_api import repo_connector, validate_repo, change_image_name
+from .utils import get_unique_image_list, get_images_for_group, parse_pending_transactions, \
+    build_id_lookup_dict, repo_modified, get_conflicts_for_group, find_image_by_name, \
+    add_cached_image, check_cached_images, increment_transactions, check_for_existing_images,\
+    get_hidden_image_list, parse_hidden_images
+from .__version__ import version
+
+
+logger = logging.getLogger('glintv2')
 
 def getUser(request):
     user = request.META.get('REMOTE_USER')
@@ -32,19 +31,18 @@ def getUser(request):
     for auth_user in auth_user_list:
         if user == auth_user.cert_cn or user == auth_user.username:
             return auth_user
-    return False
 
 
 def verifyUser(request):
     auth_user = getUser(request)
-    if auth_user:
-        return True
-    else:
-        return False
+    return bool(auth_user)
 
 def getSuperUserStatus(request):
     auth_user = getUser(request)
-    return auth_user.is_superuser
+    if auth_user is None:
+        return False
+    else:
+        return auth_user.is_superuser
 
 
 def index(request):
@@ -66,7 +64,6 @@ def index(request):
         #Else go to the last group that was active for that user
         active_group = user_obj.active_group
         return project_details(request, active_group)
-        
 
     context = {
         'groups': User_Group.objects.all(),
@@ -85,15 +82,15 @@ def project_details(request, group_name="No groups available", message=None):
     if not verifyUser(request):
         raise PermissionDenied
     user_obj = getUser(request)
-    if group_name is None or group_name in "No groups available" :
+    if group_name is None or group_name in "No groups available":
         # First time user, lets put them at the first project the have access to
         try:
             group_name = User_Group.objects.filter(user=user_obj).first().group_name.group_name
             if not group_name:
-                group_name="No groups available"
-        except:
+                group_name = "No groups available"
+        except Exception:
             # catches nonetype error
-            group_name="No groups available"
+            group_name = "No groups available"
 
     user_obj.active_group = group_name
     user_obj.save()
@@ -109,8 +106,8 @@ def project_details(request, group_name="No groups available", message=None):
         # and forces the user to resolve
         reverse_img_lookup = build_id_lookup_dict(image_dict)
 
-    except:
-        # No images in database yet, may want some logic here forcing it to wait a little on start up
+    except Exception:
+        # No images in database yet may want some logic here forcing it to wait a little on start up
         logger.info("No images yet in database, or possible error collecting image sets")
         image_set = None
         hidden_image_set = None
@@ -127,7 +124,7 @@ def project_details(request, group_name="No groups available", message=None):
         group_list.append(grp_name)
     try:
         group_list.remove(group_name)
-    except ValueError as e:
+    except ValueError:
         #list is empty
         pass
 
@@ -160,8 +157,14 @@ def add_repo(request, group_name):
         if form.is_valid():
             logger.info("Attempting to add new repo for User:" + user.username)
             # all data is exists, check if the repo is valid
-            validate_resp = validate_repo(auth_url=form.cleaned_data['auth_url'], tenant_name=form.cleaned_data['tenant'], username=form.cleaned_data['username'], password=form.cleaned_data['password'], user_domain_name=form.cleaned_data['user_domain_name'], project_domain_name=form.cleaned_data['project_domain_name'])
-            if (validate_resp[0]):
+            validate_resp = validate_repo(
+                auth_url=form.cleaned_data['auth_url'],
+                tenant_name=form.cleaned_data['tenant'],
+                username=form.cleaned_data['username'],
+                password=form.cleaned_data['password'],
+                user_domain_name=form.cleaned_data['user_domain_name'],
+                project_domain_name=form.cleaned_data['project_domain_name'])
+            if validate_resp[0]:
                 #check if repo/auth_url combo already exists
                 try:
                     if Group_Resources.objects.get(group_name=group_name, tenant=form.cleaned_data['tenant'], auth_url=form.cleaned_data['auth_url']) is not None:
@@ -171,7 +174,7 @@ def add_repo(request, group_name):
                             'error_msg': "Repo already exists"
                         }
                         return render(request, 'glintwebui/add_repo.html', context, {'form': form})
-                except Exception as e:
+                except Exception:
                     # this exception could be tightened around the django "DoesNotExist" exception
                     pass
                 #check if cloud_name is already in use
@@ -183,17 +186,28 @@ def add_repo(request, group_name):
                             'error_msg': "Cloud name already in use"
                         }
                         return render(request, 'glintwebui/add_repo.html', context, {'form': form})
-                except Exception as e:
+                except Exception:
                     # this exception could be tightened around the django "DoesNotExist" exception
                     pass
 
-                new_repo = Group_Resources(group_name=group_name, auth_url=form.cleaned_data['auth_url'], tenant=form.cleaned_data['tenant'], username=form.cleaned_data['username'], password=form.cleaned_data['password'], cloud_name=form.cleaned_data['cloud_name'], user_domain_name=form.cleaned_data['user_domain_name'], project_domain_name=form.cleaned_data['project_domain_name'])
+                new_repo = Group_Resources(
+                    group_name=group_name,
+                    auth_url=form.cleaned_data['auth_url'],
+                    tenant=form.cleaned_data['tenant'],
+                    username=form.cleaned_data['username'],
+                    password=form.cleaned_data['password'],
+                    cloud_name=form.cleaned_data['cloud_name'],
+                    user_domain_name=form.cleaned_data['user_domain_name'],
+                    project_domain_name=form.cleaned_data['project_domain_name'])
                 new_repo.save()
                 repo_modified()
 
 
                 #return to manage repos page after saving the new repo
-                return manage_repos(request, group_name, feedback_msg="Project: " + form.cleaned_data['tenant'] + " added")
+                return manage_repos(
+                    request,
+                    group_name,
+                    feedback_msg="Project: " + form.cleaned_data['tenant'] + " added")
             else:
                 #something in the repo information is bad
                 form = addRepoForm()
@@ -230,22 +244,26 @@ def save_images(request, group_name):
         repo_list = Group_Resources.objects.filter(group_name=group_name)
 
         # need to iterate thru a for loop of the repos in this group and get the list for each and
-        # check if we need to update any states
-        # Every image will have to be checked since if they are not present it means they need to be deleted
+        # check if we need to update any states. Every image will have to be checked since if
+        # they are not present it means they need to be deleted
         for repo in repo_list:
-            #these check lists will have all of the images that are checked and need to be cross referenced
-            #against the images stored in redis to detect changes in state
+            # these check lists will have all of the images that are checked and need to be cross
+            # referenced against the images stored in redis to detect changes in state
             check_list = request.POST.getlist(repo.cloud_name)
-            parse_pending_transactions(group_name=group_name, cloud_name=repo.cloud_name, image_list=check_list, user=user.username)
+            parse_pending_transactions(
+                group_name=group_name,
+                cloud_name=repo.cloud_name,
+                image_list=check_list,
+                user=user.username)
 
         #give collection thread a couple seconds to process the request
         #ideally this will be removed in the future
         time.sleep(2)
         message = "Please allow glint a few seconds to proccess your request."
-        return project_details(request, set_conflicts_for_group=group_name, message=message)
+        return project_details(request=request, message=message)
     #Not a post request, display matrix
     else:
-        return project_details(request, group_name=group_name)
+        return project_details(request=request, group_name=group_name)
 
 
 # this function accepts a post request and updates the hidden status of any images within.
@@ -261,12 +279,16 @@ def save_hidden_images(request, group_name):
         # check if we need to change any of the hidden states
         for repo in repo_list:
             check_list = request.POST.getlist(repo.cloud_name)
-            parse_hidden_images(group_name=group_name, cloud_name=repo.cloud_name, image_list=check_list, user=user.username)
+            parse_hidden_images(
+                group_name=group_name,
+                cloud_name=repo.cloud_name,
+                image_list=check_list,
+                user=user.username)
 
     message = "Please allow glint a few seconds to proccess your request."
     return project_details(request=request, group_name=group_name, message=message)
 
-
+# Out of date // Unused
 def resolve_conflict(request, group_name, cloud_name):
     if not verifyUser(request):
         raise PermissionDenied
@@ -279,9 +301,14 @@ def resolve_conflict(request, group_name, cloud_name):
         for key, value in request.POST.items():
             if key != 'csrfmiddlewaretoken':
                 # check if the name has been changed, if it is different, send update
-                if value != image_dict[repo_alias][key]['name']:
-                    change_image_name(repo_obj=repo_obj, img_id=key, old_img_name=image_dict[repo_alias][key]['name'], new_img_name=value, user=user.username)
-                    changed_names=changed_names+1
+                if value != image_dict[cloud_name][key]['name']:
+                    change_image_name(
+                        repo_obj=repo_obj,
+                        img_id=key,
+                        old_img_name=image_dict[cloud_name][key]['name'],
+                        new_img_name=value,
+                        user=user.username)
+                    changed_names = changed_names+1
         if changed_names == 0:
             # Re render resolve conflict page
             # for now this will do nothing and we trust that the user will change the name.
@@ -293,8 +320,6 @@ def resolve_conflict(request, group_name, cloud_name):
             return render(request, 'glintwebui/index.html', context)
 
     repo_modified()
-    #give the collection thread a couple seconds to update matrix or we will end right back at this page
-    #This entire function will change as we change the way glint deals with duplicate images.
     time.sleep(6)
     return project_details(request, group_name, "")
 
@@ -316,7 +341,7 @@ def manage_repos(request, group_name, feedback_msg=None, error_msg=None):
         group_list.append(grp_name)
     try:
         group_list.remove(group_list)
-    except ValueError as e:
+    except ValueError:
         #list is empty
         pass
 
@@ -338,7 +363,6 @@ def update_repo(request, group_name):
         raise PermissionDenied
     logger.info("Attempting to update repo")
     if request.method == 'POST':
-        #handle update may want to do some data cleansing here? I think django utils deals with most of it tho
         usr = request.POST.get('username')
         pwd = request.POST.get('password')
         auth_url = request.POST.get('auth_url')
@@ -347,11 +371,17 @@ def update_repo(request, group_name):
         project_domain_name = request.POST.get('project_domain_name')
         user_domain_name = request.POST.get('user_domain_name')
 
-        # probably a more effecient way to do the if below, perhaps to a try/catch without using .get
+        # probably a more effecient way to do the if below, perhaps to a try without using .get
         if usr is not None and pwd is not None and auth_url is not None and tenant is not None and cloud_name is not None:
             #data is there, check if it is valid
-            validate_resp = validate_repo(auth_url=auth_url, tenant_name=tenant, username=usr, password=pwd, user_domain_name=user_domain_name, project_domain_name=project_domain_name)
-            if (validate_resp[0]):
+            validate_resp = validate_repo(
+                auth_url=auth_url,
+                tenant_name=tenant,
+                username=usr,
+                password=pwd,
+                user_domain_name=user_domain_name,
+                project_domain_name=project_domain_name)
+            if validate_resp[0]:
                 # new data is good, grab the old repo and update to the new info
                 repo_obj = Group_Resources.objects.get(cloud_name=cloud_name)
                 repo_obj.username = usr
@@ -363,9 +393,15 @@ def update_repo(request, group_name):
                 repo_obj.save()
             else:
                 #invalid changes, reload manage_repos page with error msg
-                return manage_repos(request=request, group_name=group_name, error_msg=validate_resp[1])
+                return manage_repos(
+                    request=request,
+                    group_name=group_name,
+                    error_msg=validate_resp[1])
         repo_modified()
-        return manage_repos(request=request, group_name=group_name, feedback_msg="Update Successful")
+        return manage_repos(
+            request=request,
+            group_name=group_name,
+            feedback_msg="Update Successful")
 
     else:
         #not a post, shouldnt be coming here, redirect to matrix page
@@ -380,7 +416,7 @@ def delete_repo(request, group_name):
         repo = request.POST.get('repo')
         cloud_name = request.POST.get('cloud_name')
         if repo is not None and cloud_name is not None:
-            logger.info("Attempting to delete repo: %s" % repo)
+            logger.info("Attempting to delete repo: %s", repo)
             Group_Resources.objects.filter(tenant=repo, cloud_name=cloud_name).delete()
             repo_modified()
             return HttpResponse(True)
@@ -404,7 +440,7 @@ def add_user(request):
         pass1 = request.POST.get('pass1')
         pass2 = request.POST.get('pass2')
         cert_cn = request.POST.get('cert_cn')
-        logger.info("Adding user %s" % user)
+        logger.info("Adding user %s", user)
         try:
             # Check that the passwords are valid
             if pass1 is not None and pass2 is not None:
@@ -412,7 +448,7 @@ def add_user(request):
                     logger.error("Passwords do not match")
                     message = "Passwords did not match, add user cancelled"
                     return manage_users(request, message)
-                elif len(pass1)<4:
+                elif len(pass1) < 4:
                     logger.error("Password too short")
                     message = "Password too short, password must be at least 4 characters"
                     return manage_users(request, message)
@@ -426,13 +462,16 @@ def add_user(request):
 
             #check if username exists, if not add it
             user_found = Glint_User.objects.filter(username=user)
-            logger.error("Found user %s, already in system" % user_found[0])
+            logger.error("Found user %s, already in system", user_found[0])
             #if we get here it means the user already exists
             message = "Unable to add user, username already exists"
             return manage_users(request, message)
-        except Exception as e:
+        except Exception:
             #If we are here we are good since the username doesnt exist. add it and return
-            glint_user = Glint_User(username=user, cert_cn=cert_cn, password=bcrypt.hashpw(pass1.encode(), bcrypt.gensalt(prefix=b"2a")))
+            glint_user = Glint_User(
+                username=user,
+                cert_cn=cert_cn,
+                password=bcrypt.hashpw(pass1.encode(), bcrypt.gensalt(prefix=b"2a")))
             glint_user.save()
             message = "User %s added successfully" % user
             return manage_users(request, message)
@@ -455,31 +494,33 @@ def self_update_user(request):
         pass2 = request.POST.get('pass2')
         cert_cn = request.POST.get('cert_cn')
 
-        # Check passwords for length and ensure they are both the same, if left empty the password wont be updated
+        # Check passwords for length and ensure they are both the same,
+        # if left empty the password wont be updated
         if pass1 and pass2:
             if pass1 != pass2:
                 logger.error("new passwords do not match, unable to update user")
                 message = "New passwords did not match, update cancelled"
                 return user_settings(request, message)
-            elif len(pass1)<4:
+            elif len(pass1) < 4:
                 logger.error("new password too short, cancelling update")
-                message = "New password too short, password must be at least 4 characters, please try again"
+                message = ("New password too short, password must be at least 4"
+                           "characters, please try again")
                 return user_settings(request, message)
 
-        logger.info("Updating info for user %s" % original_user)
+        logger.info("Updating info for user %s", original_user)
         try:
             glint_user_obj = Glint_User.objects.get(username=original_user)
             glint_user_obj.cert_cn = cert_cn
-            if len(pass1)>3:
+            if len(pass1) > 3:
                 glint_user_obj.password = bcrypt.hashpw(pass1.encode(), bcrypt.gensalt(prefix=b"2a"))
             glint_user_obj.save()
             message = "User " + original_user + " updated successfully."
         except Exception as e:
-            logger.error("Unable to retrieve user %s, there may be a database inconsistency." % original_user)
+            logger.error("Unable to retrieve user %s, there may be a database inconsistency.", original_user)
             logger.error(e)
             return user_settings(request)
 
-        return redirect('/ui/') 
+        return redirect('/ui/')
     else:
         #not a post should never come to this page
         pass
@@ -502,38 +543,40 @@ def update_user(request):
         else:
             admin_status = True
 
-        # Check passwords for length and ensure they are both the same, if left empty the password wont be updated
+        # Check passwords for length and ensure they are both the same,
+        # if left empty the password wont be updated
         if pass1 and pass2:
             if pass1 != pass2:
                 logger.error("new passwords do not match, unable to update user")
                 message = "New passwords did not match, update cancelled"
                 return manage_users(request, message)
-            elif len(pass1)<4:
+            elif len(pass1) < 4:
                 logger.error("new password too short, cancelling update")
-                message = "New password too short, password must be at least 4 characters, please try again"
+                message = ("New password too short, password must be at least 4"
+                           " characters, please try again")
                 return manage_users(request, message)
 
-        logger.info("Updating info for user %s" % original_user)
+        logger.info("Updating info for user %s", original_user)
         try:
             glint_user_obj = Glint_User.objects.get(username=original_user)
             glint_user_obj.username = user
             glint_user_obj.cert_cn = cert_cn
             glint_user_obj.is_superuser = admin_status
-            if len(pass1)>3:
+            if len(pass1) > 3:
                 glint_user_obj.password = bcrypt.hashpw(pass1.encode(), bcrypt.gensalt(prefix=b"2a"))
             glint_user_obj.save()
             message = "User " + user + " updated successfully."
         except Exception as e:
-            logger.error("Unable to retrieve user %s, there may be a database inconsistency." % original_user)
+            logger.error("Unable to retrieve user %s, there may be a database inconsistency.", \
+                 original_user)
             logger.error(e)
             return manage_users(request)
 
-        return manage_users(request, message) 
+        return manage_users(request, message)
     else:
         #not a post should never come to this page
         pass
 
-        
 def delete_user(request):
     if not verifyUser(request):
         raise PermissionDenied
@@ -541,7 +584,7 @@ def delete_user(request):
         raise PermissionDenied
     if request.method == 'POST':
         user = request.POST.get('user')
-        logger.info("Attempting to delete user %s" % user)
+        logger.info("Attempting to delete user %s", user)
         user_obj = Glint_User.objects.get(username=user)
         user_obj.delete()
         message = "User %s deleted." % user
@@ -630,7 +673,7 @@ def add_user_group(request):
             #if we continue here the user group already exists and we can return without adding it
             message = "%s already has access to %s" % (user, group)
             return manage_groups(request, message)
-        except Exception as e:
+        except Exception:
             #If we get here the user group wasn't present and we can safely add it
             logger.info("No previous entry, adding new user_group")
             new_usr_grp = User_Group(user=user_obj, group_name=grp_obj)
@@ -648,21 +691,21 @@ def delete_group(request):
         raise PermissionDenied
     if request.method == 'POST':
         group = request.POST.get('group')
-        logger.info("Attempting to delete group %s" % group)
+        logger.info("Attempting to delete group %s", group)
         grp_obj = Group.objects.get(group_name=group)
         grp_obj.delete()
         message = "Group %s deleted." % group
         #need to also remove any instanced where this group was the active one for users.
         try:
             users = Glint_User.objects.get(active_group=group)
-            if(users is not None):
+            if users is not None:
                 for user in users:
                     user.active_group = None
                     user.save()
         except:
             #No users tied to this group
             logger.info("No users to clean-up..")
-        logger.info("Successfull delete of group %s" % group)
+        logger.info("Successfull delete of group %s", group)
         return HttpResponse(True)
     else:
         #not a post
@@ -681,16 +724,16 @@ def update_group(request):
         try:
             new_group_obj = Group.objects.get(group_name=new_group)
             #name already taken, don't edit the name and return
-            logger.info("Could not update group name to %s, name already in use" % new_group)
+            logger.info("Could not update group name to %s, name already in use", new_group)
             message = "Could not update group name to %s, name already in use" % new_group
             return manage_groups(request=request, message=message)
-        except Exception as e:
+        except Exception:
             #No group has the new name, proceed freely
             group_obj = Group.objects.get(group_name=old_group)
             group_obj.group_name = new_group
             group_obj.save()
             message = "Successfully updated group name to %s" % new_group
-            logger.info("Successfully updated group name to %s" % new_group)
+            logger.info("Successfully updated group name to %s", new_group)
             return manage_groups(request=request, message=message)
     else:
         #not a post
@@ -704,21 +747,20 @@ def add_group(request):
         raise PermissionDenied
     if request.method == 'POST':
         group = request.POST.get('group')
-        logger.info("Attempting to add group %s" % group)
+        logger.info("Attempting to add group %s", group)
         try:
             group_obj = Group.objects.get(group_name=group)
             #group exists, return without adding
             message = "Group with that name already exists"
-            logger.info("Could not add group %s, name already in use." % group)
+            logger.info("Could not add group %s, name already in use.", group)
             return manage_groups(request=request, message=message)
-        except Exception as e:
+        except Exception:
             #group doesnt exist, we can go ahead and add it.
             new_grp = Group(group_name=group)
             new_grp.save()
-            logging.info("Group '%s' created successfully" % group)
+            logging.info("Group '%s' created successfully", group)
             message = "Group '%s' created successfully" % group
             return manage_groups(request=request, message=message)
-        pass
     else:
         #not a post should never come to this page, redirect to matrix?
         pass
@@ -761,11 +803,10 @@ def download_image(request, group_name, image_name):
         raise PermissionDenied
 
     logger.info("Preparing to download image file.")
-    # returns (repo_obj.auth_url, repo_obj.tenant, repo_obj.username, repo_obj.password, image_id, img_checksum)
     image_info = find_image_by_name(group_name=group_name, image_name=image_name)
 
     # Find image location
-    image_id=image_info[4]
+    image_id = image_info[4]
 
     # Check download location to see if image is there already
     # This function should update the timestamp if it finds a hit
@@ -774,7 +815,7 @@ def download_image(request, group_name, image_name):
         #return the image using this path
         logger.info("Found cached local copy...")
         filename = image_name
-        response = StreamingHttpResponse((line for line in open(tentative_path,'r')))
+        response = StreamingHttpResponse((line for line in open(tentative_path, 'r')))
         response['Content-Disposition'] = "attachment; filename={0}".format(filename)
         response['Content-Length'] = os.path.getsize(tentative_path)
         return response
@@ -784,8 +825,15 @@ def download_image(request, group_name, image_name):
     if not os.path.exists("/var/www/glintv2/scratch/"):
         os.makedirs("/var/www/glintv2/scratch/")
     logger.info("No cached copy found, downloading image file.")
-    rcon = repo_connector(auth_url=image_info[0], project=image_info[1], username=image_info[2], password=image_info[3])
-    rcon.download_image(image_name=image_name, image_id=image_id, scratch_dir="/var/www/glintv2/scratch/")
+    rcon = repo_connector(
+        auth_url=image_info[0],
+        project=image_info[1],
+        username=image_info[2],
+        password=image_info[3])
+    rcon.download_image(
+        image_name=image_name,
+        image_id=image_id,
+        scratch_dir="/var/www/glintv2/scratch/")
 
     # add to download table in redis
     filename = image_name
@@ -793,7 +841,7 @@ def download_image(request, group_name, image_name):
     add_cached_image(image_name, image_checksum=image_info[5], full_path=file_full_path)
 
 
-    response = StreamingHttpResponse((line for line in open(file_full_path,'r')))
+    response = StreamingHttpResponse((line for line in open(file_full_path, 'r')))
     response['Content-Disposition'] = "attachment; filename={0}".format(filename)
     response['Content-Length'] = os.path.getsize(file_full_path)
     return response
@@ -804,7 +852,7 @@ def upload_image(request, group_name):
 
     try:
         image_file = request.FILES['myfile']
-    except Exception as e:
+    except Exception:
         # no file means it's not a POST or it's an upload by URL
         image_file = False
 
@@ -817,14 +865,16 @@ def upload_image(request, group_name):
         #before we save it locally let us check if it is already in the repos
         cloud_name_list = request.POST.getlist('clouds')
         bad_clouds = check_for_existing_images(group_name, cloud_name_list, image_file.name)
-        if len(bad_clouds)>0:
+        if len(bad_clouds) > 0:
             for cloud in bad_clouds:
                 cloud_name_list.remove(cloud)
-            message = "Upload failed for one or more projects because the image name was already in use."
+            message = ("Upload failed for one or more projects because"
+                       " the image name was already in use.")
 
-        if len(cloud_name_list)==0:
+        if len(cloud_name_list) == 0:
             #if we have eliminated all the target clouds, return with error message
-            message = "Upload failed to all target projects because the image name was already in use."
+            message = ("Upload failed to all target projects because"
+                       " the image name was already in use.")
             image_dict = json.loads(get_images_for_group(group_name))
             context = {
                 'group_name': group_name,
@@ -836,10 +886,10 @@ def upload_image(request, group_name):
 
         #And finally before we save locally double check that file doesn't already exist
         valid_path = True
-        if(os.path.exists(file_path)):
+        if os.path.exists(file_path):
             valid_path = False
             # Filename exists locally, we need to use a temp folder
-            for x in range(0,10):
+            for x in range(0, 10):
                 #first check if the temp folder exists
                 file_path = "/var/www/glintv2/scratch/" + str(x)
                 if not os.path.exists(file_path):
@@ -862,7 +912,8 @@ def upload_image(request, group_name):
                 'group_name': group_name,
                 'image_dict': image_dict,
                 'max_repos': len(image_dict),
-                'message': "Too many images by that name being uploaded, please try again in a few minutes."
+                'message': ("Too many images by that name being uploaded,"
+                            " please try again in a few minutes.")
             }
             return render(request, 'glintwebui/upload_image.html', context)
 
@@ -872,10 +923,10 @@ def upload_image(request, group_name):
                 destination.write(chunk)
 
         # now queue the uploads to the destination clouds
-        r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
+        red = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
         user = getUser(request)
         for cloud in cloud_name_list:
-            logger.info("Queing image upload to %s" % cloud)
+            logger.info("Queing image upload to %s", cloud)
             transaction = {
                 'user': user.username,
                 'action':  'upload',
@@ -887,9 +938,8 @@ def upload_image(request, group_name):
                 'container_format': "bare"
             }
             trans_key = group_name + "_pending_transactions"
-            r.rpush(trans_key, json.dumps(transaction))
+            red.rpush(trans_key, json.dumps(transaction))
             increment_transactions()
-            
 
         #return to project details page with message
         return redirect('project_details', group_name=group_name)
@@ -902,10 +952,10 @@ def upload_image(request, group_name):
         file_path = "/var/www/glintv2/scratch/" + image_name
         # check if a file with that name already exists
         valid_path = True
-        if(os.path.exists(file_path)):
+        if os.path.exists(file_path):
             valid_path = False
             # Filename exists locally, we need to use a temp folder
-            for x in range(0,10):
+            for x in range(0, 10):
                 #first check if the temp folder exists
                 file_path = "/var/www/glintv2/scratch/" + str(x)
                 if not os.path.exists(file_path):
@@ -940,11 +990,11 @@ def upload_image(request, group_name):
 
         with open(file_path, "wb") as image_file:
             image_file.write(image_data.read())
-        
+
         disk_format = request.POST.get('disk_format')
         # now upload it to the destination clouds
         cloud_name_list = request.POST.getlist('clouds')
-        r = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
+        red = redis.StrictRedis(host=config.redis_host, port=config.redis_port, db=config.redis_db)
         user = getUser(request)
         for cloud in cloud_name_list:
             transaction = {
@@ -958,9 +1008,8 @@ def upload_image(request, group_name):
                 'container_format': "bare"
             }
             trans_key = group_name + "_pending_transactions"
-            r.rpush(trans_key, json.dumps(transaction))
+            red.rpush(trans_key, json.dumps(transaction))
             increment_transactions()
-            
 
         #return to project details page with message
         return redirect('project_details', group_name=group_name)

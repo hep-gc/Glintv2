@@ -1,21 +1,17 @@
 from __future__ import unicode_literals
-
+import datetime
 from django.db import models
 from django.contrib.auth.models import User
 
-import datetime
 
 
-
-'''
-The Group_Resources table will contain all information about a given project.
-Atributes:
-    - URI
-    - tenant(repo)
-    - Account Name
-    - username (glint user for that cloud)
-    - password (glint user pw for that cloud)
-'''
+#The Group_Resources table will contain all information about a given project.
+#Atributes:
+#    - URI
+#    - tenant(repo)
+#    - Account Name
+#    - username (glint user for that cloud)
+#    - password (glint user pw for that cloud)
 class Group_Resources(models.Model):
     cloud_name = models.CharField(primary_key=True, max_length=20)
     group_name = models.CharField(max_length=32)
@@ -52,12 +48,11 @@ class Group_Resources(models.Model):
 
 
     def __str__(self):
-        return self.account_name + ": " + self.tenant
+        return self.group_name + ": " + self.tenant
 
-'''
-The Glint User table provides the second layer of authentication and provides room for future developments
-of alternative authenication methods (ssh, user/pw, etc)
-'''
+
+# The Glint User table provides the second layer of authentication and provides room
+# for future developments of alternative authenication methods (ssh, user/pw, etc)
 class Glint_User(models.Model):
     username = models.CharField(max_length=32)
     password = models.CharField(max_length=128) #keeping this long for hashes
@@ -74,7 +69,7 @@ class Glint_User(models.Model):
 
 
     def __str__(self):
-        return "%s" % (self.user_name)
+        return "%s" % (self.username)
 
 
 
@@ -83,13 +78,12 @@ class Group(models.Model):
     def __str__(self):
         return "%s" % (self.group_name)
 
-'''
-The User_Account table will contain the correlation between users and the accounts they have access to.
-Attributes:
-    - Project Name
-    - User  (...glint user?)
-    - Date last used
-'''
+
+#The User_Group table will contain the correlation between users and the groups they have access to
+#Attributes:
+#    - Project Name
+#    - User  (...glint user?)
+#    - Date last used
 class User_Group(models.Model):
     group_name = models.ForeignKey(Group, on_delete=models.CASCADE)
     user = models.ForeignKey(Glint_User, on_delete=models.CASCADE)
@@ -98,5 +92,3 @@ class User_Group(models.Model):
 
     def __str__(self):
         return "%s: %s" % (self.group_name, self.user)
-
-
