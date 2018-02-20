@@ -22,8 +22,7 @@ urlpatterns = [
     #url(r'^glintwebui/', include('glintwebui.urls')),
     url(r'^admin/', admin.site.urls),
     url(r'^$', RedirectView.as_view(url='ui/')), #root index goes to the glintwebui
-    url(r'^ui/', include('glintwebui.urls')), 
-    url(r'^users/', include('glintwebui.urls')),  
+    url(r'^ui/', include('glintwebui.urls')),
+    url(r'^users/', include('glintwebui.urls')),
     url(r'^project_details/', include('glintwebui.urls')),
 ]
-
