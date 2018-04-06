@@ -64,7 +64,7 @@ def jsonify_image_list(image_list, repo_list):
     for repo in repo_list:
         img_dict = {}
         for image in image_list:
-            if image[0] == repo.tenant and image[7] == repo.cloud_name:
+            if image[0] == repo.project and image[7] == repo.cloud_name:
                 img = {}
                 img['name'] = image[1]
                 img['state'] = 'Present'
@@ -427,7 +427,7 @@ def process_pending_transactions(group_name, json_img_dict):
 
             rcon = repo_connector(
                 auth_url=repo_obj.authurl,
-                project=repo_obj.tenant,
+                project=repo_obj.project,
                 username=repo_obj.username,
                 password=repo_obj.password,
                 user_domain_name=repo_obj.user_domain_name,
@@ -452,7 +452,7 @@ def process_pending_transactions(group_name, json_img_dict):
                 image_id=new_img_id,
                 group_name=group_name,
                 auth_url=repo_obj.authurl,
-                project_tenant=repo_obj.tenant,
+                project_tenant=repo_obj.project,
                 username=repo_obj.username,
                 password=repo_obj.password,
                 requesting_user=transaction['user'],
@@ -473,7 +473,7 @@ def process_pending_transactions(group_name, json_img_dict):
                     image_name=transaction['image_name'],
                     group_name=group_name,
                     auth_url=repo_obj.authurl,
-                    project_tenant=repo_obj.tenant,
+                    project_tenant=repo_obj.project,
                     username=repo_obj.username,
                     password=repo_obj.password,
                     requesting_user=transaction['user'],
@@ -494,7 +494,7 @@ def process_pending_transactions(group_name, json_img_dict):
                 image_name=img_name,
                 image_path=image_path,
                 auth_url=repo_obj.authurl,
-                project_tenant=repo_obj.tenant,
+                project_tenant=repo_obj.project,
                 username=repo_obj.username,
                 password=repo_obj.password,
                 requesting_user=req_user,
@@ -602,7 +602,7 @@ def find_image_by_name(group_name, image_name):
             if image_dict[cloud][image]['name'] == image_name:
                 if image_dict[cloud][image]['state'] == 'Present' and image_dict[cloud][image]['hidden'] is False:
                     repo_obj = Group_Resources.objects.get(group_name=group_name, cloud_name=cloud)
-                    return (repo_obj.authurl, repo_obj.tenant, repo_obj.username,\
+                    return (repo_obj.authurl, repo_obj.project, repo_obj.username,\
                         repo_obj.password, image, image_dict[cloud][image]['checksum'],\
                         repo_obj.user_domain_name, repo_obj.project_domain_name)
     return False

@@ -65,8 +65,8 @@ def image_collection(self):
             for repo in repo_list:
                 try:
                     rcon = repo_connector(
-                        auth_url=repo.auth_url,
-                        project=repo.tenant,
+                        auth_url=repo.authurl,
+                        project=repo.project,
                         username=repo.username,
                         password=repo.password,
                         user_domain_name=repo.user_domain_name,
@@ -77,7 +77,7 @@ def image_collection(self):
                 except Exception as exc:
                     logger.error(exc)
                     logger.error("Could not connect to repo: %s at %s",\
-                        repo.tenant, repo.auth_url)
+                        repo.project, repo.authurl)
 
             # take the new json and compare it to the previous one
             # and merge the differences, generally the new one will be used but if there
