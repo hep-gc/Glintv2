@@ -25,7 +25,6 @@ class Group_Resources(models.Model):
     region = models.CharField(max_length=20, null=True, default=None)
     cloud_type = models.CharField(max_length=64, null=True, default="Openstack")
     # need to have control options in the table for csv2 compatibility
-    '''
     extrayaml = models.CharField(null=True, default=None)
     cacertificate = models.CharField(null=True, default=None)
     server_meta_ctl =  models.IntegerField()
@@ -41,7 +40,6 @@ class Group_Resources(models.Model):
     server_group_members_ctl =  models.IntegerField()
     floating_ips_ctl =  models.IntegerField()
     cores_ctl =  models.IntegerField()
-    '''
 
     class Meta:
         db_table = 'csv2_group_resources'

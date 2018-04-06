@@ -120,11 +120,11 @@ LOGGING = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'glintv2',
+        'NAME': 'csv2',
         'USER': 'glintv2',
         'PASSWORD': 'glintv2pass',
         'HOST': 'localhost',
-        'PORT': '',
+        'PORT': '3306',
     }
 }
 
