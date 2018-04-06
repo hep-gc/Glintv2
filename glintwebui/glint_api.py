@@ -175,7 +175,7 @@ def change_image_name(repo_obj, img_id, old_img_name, new_img_name, user):
         logger.info("User %s attempting to rename image '%s' to '%s' in repo '%s'",\
             user, old_img_name, new_img_name, repo_obj.tenant)
         repo = repo_connector(
-            auth_url=repo_obj.auth_url,
+            auth_url=repo_obj.authurl,
             project=repo_obj.tenant,
             username=repo_obj.username,
             password=repo_obj.password)

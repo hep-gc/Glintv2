@@ -426,7 +426,7 @@ def process_pending_transactions(group_name, json_img_dict):
                 cloud_name=transaction['cloud_name'])
 
             rcon = repo_connector(
-                auth_url=repo_obj.auth_url,
+                auth_url=repo_obj.authurl,
                 project=repo_obj.tenant,
                 username=repo_obj.username,
                 password=repo_obj.password,
@@ -451,7 +451,7 @@ def process_pending_transactions(group_name, json_img_dict):
                 image_name=transaction['image_name'],
                 image_id=new_img_id,
                 group_name=group_name,
-                auth_url=repo_obj.auth_url,
+                auth_url=repo_obj.authurl,
                 project_tenant=repo_obj.tenant,
                 username=repo_obj.username,
                 password=repo_obj.password,
@@ -472,7 +472,7 @@ def process_pending_transactions(group_name, json_img_dict):
                     image_id=transaction['image_id'],
                     image_name=transaction['image_name'],
                     group_name=group_name,
-                    auth_url=repo_obj.auth_url,
+                    auth_url=repo_obj.authurl,
                     project_tenant=repo_obj.tenant,
                     username=repo_obj.username,
                     password=repo_obj.password,
@@ -493,7 +493,7 @@ def process_pending_transactions(group_name, json_img_dict):
             upload_image.delay(
                 image_name=img_name,
                 image_path=image_path,
-                auth_url=repo_obj.auth_url,
+                auth_url=repo_obj.authurl,
                 project_tenant=repo_obj.tenant,
                 username=repo_obj.username,
                 password=repo_obj.password,
@@ -602,7 +602,7 @@ def find_image_by_name(group_name, image_name):
             if image_dict[cloud][image]['name'] == image_name:
                 if image_dict[cloud][image]['state'] == 'Present' and image_dict[cloud][image]['hidden'] is False:
                     repo_obj = Group_Resources.objects.get(group_name=group_name, cloud_name=cloud)
-                    return (repo_obj.auth_url, repo_obj.tenant, repo_obj.username,\
+                    return (repo_obj.authurl, repo_obj.tenant, repo_obj.username,\
                         repo_obj.password, image, image_dict[cloud][image]['checksum'],\
                         repo_obj.user_domain_name, repo_obj.project_domain_name)
     return False

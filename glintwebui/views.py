@@ -167,7 +167,7 @@ def add_repo(request, group_name):
             if validate_resp[0]:
                 #check if repo/auth_url combo already exists
                 try:
-                    if Group_Resources.objects.get(group_name=group_name, tenant=form.cleaned_data['tenant'], auth_url=form.cleaned_data['auth_url']) is not None:
+                    if Group_Resources.objects.get(group_name=group_name, tenant=form.cleaned_data['tenant'], authurl=form.cleaned_data['auth_url']) is not None:
                         #This combo already exists
                         context = {
                             'group_name': group_name,
@@ -192,7 +192,7 @@ def add_repo(request, group_name):
 
                 new_repo = Group_Resources(
                     group_name=group_name,
-                    auth_url=form.cleaned_data['auth_url'],
+                    authurl=form.cleaned_data['auth_url'],
                     tenant=form.cleaned_data['tenant'],
                     username=form.cleaned_data['username'],
                     password=form.cleaned_data['password'],
@@ -385,7 +385,7 @@ def update_repo(request, group_name):
                 # new data is good, grab the old repo and update to the new info
                 repo_obj = Group_Resources.objects.get(cloud_name=cloud_name)
                 repo_obj.username = usr
-                repo_obj.auth_url = auth_url
+                repo_obj.authurl = auth_url
                 repo_obj.tenant_name = tenant
                 repo_obj.password = pwd
                 repo_obj.project_domain_name = project_domain_name

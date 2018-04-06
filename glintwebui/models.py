@@ -15,7 +15,7 @@ from django.contrib.auth.models import User
 class Group_Resources(models.Model):
     cloud_name = models.CharField(primary_key=True, max_length=20)
     group_name = models.CharField(max_length=32)
-    auth_url = models.CharField(max_length=128, default="")
+    authurl = models.CharField(max_length=128, default="")
     tenant = models.CharField(max_length=128, default="")
     #credentials? How to encrypt?
     username = models.CharField(max_length=20)
