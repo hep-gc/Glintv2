@@ -14,13 +14,13 @@
     <li><div><a style="color: #4CAF50;font-weight: bold;" onclick="doDropdown()" class="dropbtn">{{group}}</a>
                                 <div id="myDropdown" class="dropdown-content">
                                     {% for grp in group_list %}
-                                        <a href='/ui/manage_repos/{{acc}}/'>{{grp}}</a>
+                                        <a href='/ui/manage_repos/{{group}}/'>{{grp}}</a>
                                     {% endfor %}
                                 </div>
         </div>
     </li>
     {% if group not in "No groups available" %}
-        <li><a href="/ui/manage_repos/{{group}}">Manage '{{group}}' repos</a></li>
+        <li><a href="/ui/manage_repos/{{group}}/">Manage '{{group}}' repos</a></li>
     {% endif %}
     {% if is_superuser %}
        <li> <div>
@@ -57,7 +57,7 @@
 				<b>{{repo.cloud_name}}</b>
 			</td>
 			<td class="main_table">
-				{{repo.tenant}}
+				{{repo.project}}
 			</td>
 			<td class="main_table">
 				{{repo.authurl}}
