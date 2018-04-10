@@ -76,7 +76,7 @@
 						    <td><input type="text" name="auth_url" id="" value="{{repo.authurl}}" /></td></tr>
 
 						    <tr><td><label for="tenant">Tenant</label></td>
-						    <td><input type="text" name="tenant" id="" value="{{repo.tenant}}" /></td></tr>
+						    <td><input type="text" name="tenant" id="" value="{{repo.project}}" /></td></tr>
 
 						    <tr><td><label for="username">Username</label></td>
 						    <td><input type="text" name="username" id="" value="{{repo.username}}" /></td></tr>
@@ -103,7 +103,7 @@
 							<tr><td></td>
 							<input type="hidden" name="cloud_name" value="{{repo.cloud_name}}" />
 							<td><input type="submit" value="Update Repo" style="background-color: green; color: black; float: left"/>
-                            <input type="button" onclick="confirmDelete('{{repo.tenant}}', '{{repo.cloud_name}}')" value="Delete" style="background-color: red; color: black; float: right"/></td></tr>
+                            <input type="button" onclick="confirmDelete('{{repo.project}}', '{{repo.cloud_name}}')" value="Delete" style="background-color: red; color: black; float: right"/></td></tr>
 						</table>
 					</form>
 				</div>
@@ -148,7 +148,7 @@
 	    if (confirm("Are you sure you want to delete '" + repo + "'") == true) {;
 	        $.post("/ui/delete_repo/{{group}}/", {repo: repo, cloud_name: form_name, csrfmiddlewaretoken: '{{csrf_token}}'}, function(result){
 	        	if(result){
-	        		window.location.href = "/ui/manage_repos/{{group}}";
+	        		window.location.href = "/ui/manage_repos/{{group}}/";
 	        	}
 	        	else{
 	        		//something happened with delete, maybe give an error msg?

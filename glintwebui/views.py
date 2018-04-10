@@ -417,7 +417,7 @@ def delete_repo(request, group_name):
         cloud_name = request.POST.get('cloud_name')
         if repo is not None and cloud_name is not None:
             logger.info("Attempting to delete repo: %s", repo)
-            Group_Resources.objects.filter(tenant=repo, cloud_name=cloud_name).delete()
+            Group_Resources.objects.filter(project=repo, cloud_name=cloud_name).delete()
             repo_modified()
             return HttpResponse(True)
         else:
