@@ -23,7 +23,7 @@ from .utils import get_unique_image_list, get_images_for_group, parse_pending_tr
     add_cached_image, check_cached_images, increment_transactions, check_for_existing_images,\
     get_hidden_image_list, parse_hidden_images
 from .__version__ import version
-from .db_utils import get_db_base_and_session
+from .db_util import get_db_base_and_session
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
