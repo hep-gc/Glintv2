@@ -32,9 +32,9 @@ try:
         cfg = yaml.load(ymlfile)
 
 except Exception as e:
-    print >> sys.stderr "Configuration file problem: There was a " \
-                        "problem reading %s. Check that it is readable," \
-                        "and that it exists. " % path
+    print >> sys.stderr, "Configuration file problem: There was a " \
+                         "problem reading %s. Check that it is readable," \
+                         "and that it exists. " % path
 
 if "database" in cfg:
     if "db_host" in cfg["database"]:
