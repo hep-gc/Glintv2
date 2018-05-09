@@ -14,6 +14,8 @@ from django.contrib.auth.models import User
 import glintwebui.config as config
 
 from .models import Group_Resources, User_Group, Glint_User, Group
+
+
 from .forms import addRepoForm
 from .glint_api import repo_connector, validate_repo, change_image_name
 from .utils import get_unique_image_list, get_images_for_group, parse_pending_transactions, \
@@ -21,13 +23,20 @@ from .utils import get_unique_image_list, get_images_for_group, parse_pending_tr
     add_cached_image, check_cached_images, increment_transactions, check_for_existing_images,\
     get_hidden_image_list, parse_hidden_images
 from .__version__ import version
+from .db_utils import get_db_base_and_session
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+from sqlalchemy.ext.automap import automap_base
 
 
 logger = logging.getLogger('glintv2')
 
 def getUser(request):
     user = request.META.get('REMOTE_USER')
-    auth_user_list = Glint_User.objects.all()
+    Base, session = get_db_base_and_session()
+    Glint_User = Base.classes.csv2_user
+    auth_user_list = session.query(Glint_User)
     for auth_user in auth_user_list:
         if user == auth_user.cert_cn or user == auth_user.username:
             return auth_user
