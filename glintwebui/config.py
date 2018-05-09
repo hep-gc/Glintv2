@@ -4,7 +4,7 @@ import yaml
 
 static_files_root = "/var/www/glintv2/static/"
 cert_auth_bundle_path = "/etc/glintv2/CABundle.crt"
-log_file_path = "/var/log/glintv2/glintv2.log
+log_file_path = "/var/log/glintv2/glintv2.log"
 celery_url = "redis://localhost:6379/0"
 celery_backend = "redis://localhost:6379/"
 redis_host = "localhost"
@@ -32,9 +32,9 @@ try:
         cfg = yaml.load(ymlfile)
 
 except Exception as e:
-    print("Configuration file problem: There was a " \
-          "problem reading %s. Check that it is readable," \
-          "and that it exists. " % path, file=sys.stderr)
+    print >> sys.stderr "Configuration file problem: There was a " \
+                        "problem reading %s. Check that it is readable," \
+                        "and that it exists. " % path
 
 if "database" in cfg:
     if "db_host" in cfg["database"]:
