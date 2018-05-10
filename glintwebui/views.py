@@ -63,7 +63,7 @@ def index(request):
 
 
     user_obj = getUser(request)
-    user_group = session.query(User_Group).filter(user=user_obj.username)
+    user_group = session.query(User_Group).filter(username=user_obj.username)
     if user_group is None:
         #User has access to no groups yet, tell them to contact admin
         #Render index page that has the above info
@@ -98,7 +98,7 @@ def project_details(request, group_name="No groups available", message=None):
     if group_name is None or group_name in "No groups available":
         # First time user, lets put them at the first project the have access to
         try:
-            group_name = session.query(User_Group).filter(user=user_obj.username).first().group_name.group_name
+            group_name = session.query(User_Group).filter(username=user_obj.username).first().group_name.group_name
             if not group_name:
                 group_name = "No groups available"
         except Exception:
@@ -131,7 +131,7 @@ def project_details(request, group_name="No groups available", message=None):
 
     # The image_list is a unique list of images stored in tuples (img_id, img_name)
     # Still need to add detection for images that have different names but the same ID
-    user_groups = session.query(User_Group).filter(username=user_obj.username))
+    user_groups = session.query(User_Group).filter(username=user_obj.username)
     group_list = []
     for grp in user_groups:
         grp_name = grp.group_name
@@ -430,7 +430,7 @@ def update_repo(request, group_name):
                 repo_obj.project_domain_name = project_domain_name
                 repo_obj.user_domain_name = user_domain_name
                 session.merge(repo_obj)
-                session.commit)()
+                session.commit()
             else:
                 #invalid changes, reload manage_repos page with error msg
                 return manage_repos(
@@ -759,7 +759,7 @@ def add_user_group(request):
                 return manage_groups(request, message)
             else:
                 logger.info("No previous entry, adding new user_group")
-                new_usr_grp = User_Group(user=user_obj, group_name=grp_obj)
+                new_usr_grp = User_Group(username=user_obj.username, group_name=grp_obj.group_name)
                 session.merge(new_usr_grp)
                 session.commit()
                 message = "User %s added to %s" % (user, group)
@@ -768,7 +768,7 @@ def add_user_group(request):
             #If we get here the user group wasn't present and we can safely add it
             # this exception may not be needed with the sqlalchemy implimentation
             logger.info("No previous entry, adding new user_group")
-            new_usr_grp = User_Group(user=user_obj, group_name=grp_obj)
+            new_usr_grp = User_Group(username=user_obj.username, group_name=grp_obj.group_name)
             session.merge(new_usr_grp)
             session.commit()
             message = "User %s added to %s" % (user, group)
