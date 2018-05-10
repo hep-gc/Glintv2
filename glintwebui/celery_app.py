@@ -36,8 +36,6 @@ def debug_task(self):
 @app.task(bind=True)
 def image_collection(self):
 
-    from glintwebui.models import Group_Resources, Group
-
     wait_period = 0
     term_signal = False
     num_tx = get_num_transactions()
@@ -45,6 +43,11 @@ def image_collection(self):
 
     # perminant for loop to monitor image states and to queue up tasks
     while True:
+        # setup database objects
+        Base, session = get_db_base_and_session()
+        Group_Resources = Base.classes.csv2_group_resources
+        Group = Base.classes.csv2_groups
+
         # First check for term signal
         logger.debug("Term signal: %s", term_signal)
         if term_signal is True:
@@ -53,14 +56,14 @@ def image_collection(self):
             set_collection_task(False)
             return
         logger.info("Start Image collection")
-        group_list = Group.objects.all()
+        group_list = session.query(Group)
 
         #if there are no active transactions clean up the cache folders
         if num_tx == 0:
             do_cache_cleanup()
 
         for group in group_list:
-            repo_list = Group_Resources.objects.filter(group_name=group.group_name)
+            repo_list = session.query(Group_Resources).filter(group_name=group.group_name)
             image_list = ()
             for repo in repo_list:
                 try:

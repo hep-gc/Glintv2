@@ -10,10 +10,8 @@ from django.http import HttpResponse
 from django.http import StreamingHttpResponse
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import render, redirect
-from django.contrib.auth.models import User
 import glintwebui.config as config
 
-from .models import Group_Resources, User_Group, Glint_User, Group
 
 
 from .forms import addRepoForm
