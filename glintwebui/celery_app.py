@@ -8,6 +8,7 @@ from django.conf import settings
 from celery import Celery
 from celery.utils.log import get_task_logger
 import glintwebui.config as config
+from .db_util import get_db_base_and_session
 
 from glintwebui.glint_api import repo_connector
 from .utils import  jsonify_image_list, update_pending_transactions, get_images_for_group,\

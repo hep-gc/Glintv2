@@ -369,7 +369,7 @@ def manage_repos(request, group_name, feedback_msg=None, error_msg=None):
 
     repo_list = session.query(Group_Resources).filter(Group_Resources.group_name == group_name)
 
-    user_groups = session.query(User_Group).filter(User_Group.username == user_obj.usernmae)
+    user_groups = session.query(User_Group).filter(User_Group.username == user_obj.username)
     group_list = []
     for grp in user_groups:
         grp_name = grp.group_name
