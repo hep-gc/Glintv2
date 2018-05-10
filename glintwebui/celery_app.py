@@ -63,7 +63,7 @@ def image_collection(self):
             do_cache_cleanup()
 
         for group in group_list:
-            repo_list = session.query(Group_Resources).filter(group_name=group.group_name)
+            repo_list = session.query(Group_Resources).filter(Group_Resources.group_name == group.group_name)
             image_list = ()
             for repo in repo_list:
                 try:

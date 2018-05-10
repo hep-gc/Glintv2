@@ -428,7 +428,7 @@ def process_pending_transactions(group_name, json_img_dict):
             # First we need to create a placeholder img and get the new image_id
             # This may cause an error if the same repo is added twice, perhaps we
             # can screen for this when repos are added
-            repo_obj = session.query(Group_Resources).filter(group_name=transaction['group_name'], cloud_name=transaction['cloud_name']).first()
+            repo_obj = session.query(Group_Resources).filter(Group_Resources.group_name == transaction['group_name'], Group_Resources.cloud_name == transaction['cloud_name']).first()
 
 
             rcon = repo_connector(
@@ -470,7 +470,7 @@ def process_pending_transactions(group_name, json_img_dict):
             # First check if it exists in the redis dictionary, if it doesn't exist we can't delete it
             if img_dict[transaction['cloud_name']].get(transaction['image_id']) is not None:
                 # Set state and queue delete task
-                repo_obj = session.query(Group_Resources).filter(group_name=transaction['group_name'], cloud_name=transaction['cloud_name']).first()
+                repo_obj = session.query(Group_Resources).filter(Group_Resources.group_name == transaction['group_name'], Group_Resources.cloud_name == transaction['cloud_name']).first()
 
                 img_dict[transaction['cloud_name']][transaction['image_id']]['state'] = 'Pending Delete'
                 delete_image.delay(
@@ -492,7 +492,7 @@ def process_pending_transactions(group_name, json_img_dict):
             image_path = transaction['local_path']
             disk_format = transaction['disk_format']
             container_format = transaction['container_format']
-            repo_obj = session.query(Group_Resources).filter(group_name=transaction['group_name'], cloud_name=transaction['cloud_name']).first()
+            repo_obj = session.query(Group_Resources).filter(Group_Resources.group_name == transaction['group_name'], Group_Resources.cloud_name == transaction['cloud_name']).first()
             upload_image.delay(
                 image_name=img_name,
                 image_path=image_path,
@@ -606,7 +606,7 @@ def find_image_by_name(group_name, image_name):
         for image in image_dict[cloud]:
             if image_dict[cloud][image]['name'] == image_name:
                 if image_dict[cloud][image]['state'] == 'Present' and image_dict[cloud][image]['hidden'] is False:
-                    repo_obj = session.query(Group_Resources).filter(group_name=group_name, cloud_name=cloud).first()
+                    repo_obj = session.query(Group_Resources).filter(Group_Resources.group_name == group_name, Group_Resources.cloud_name == cloud).first()
                     return (repo_obj.authurl, repo_obj.project, repo_obj.username,\
                         repo_obj.password, image, image_dict[cloud][image]['checksum'],\
                         repo_obj.user_domain_name, repo_obj.project_domain_name)

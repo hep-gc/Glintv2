@@ -63,7 +63,7 @@ def index(request):
 
 
     user_obj = getUser(request)
-    user_group = session.query(User_Group).filter(username=user_obj.username)
+    user_group = session.query(User_Group).filter(User_Group.username == user_obj.username)
     if user_group is None:
         #User has access to no groups yet, tell them to contact admin
         #Render index page that has the above info
@@ -98,7 +98,7 @@ def project_details(request, group_name="No groups available", message=None):
     if group_name is None or group_name in "No groups available":
         # First time user, lets put them at the first project the have access to
         try:
-            group_name = session.query(User_Group).filter(username=user_obj.username).first().group_name.group_name
+            group_name = session.query(User_Group).filter(User_Group.username == user_obj.username).first().group_name.group_name
             if not group_name:
                 group_name = "No groups available"
         except Exception:
@@ -131,7 +131,7 @@ def project_details(request, group_name="No groups available", message=None):
 
     # The image_list is a unique list of images stored in tuples (img_id, img_name)
     # Still need to add detection for images that have different names but the same ID
-    user_groups = session.query(User_Group).filter(username=user_obj.username)
+    user_groups = session.query(User_Group).filter(User_Group.username == user_obj.username)
     group_list = []
     for grp in user_groups:
         grp_name = grp.group_name
@@ -184,7 +184,7 @@ def add_repo(request, group_name):
             if validate_resp[0]:
                 #check if repo/auth_url combo already exists
                 try:
-                    if session.query(Group_Resources).filter(group_name=group_name, project=form.cleaned_data['tenant'], authurl=form.cleaned_data['auth_url']) is not None:
+                    if session.query(Group_Resources).filter(Group_Resources.group_name == group_name, Group_Resources.project == form.cleaned_data['tenant'], Group_Resources.authurl == form.cleaned_data['auth_url']) is not None:
                         #This combo already exists
                         context = {
                             'group_name': group_name,
@@ -196,7 +196,7 @@ def add_repo(request, group_name):
                     pass
                 #check if cloud_name is already in use
                 try:
-                    if session.query(Group_Resources).filter(group_name=group_name, cloud_name=form.cleaned_data['cloud_name']) is not None:
+                    if session.query(Group_Resources).filter(Group_Resources.group_name == group_name, Group_Resources.cloud_name == form.cleaned_data['cloud_name']) is not None:
                         #This cloud_name already exists
                         context = {
                             'group_name': group_name,
@@ -262,7 +262,7 @@ def save_images(request, group_name):
         Group_Resources = Base.classes.csv2_group_resources
         user = getUser(request)
         #get repos
-        repo_list = session.query(Group_Resources).filter(group_name=group_name)
+        repo_list = session.query(Group_Resources).filter(Group_Resources.group_name == group_name)
 
         # need to iterate thru a for loop of the repos in this group and get the list for each and
         # check if we need to update any states. Every image will have to be checked since if
@@ -297,7 +297,7 @@ def save_hidden_images(request, group_name):
         Base, session = get_db_base_and_session()
         Group_Resources = Base.classes.csv2_group_resources
         #get repos
-        repo_list = session.query(Group_Resources).filter(group_name=group_name)
+        repo_list = session.query(Group_Resources).filter(Group_Resources.group_name == group_name)
 
         # need to iterate thru a for loop of the repos in this group and get the list for each and
         # check if we need to change any of the hidden states
@@ -323,7 +323,7 @@ def resolve_conflict(request, group_name, cloud_name):
         Base, session = get_db_base_and_session()
         Group_Resources = Base.classes.csv2_group_resources
 
-        repo_obj = session.query(Group_Resources).filter(group_name=group_name, cloud_name=cloud_name).first()
+        repo_obj = session.query(Group_Resources).filter(Group_Resources.group_name == group_name, Group_Resources.cloud_name == cloud_name).first()
         image_dict = json.loads(get_images_for_group(group_name))
         changed_names = 0
         #key is img_id, calue is image name
@@ -367,9 +367,9 @@ def manage_repos(request, group_name, feedback_msg=None, error_msg=None):
     User_Group = Base.classes.csv2_user_groups
 
 
-    repo_list = session.query(Group_Resources).filter(group_name=group_name)
+    repo_list = session.query(Group_Resources).filter(Group_Resources.group_name == group_name)
 
-    user_groups = session.query(User_Group).filter(username=user_obj.usernmae)
+    user_groups = session.query(User_Group).filter(User_Group.username == user_obj.usernmae)
     group_list = []
     for grp in user_groups:
         grp_name = grp.group_name
@@ -422,7 +422,7 @@ def update_repo(request, group_name):
                 Base, session = get_db_base_and_session()
                 Group_Resources = Base.classes.csv2_group_resources
 
-                repo_obj = session.query(Group_Resources).filter(group_name=group_name, cloud_name=cloud_name).first()
+                repo_obj = session.query(Group_Resources).filter(Group_Resources.group_name == group_name, Group_Resources.cloud_name == cloud_name).first()
                 repo_obj.username = usr
                 repo_obj.authurl = auth_url
                 repo_obj.project = tenant
@@ -460,7 +460,7 @@ def delete_repo(request, group_name):
         cloud_name = request.POST.get('cloud_name')
         if repo is not None and cloud_name is not None:
             logger.info("Attempting to delete repo: %s", repo)
-            repo_to_del = session.query(Group_Resources).filter(group_name=group_name, cloud_name=cloud_name).first()
+            repo_to_del = session.query(Group_Resources).filter(Group_Resources.group_name == group_name, Group_Resources.cloud_name == cloud_name).first()
             session.delete(repo_to_del)
             session.commit()
             repo_modified()
@@ -511,7 +511,7 @@ def add_user(request):
 
             # check if username exists, if not add it
             # This could be cleaned up to not depend on an exception. using first() will return none if no user is found
-            user_found = session.query(Glint_User).filter(username=user).one()
+            user_found = session.query(Glint_User).filter(Glint_User.username == user).one()
             logger.error("Found user %s, already in system", user_found[0])
             #if we get here it means the user already exists
             message = "Unable to add user, username already exists"
@@ -670,7 +670,7 @@ def manage_users(request, message=None):
     Glint_User = Base.classes.csv2_user
 
     user_list = session.query(Glint_User)
-    suser_obj_list = session.query(Glint_User).filter(is_superuser=1)
+    suser_obj_list = session.query(Glint_User).filter(Glint_User.is_superuser == 1)
     admin_list = []
     for usr in suser_obj_list:
         admin_list.append(usr.username)
@@ -713,11 +713,11 @@ def delete_user_group(request):
         user = request.POST.get('user')
         group = request.POST.get('group')
         logger.info("Attempting to delete user %s from group %s" % (user, group))
-        user_obj = session.query(Glint_User).filter(username=user)
+        user_obj = session.query(Glint_User).filter(Glint_User.username == user)
         user_obj.active_group = None
         session.merge(user_obj)
         grp_obj = session.query(Group).get(group)
-        user_group_obj = session.query(User_Group).filter(username=user_obj.username, group_name=grp_obj.group_name)
+        user_group_obj = session.query(User_Group).filter(User_Group.username == user_obj.username, User_Group.group_name == grp_obj.group_name)
         session.delete(user_group_obj)
         session.commit()
         message = "User %s deleted from %s" % (user, group)
@@ -744,7 +744,7 @@ def add_user_group(request):
         grp_obj = None
         logger.info("Attempting to add user %s to group %s" % (user, group))
         try:
-            user_obj = session.query(Glint_User).filter(username=user)
+            user_obj = session.query(Glint_User).filter(Glint_User.username == user)
             grp_obj = session.query(Group).get(group)
         except Exception as e:
             logger.error("Either user or group does not exist, could not add user_group.")
@@ -752,7 +752,7 @@ def add_user_group(request):
         try:
             #check to make sure it's not already there
             logger.info("Checking if user already has access.")
-            usr_grp = session.query(User_Group).filter(username=user_obj.usernmae, group_name=grp_obj.group_name)
+            usr_grp = session.query(User_Group).filter(User_Group.username == user_obj.usernmae, User_Group.group_name == grp_obj.group_name)
             if usr_grp is not None: 
                 #if we continue here the user group already exists and we can return without adding it
                 message = "%s already has access to %s" % (user, group)
@@ -796,7 +796,7 @@ def delete_group(request):
         message = "Group %s deleted." % group
         #need to also remove any instanced where this group was the active one for users.
         try:
-            users = session.query(Glint_User).filter(active_group=group)
+            users = session.query(Glint_User).filter(Glint_User.active_group == group)
             if users is not None:
                 for user in users:
                     user.active_group = None
