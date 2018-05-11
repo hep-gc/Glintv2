@@ -26,6 +26,9 @@ th {
 .public {
     background-color: #FFFF63;
 }
+.shared {
+    background-color: #97E739;
+}
 
 .private{
     background-color: #97E739;
