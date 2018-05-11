@@ -369,7 +369,7 @@ def manage_repos(request, group_name, feedback_msg=None, error_msg=None):
 
     repo_list = session.query(Group_Resources).filter(Group_Resources.group_name == group_name)
 
-    user_groups = session.query(User_Group).filter(User_Group.username == user_obj.usernmae)
+    user_groups = session.query(User_Group).filter(User_Group.username == user_obj.username)
     group_list = []
     for grp in user_groups:
         grp_name = grp.group_name
@@ -744,7 +744,7 @@ def add_user_group(request):
         grp_obj = None
         logger.info("Attempting to add user %s to group %s" % (user, group))
         try:
-            user_obj = session.query(Glint_User).filter(Glint_User.username == user)
+            user_obj = session.query(Glint_User).get(user)
             grp_obj = session.query(Group).get(group)
         except Exception as e:
             logger.error("Either user or group does not exist, could not add user_group.")
