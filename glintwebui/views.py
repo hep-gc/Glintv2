@@ -744,7 +744,7 @@ def add_user_group(request):
         grp_obj = None
         logger.info("Attempting to add user %s to group %s" % (user, group))
         try:
-            user_obj = session.query(Glint_User).get(user)
+            user_obj = session.query(Glint_User).filter(Glint_User.username == user).first()
             grp_obj = session.query(Group).get(group)
         except Exception as e:
             logger.error("Either user or group does not exist, could not add user_group.")
