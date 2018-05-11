@@ -184,7 +184,7 @@ def add_repo(request, group_name):
             if validate_resp[0]:
                 #check if repo/auth_url combo already exists
                 try:
-                    if session.query(Group_Resources).filter(Group_Resources.group_name == group_name, Group_Resources.project == form.cleaned_data['tenant'], Group_Resources.authurl == form.cleaned_data['auth_url']) is not None:
+                    if session.query(Group_Resources).filter(Group_Resources.group_name == group_name, Group_Resources.project == form.cleaned_data['tenant'], Group_Resources.authurl == form.cleaned_data['auth_url']).first() is not None:
                         #This combo already exists
                         context = {
                             'group_name': group_name,
