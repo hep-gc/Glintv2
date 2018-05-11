@@ -196,7 +196,7 @@ def add_repo(request, group_name):
                     pass
                 #check if cloud_name is already in use
                 try:
-                    if session.query(Group_Resources).filter(Group_Resources.group_name == group_name, Group_Resources.cloud_name == form.cleaned_data['cloud_name']) is not None:
+                    if session.query(Group_Resources).filter(Group_Resources.group_name == group_name, Group_Resources.cloud_name == form.cleaned_data['cloud_name']).first() is not None:
                         #This cloud_name already exists
                         context = {
                             'group_name': group_name,
@@ -215,7 +215,8 @@ def add_repo(request, group_name):
                     password=form.cleaned_data['password'],
                     cloud_name=form.cleaned_data['cloud_name'],
                     user_domain_name=form.cleaned_data['user_domain_name'],
-                    project_domain_name=form.cleaned_data['project_domain_name'])
+                    project_domain_name=form.cleaned_data['project_domain_name'],
+                    cloud_type="openstack")
                 session.merge(new_repo)
                 session.commit()
                 repo_modified()
