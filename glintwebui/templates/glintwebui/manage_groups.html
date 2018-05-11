@@ -49,7 +49,7 @@
                     {% for grp in group_user_dict %}
                         {% if group == grp %}
                             {% for user in group_user_dict|get_item:grp %}
-                                <p>{{user}} <input type="button" onclick="confirmUserDelete('{{user}}', '{{group.group_name}}')" value="x" style="background-color: red; color: black; float: right"/></p>
+                                <p>{{user.username}} <input type="button" onclick="confirmUserDelete('{{user.username}}', '{{group.group_name}}')" value="x" style="background-color: red; color: black; float: right"/></p>
                             {% endfor %}
                         {% endif %}
                     {% endfor %}
@@ -60,7 +60,7 @@
                             <table>
                                 <td><select name="user" id="" value="" />
                                     {% for user in user_list%}
-                                        <option value="{{user}}">{{user}}</option>
+                                        <option value="{{user.username}}">{{user.username}}</option>
                                     {% endfor%}
                                 </select></td>
                     
