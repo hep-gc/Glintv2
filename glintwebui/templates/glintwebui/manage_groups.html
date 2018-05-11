@@ -47,9 +47,9 @@
                 <td><b>{{group.group_name}}</b></td>
                 <td>
                     {% for grp in group_user_dict %}
-                        {% if group == grp %}
+                        {% if group.group_name == grp %}
                             {% for user in group_user_dict|get_item:grp %}
-                                <p>{{user.username}} <input type="button" onclick="confirmUserDelete('{{user.username}}', '{{group.group_name}}')" value="x" style="background-color: red; color: black; float: right"/></p>
+                                <p>{{user}} <input type="button" onclick="confirmUserDelete('{{user}}', '{{group.group_name}}')" value="x" style="background-color: red; color: black; float: right"/></p>
                             {% endfor %}
                         {% endif %}
                     {% endfor %}
