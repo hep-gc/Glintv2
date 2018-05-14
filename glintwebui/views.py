@@ -792,7 +792,7 @@ def delete_group(request):
 
         group = request.POST.get('group')
         logger.info("Attempting to delete group %s", group)
-        grp_obj = session.query(Group).filter(Group.group_name == group)
+        grp_obj = session.query(Group).filter(Group.group_name == group).first()
         session.delete(grp_obj)
         session.commit()
         message = "Group %s deleted." % group
@@ -838,7 +838,7 @@ def update_group(request):
                 return manage_groups(request=request, message=message)
             else:
                 #No group has the new name, proceed freely
-                group_obj = session.query(Group).filter(Group.group_name == old_group)
+                group_obj = session.query(Group).filter(Group.group_name == old_group).first()
                 group_obj.group_name = new_group
                 session.merge(group_obj)
                 session.commit()
@@ -847,7 +847,7 @@ def update_group(request):
                 return manage_groups(request=request, message=message)
         except Exception:
             #No group has the new name, proceed freely
-            group_obj = session.query(Group).filter(Group.group_name == old_group)
+            group_obj = session.query(Group).filter(Group.group_name == old_group).first()
             group_obj.group_name = new_group
             session.merge(group_obj)
             session.commit()
@@ -872,7 +872,7 @@ def add_group(request):
         group = request.POST.get('group')
         logger.info("Attempting to add group %s", group)
         try:
-            group_obj =  session.query(Group).filter(Group.group_name == group)
+            group_obj =  session.query(Group).filter(Group.group_name == group).first()
             if group_obj is not None:
                 #group exists, return without adding
                 message = "Group with that name already exists"
