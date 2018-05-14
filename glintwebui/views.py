@@ -567,7 +567,7 @@ def self_update_user(request):
 
         logger.info("Updating info for user %s", original_user)
         try:
-            glint_user_obj = session.query(Glint_User).filter(Glint_User.username == original_user)
+            glint_user_obj = session.query(Glint_User).filter(Glint_User.username == original_user).first()
             glint_user_obj.cert_cn = cert_cn
             if len(pass1) > 3:
                 glint_user_obj.password = bcrypt.hashpw(pass1.encode(), bcrypt.gensalt(prefix=b"2a"))
