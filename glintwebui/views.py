@@ -651,7 +651,7 @@ def delete_user(request):
     if request.method == 'POST':
         user = request.POST.get('user')
         logger.info("Attempting to delete user %s", user)
-        user_obj = session.query(Glint_User).get(user)
+        user_obj = session.query(Glint_User).filter(Glint_User.username == user).first()
         session.delete(user_obj)
         session.commit()
         message = "User %s deleted." % user
