@@ -566,7 +566,7 @@ def self_update_user(request):
 
         logger.info("Updating info for user %s", original_user)
         try:
-            glint_user_obj = session.query(Glint_User).get(original_user)
+            glint_user_obj = session.query(Glint_User).filter(Glint_User.username == original_user)
             glint_user_obj.cert_cn = cert_cn
             if len(pass1) > 3:
                 glint_user_obj.password = bcrypt.hashpw(pass1.encode(), bcrypt.gensalt(prefix=b"2a"))
@@ -619,7 +619,7 @@ def update_user(request):
 
         logger.info("Updating info for user %s", original_user)
         try:
-            glint_user_obj = session.query(Glint_User).get(original_user)
+            glint_user_obj = session.query(Glint_User).filter(Glint_User.username == original_user).first()
             glint_user_obj.username = user
             glint_user_obj.cert_cn = cert_cn
             glint_user_obj.is_superuser = admin_status
@@ -717,7 +717,7 @@ def delete_user_group(request):
         user_obj = session.query(Glint_User).filter(Glint_User.username == user)
         user_obj.active_group = None
         session.merge(user_obj)
-        grp_obj = session.query(Group).get(group)
+        grp_obj = session.query(Group).filter(Group.group_name == group).first()
         user_group_obj = session.query(User_Group).filter(User_Group.username == user_obj.username, User_Group.group_name == grp_obj.group_name)
         session.delete(user_group_obj)
         session.commit()
@@ -746,7 +746,7 @@ def add_user_group(request):
         logger.info("Attempting to add user %s to group %s" % (user, group))
         try:
             user_obj = session.query(Glint_User).filter(Glint_User.username == user).first()
-            grp_obj = session.query(Group).get(group)
+            grp_obj = session.query(Group).filter(Group.group_name == group).first()
         except Exception as e:
             logger.error("Either user or group does not exist, could not add user_group.")
             logger.error(e)
@@ -791,7 +791,7 @@ def delete_group(request):
 
         group = request.POST.get('group')
         logger.info("Attempting to delete group %s", group)
-        grp_obj = session.query(Group).get(group)
+        grp_obj = session.query(Group).filter(Group.group_name == group)
         session.delete(grp_obj)
         session.commit()
         message = "Group %s deleted." % group
@@ -829,7 +829,7 @@ def update_group(request):
         logger.info("Attempting to update group name %s to %s" % (old_group, new_group))
         #check for groups with the new name
         try:
-            new_group_obj = session.query(Group).get(group)
+            new_group_obj = session.query(Group).filter(Group.group_name == group).first()
             if new_group_obj is not None:
                 #name already taken, don't edit the name and return
                 logger.info("Could not update group name to %s, name already in use", new_group)
@@ -837,7 +837,7 @@ def update_group(request):
                 return manage_groups(request=request, message=message)
             else:
                 #No group has the new name, proceed freely
-                group_obj = session.query(Group).get(old_group)
+                group_obj = session.query(Group).filter(Group.group_name == old_group)
                 group_obj.group_name = new_group
                 session.merge(group_obj)
                 session.commit()
@@ -846,7 +846,7 @@ def update_group(request):
                 return manage_groups(request=request, message=message)
         except Exception:
             #No group has the new name, proceed freely
-            group_obj = session.query(Group).get(old_group)
+            group_obj = session.query(Group).filter(Group.group_name == old_group)
             group_obj.group_name = new_group
             session.merge(group_obj)
             session.commit()
@@ -871,7 +871,7 @@ def add_group(request):
         group = request.POST.get('group')
         logger.info("Attempting to add group %s", group)
         try:
-            group_obj = session.query(Group).get(group)
+            group_obj =  session.query(Group).filter(Group.group_name == group)
             if group_obj is not None:
                 #group exists, return without adding
                 message = "Group with that name already exists"
