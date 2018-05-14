@@ -522,7 +522,7 @@ def add_user(request):
             glint_user = Glint_User(
                 username=user,
                 cert_cn=cert_cn,
-                password=bcrypt.hashpw(pass1.encode(), bcrypt.gensalt(prefix=b"2a"))
+                password=bcrypt.hashpw(pass1.encode(), bcrypt.gensalt(prefix=b"2a")),
                 is_superuser=0)
             session.merge(glint_user)
             session.commit()
