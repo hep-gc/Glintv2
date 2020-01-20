@@ -17,20 +17,12 @@ from django.conf.urls import include, url
 from django.contrib import admin
 from django.views.generic import RedirectView
 
-from .celery_app import image_collection
-from .utils import check_collection_task, set_collection_task
 
 urlpatterns = [
     #url(r'^glintwebui/', include('glintwebui.urls')),
     url(r'^admin/', admin.site.urls),
     url(r'^$', RedirectView.as_view(url='ui/')), #root index goes to the glintwebui
-    url(r'^ui/', include('glintwebui.urls')), 
-    url(r'^users/', include('glintwebui.urls')),  
+    url(r'^ui/', include('glintwebui.urls')),
+    url(r'^users/', include('glintwebui.urls')),
     url(r'^project_details/', include('glintwebui.urls')),
 ]
-
-# Check if the image collection task is running, if not start it and set it to running
-collection_started = check_collection_task()
-if not collection_started:
-    image_collection.apply_async(queue='image_collection')
-    set_collection_task(True)

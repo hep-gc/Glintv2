@@ -11,8 +11,7 @@ https://docs.djangoproject.com/en/1.10/ref/settings/
 """
 
 import os
-import config
-from kombu import Queue
+from glintwebui import config
 
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -87,14 +86,14 @@ LOGGING = {
             '()': 'django.utils.log.RequireDebugFalse'
         }
     },
-     'formatters': {
+    'formatters': {
         'simple': {
             'format': '[%(asctime)s] %(levelname)s %(message)s',
-        'datefmt': '%Y-%m-%d %H:%M:%S'
+            'datefmt': '%Y-%m-%d %H:%M:%S'
         },
         'verbose': {
             'format': '[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s',
-        'datefmt': '%Y-%m-%d %H:%M:%S'
+            'datefmt': '%Y-%m-%d %H:%M:%S'
         },
     },
     'handlers': {
@@ -121,11 +120,14 @@ LOGGING = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'glintv2',
+        'NAME': 'csv2',
         'USER': 'glintv2',
         'PASSWORD': 'glintv2pass',
         'HOST': 'localhost',
-        'PORT': '',
+        'PORT': '3306',
+        'OPTIONS': {
+           "init_command": "SET GLOBAL max_connections = 10000", 
+        }
     }
 }
 
@@ -180,7 +182,7 @@ SECURE_SSL_REDIRECT = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # may be neccesary to configure the below on a virtual machine due to firewalls
-# More info: https://docs.djangoproject.com/en/1.10/ref/settings/#std:setting-SECURE_PROXY_SSL_HEADER
+# More info:https://docs.djangoproject.com/en/1.10/ref/settings/#std:setting-SECURE_PROXY_SSL_HEADER
 # SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # wsgi scheme

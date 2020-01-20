@@ -14,13 +14,13 @@
     <li><div><a style="color: #4CAF50;font-weight: bold;" onclick="doDropdown()" class="dropbtn">{{group}}</a>
                                 <div id="myDropdown" class="dropdown-content">
                                     {% for grp in group_list %}
-                                        <a href='/ui/manage_repos/{{acc}}/'>{{grp}}</a>
+                                        <a href='/ui/manage_repos/{{group}}/'>{{grp}}</a>
                                     {% endfor %}
                                 </div>
         </div>
     </li>
     {% if group not in "No groups available" %}
-        <li><a href="/ui/manage_repos/{{group}}">Manage '{{group}}' repos</a></li>
+        <li><a href="/ui/manage_repos/{{group}}/">Manage '{{group}}' repos</a></li>
     {% endif %}
     {% if is_superuser %}
        <li> <div>
@@ -57,10 +57,10 @@
 				<b>{{repo.cloud_name}}</b>
 			</td>
 			<td class="main_table">
-				{{repo.tenant}}
+				{{repo.project}}
 			</td>
 			<td class="main_table">
-				{{repo.auth_url}}
+				{{repo.authurl}}
 			</td>
 			<td class="main_table">
 				{{repo.username}}
@@ -73,17 +73,17 @@
 						{% csrf_token %}
 						<table>
 						    <tr><td><label for="auth_url">Auth URL</label></td>
-						    <td><input type="text" name="auth_url" id="" value="{{repo.auth_url}}" /></td></tr>
+						    <td><input type="text" name="auth_url" id="" value="{{repo.authurl}}" /></td></tr>
 
 						    <tr><td><label for="tenant">Tenant</label></td>
-						    <td><input type="text" name="tenant" id="" value="{{repo.tenant}}" /></td></tr>
+						    <td><input type="text" name="tenant" id="" value="{{repo.project}}" /></td></tr>
 
 						    <tr><td><label for="username">Username</label></td>
 						    <td><input type="text" name="username" id="" value="{{repo.username}}" /></td></tr>
 						    <tr><td><label for="password">Password</label></td>
 						    <td><input type="password" name="password" id="" value="{{repo.password}}" /></td></tr>
                             <tr>
-                            {% if "/v2.0" in repo.auth_url%}
+                            {% if "/v2.0" in repo.authurl%}
                                 <td>Keystone Version</td> <td><input type="radio" id="v2" name="versionRadio" value="v2" checked/>v2<input type="radio" id="v3" name="versionRadio" value="v3"/>v3</td></tr>
                                 <tr class="version3" hidden=True><td><label for="project_domain_name">Project Domain Name</label></td>
                                 <td><input type="text" name="project_domain_name" id="" value="{{repo.project_domain_name}}" /></td></tr>
@@ -103,7 +103,7 @@
 							<tr><td></td>
 							<input type="hidden" name="cloud_name" value="{{repo.cloud_name}}" />
 							<td><input type="submit" value="Update Repo" style="background-color: green; color: black; float: left"/>
-                            <input type="button" onclick="confirmDelete('{{repo.tenant}}', '{{repo.cloud_name}}')" value="Delete" style="background-color: red; color: black; float: right"/></td></tr>
+                            <input type="button" onclick="confirmDelete('{{repo.project}}', '{{repo.cloud_name}}')" value="Delete" style="background-color: red; color: black; float: right"/></td></tr>
 						</table>
 					</form>
 				</div>
@@ -148,7 +148,7 @@
 	    if (confirm("Are you sure you want to delete '" + repo + "'") == true) {;
 	        $.post("/ui/delete_repo/{{group}}/", {repo: repo, cloud_name: form_name, csrfmiddlewaretoken: '{{csrf_token}}'}, function(result){
 	        	if(result){
-	        		window.location.href = "/ui/manage_repos/{{group}}";
+	        		window.location.href = "/ui/manage_repos/{{group}}/";
 	        	}
 	        	else{
 	        		//something happened with delete, maybe give an error msg?
